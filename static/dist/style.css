@@ -1,0 +1,191 @@
+button > svg {
+  vertical-align: top;
+}
+
+polyline.wall {
+  stroke: darkgray;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+polyline.no-wall {
+  visibility: hidden;
+}
+
+polygon {
+  stroke: lightgray;
+}
+
+polygon.empty {
+  fill: #222222;
+}
+
+polygon.obsticle {
+  fill: rgb( 34, 112, 55 );
+}
+
+polygon.wall {
+  fill: darkgray;
+}
+
+polygon.trap {
+  fill: rgb( 143, 30, 31 );
+}
+
+polygon.hazardous-terrain {
+  fill: rgb( 215, 87, 41 );
+}
+
+polygon.difficult-terrain {
+  fill: rgb( 87, 47, 143 );
+}
+
+polygon.aoe-coverage {
+  fill: darkred;
+  opacity: 0.7;
+}
+
+polygon.aoe-center {
+  fill: gray;
+}
+
+polygon.aoe {
+  fill: darkred;
+  opacity: 0.7;
+}
+
+circle.character {
+  fill: darkcyan;
+  stroke: black;
+  stroke-width: 2;
+}
+
+circle.monster {
+  fill: darkred;
+  stroke: black;
+  stroke-width: 2;
+}
+
+circle.active-monster {
+  fill: darkgoldenrod;
+  stroke: black;
+  stroke-width: 2;
+}
+
+circle.active-character {
+  fill: mediumorchid;
+  stroke: black;
+  stroke-width: 2;
+}
+
+circle.attacked {
+  stroke: red;
+}
+
+circle.selection-highlight {
+  fill-opacity: 0.0;
+  stroke-opacity: 0.9;
+  stroke: white;
+  stroke-width: 1;
+}
+
+.previous-position {
+  opacity: 0.5;
+}
+
+path.play-senario-fill {
+  fill: #606060;
+}
+
+path.play-senario-stroke {
+  fill: #000000;
+}
+
+div.grabbing {
+  cursor: -webkit-grabbing;
+  cursor: grabbing;
+}
+
+label {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+span {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+text {
+  font-family: Arial;
+  text-anchor: middle;
+  fill: white;
+
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+@-moz-keyframes throbber {
+  0% {
+    -moz-transform: rotate( 0deg );
+    transform: rotate( 0deg );
+  }
+  100% {
+    -moz-transform: rotate( 360deg );
+    transform: rotate( 360deg );
+  }
+}
+@-webkit-keyframes throbber {
+  0% {
+    -webkit-transform: rotate( 0deg );
+    transform: rotate( 0deg );
+  }
+  100% {
+    -webkit-transform: rotate( 360deg );
+    transform: rotate( 360deg );
+  }
+}
+@keyframes throbber {
+  0% {
+    -moz-transform: rotate( 0deg );
+    -ms-transform: rotate( 0deg );
+    -webkit-transform: rotate( 0deg );
+    transform: rotate( 0deg );
+  }
+  100% {
+    -moz-transform: rotate( 360deg );
+    -ms-transform: rotate( 360deg );
+    -webkit-transform: rotate( 360deg );
+    transform: rotate( 360deg );
+  }
+}
+.throbber:not(:required) {
+  -moz-animation: throbber 1500ms infinite linear;
+  -webkit-animation: throbber 1500ms infinite linear;
+  animation: throbber 1500ms infinite linear;
+  -moz-border-radius: 0.1em;
+  -webkit-border-radius: 0.15em;
+  border-radius: 0.1em;
+  box-shadow: 0.3em 0 0 0, 0 0.3em 0 0, -0.3em 0 0 0, 0 -0.3em 0 0;
+  display: inline-block;
+  width: 0.2em;
+  height: 0.2em;
+  margin: 0.3em;
+  overflow: hidden;
+  text-indent: 100%;
+}
+.throbber-inactive {
+  display: none;
+}
