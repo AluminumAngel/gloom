@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+  <html lang='en'>
+
+  <head>
+    <title>{{ title }} - v{{ version }}{{ debug_server and ' - Debug' or '' }}</title>
+
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
+
+    <script>
+      URL_FOR = {
+        solve: '{{ url_for( "solve" ) }}',
+        senario: '{{ url_for( "senario", senario_index="" ) }}',
+      };
+      DEVELOPMENT = ( {{ debug_server and "true" or "false" }} );
+      APP_NAME = '{{ title }}';
+      APP_VERSION = '{{ version }}';
+    </script>
+
+    <script async src='https://www.googletagmanager.com/gtag/js?id=UA-119941535-1'></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ dataLayer.push( arguments ); }
+      if ( !DEVELOPMENT ) {
+        gtag( 'js', new Date() );
+        gtag( 'config', 'UA-119941535-1' );
+      }
+    </script>
+
+    <link rel='stylesheet' href='{{ url_for( 'static', filename='darkly.bootstrap.min.css' ) }}'>
+    <link rel='stylesheet' href='{{ url_for( 'static', filename='style.css', version=version ) }}'>
+  </head>
+
+  <body>
+    <div id='root'/>
+    <script src='{{ url_for( 'static', filename='bundle.js', version=version ) }}' type='text/javascript'></script>
+  </body>
+
+</html>
