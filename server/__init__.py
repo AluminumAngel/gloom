@@ -12,7 +12,7 @@ from production import production
 debug = not production
 
 title = 'Gloomhaven Monster Mover'
-version = '2.1.1'
+version = '2.1.2'
 client_local_storage_version = '1.0.0'
 
 # Routes
