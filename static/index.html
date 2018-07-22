@@ -11,11 +11,14 @@
     <script>
       URL_FOR = {
         solve: '{{ url_for( "solve" ) }}',
-        senario: '{{ url_for( "senario", senario_index="" ) }}',
+        views: '{{ url_for( "views" ) }}',
+        scenario: '{{ url_for( "scenario", scenario_index="" ) }}',
       };
       DEVELOPMENT = ( {{ debug_server and "true" or "false" }} );
       APP_NAME = '{{ title }}';
       APP_VERSION = '{{ version }}';
+      DATA_VERSION = '{{ client_local_storage_version }}';
+      START_IN_LOS_MODE = '{{ los_mode }}';
     </script>
 
     <script async src='https://www.googletagmanager.com/gtag/js?id=UA-119941535-1'></script>

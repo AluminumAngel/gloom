@@ -4,8 +4,7 @@ import Hex from './Hex';
 
 export default function HexGrid( props ) {
   var hexes = [];
-  var index = 0;
-  for ( var c = 0; c < C.GRID_WIDTH; c++ ) {
+  for ( var c = 0, index = 0; c < C.GRID_WIDTH; c++ ) {
     for ( var r = 0; r < C.GRID_HEIGHT; r++, index++ ) {
       hexes.push( <Hex
         key={index}

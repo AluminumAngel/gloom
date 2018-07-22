@@ -1,5 +1,7 @@
 # TODO should be a member function
 def init( s, width, height, aoe_width, aoe_height ):
+  s.test_switch = True#False
+
   s.MAP_WIDTH = width
   s.MAP_HEIGHT = height
   s.MAP_SIZE = s.MAP_WIDTH * s.MAP_HEIGHT
@@ -29,7 +31,7 @@ def init( s, width, height, aoe_width, aoe_height ):
   s.MUDDLED = False
 
 # TODO should be a member function?
-def init_from_test_senario( s, senario_index ):
+def init_from_test_scenario( s, scenario_index ):
   init( s, 16, 7, 7, 7 )
 
   # C : charcter
@@ -44,7 +46,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 1 - simple test
 
-  if senario_index == 1:
+  if scenario_index == 1:
     s.message = 'Move towards the character and offer all valid options for the players to choose among.'
 
     s.figures[60] = 'C'
@@ -59,8 +61,8 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 2 - online test question #1
 
-  elif senario_index == 2:
-    s.message = 'Online test question #1. Shorten the path to the destination'
+  elif scenario_index == 2:
+    s.message = 'Online test question #1. Shorten the path to the destinations.'
 
     s.figures[35] = 'C'
     s.figures[36] = 'M'
@@ -74,7 +76,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 3 - online test question #2
 
-  elif senario_index == 3:
+  elif scenario_index == 3:
     s.message = 'Online test question #2. The monster cannot shorten the path to the destination, so it stays put.'
 
     s.figures[35] = 'C'
@@ -89,7 +91,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 4 - online test question #6
 
-  elif senario_index == 4:
+  elif scenario_index == 4:
     s.message = 'Online test question #6. The monster cannot attack the character from the near edge, so it begins the long trek around to the far edge.'
 
     s.figures[29] = 'C'
@@ -120,7 +122,7 @@ def init_from_test_senario( s, senario_index ):
   # 5 - The monster will not move farther than it needs to to minimize
   # the path distance to its destination. 
 
-  elif senario_index == 5:
+  elif scenario_index == 5:
     s.message = 'When shortening the path to its destination, the monster will move the minimum amount. Players cannot choose a move that puts the monster equally close to its destination, but uses more movement.'
     
     s.figures[35] = 'C'
@@ -137,7 +139,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 6 - online test question #3; test breaking focus ties with proximity
 
-  elif senario_index == 6:
+  elif scenario_index == 6:
     s.message = 'When choosing focus, proximity breaks ties in path delta_length. C20 is in closer proximity.'
 
     s.figures[50] = 'C'
@@ -156,7 +158,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 7 - like 6, but test that proximity is blocked by s.walls
 
-  elif senario_index == 7:
+  elif scenario_index == 7:
     s.message = 'When choosing focus, proximity breaks ties in path delta_length, but s.walls must be pathed around when testing proximity. Proximity is equal here, so initiative breaks the tie.'
     
     s.figures[50] = 'C'
@@ -175,7 +177,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 8 - test breaking focus ties with s.initiatives
 
-  elif senario_index == 8:
+  elif scenario_index == 8:
     s.message = 'Given equal path distance and proximity, lowest initiative breaks the focus tie.'
 
     s.figures[9] = 'C'
@@ -193,7 +195,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 9 - test tied focus
 
-  elif senario_index == 9:
+  elif scenario_index == 9:
     s.message = 'Given equal path distance, proximity, and initiative; players choose the focu'
 
     s.figures[9] = 'C'
@@ -211,7 +213,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # online test question #4
 
-  elif senario_index == 10:
+  elif scenario_index == 10:
     s.message = 'Online test question #4. The monster has a valid path to its destination that does not go through a trap. Even though the monster cannot shorten its path to the destination, it will not go through the trap.'
 
     s.contents[70] = 'X'
@@ -250,7 +252,7 @@ def init_from_test_senario( s, senario_index ):
   # in comments of online test question #4; monster shortens
   # distance to focus, even if it means moving off of shortest path 
 
-  elif senario_index == 11:
+  elif scenario_index == 11:
     s.message = 'The monster will shorten its distance to focus, even if it means moving off the shortest path.'
 
     s.contents[70] = 'X'
@@ -287,7 +289,7 @@ def init_from_test_senario( s, senario_index ):
   # in comments of online test question #4; monster can't
   # shorten distance in only one move, so it stays put
 
-  elif senario_index == 12:
+  elif scenario_index == 12:
     s.message = 'The monster cannot shorten its path to the destination, so it stays put.'
     
     s.contents[70] = 'X'
@@ -323,8 +325,8 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 13:
-    s.message = 'The players do not choose between equally close destination Rather, the monster moves to the location that most shortens its path to any of the valid destination'
+  elif scenario_index == 13:
+    s.message = 'The players choose between the equally close destinations, even thought the monster can make less progress towards one of the two destinations. See this thread (https://boardgamegeek.com/article/28429917#28429917).'
 
     s.figures[33] = 'A'
 
@@ -337,12 +339,12 @@ def init_from_test_senario( s, senario_index ):
 
     s.ACTION_MOVE = 2
 
-    s.correct_answer = { ( 38, ) }
+    s.correct_answer = { ( 32, ), ( 25, ), ( 38, ) }
 
   #######################################
   # online test question #5; moving over traps
 
-  elif senario_index == 14:
+  elif scenario_index == 14:
     s.message = 'Online test question #5.'
 
     s.figures[31] = 'A'
@@ -374,7 +376,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # test that shortest path chooses focus
 
-  elif senario_index == 15:
+  elif scenario_index == 15:
     s.message = 'The monster moves towards the character to which it has the stortest path, C20.'
     
     s.figures[17] = 'C'
@@ -395,9 +397,9 @@ def init_from_test_senario( s, senario_index ):
 
   #######################################
   # test that shortest path to a legal attack chooses the focus;
-  # not the shortest path to the focus itsenario
+  # not the shortest path to the focus itscenario
 
-  elif senario_index == 16:
+  elif scenario_index == 16:
     s.message = 'The monster chooses its focus based on the shortest path to an attack position, not the shortest path to a character\'s position. The monster moves towards C20.'
 
     s.figures[9] = 'C'
@@ -423,7 +425,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 17
 
-  elif senario_index == 17:
+  elif scenario_index == 17:
     s.message = 'The monster will choose its destination without consideration for which destination it can most shorten its path to. The destination is chosen based only on which destination is closest. The monster moves as far as it can down the west side of the obsticle.'
 
     s.figures[29] = 'C'
@@ -446,7 +448,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 18
 
-  elif senario_index == 18:
+  elif scenario_index == 18:
     s.message = 'The monster will path around traps if at all possible.'
 
     s.figures[28] = 'C'
@@ -466,7 +468,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 19
 
-  elif senario_index == 19:
+  elif scenario_index == 19:
     s.message = 'The monster will move through traps if that is its only option.'
 
     s.figures[28] = 'C'
@@ -487,7 +489,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 20
 
-  elif senario_index == 20:
+  elif scenario_index == 20:
     s.message = 'The monster will move through the minimium number of traps possible.'
 
     s.figures[28] = 'C'
@@ -519,7 +521,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 21
 
-  elif senario_index == 21:
+  elif scenario_index == 21:
     s.message = 'Monsters will fly over trap'
 
     s.figures[28] = 'C'
@@ -552,7 +554,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 22
 
-  elif senario_index == 22:
+  elif scenario_index == 22:
     s.message = 'Monsters will jump over trap'
 
     s.figures[28] = 'C'
@@ -585,7 +587,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 23
 
-  elif senario_index == 23:
+  elif scenario_index == 23:
     s.message = 'Monsters will jump over traps, but not land of them if possible.'
 
     s.figures[28] = 'C'
@@ -619,7 +621,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 21
 
-  elif senario_index == 24:
+  elif scenario_index == 24:
     s.message = 'The monster will focus on a character that does not require it to move through a trap or hazardous terrain, if possible.'
 
     s.figures[8] = 'C'
@@ -659,7 +661,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 22
 
-  elif senario_index == 25:
+  elif scenario_index == 25:
     s.message = 'Online test question #13.'
 
     s.figures[16] = 'C'
@@ -687,7 +689,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # 23
 
-  elif senario_index == 26:
+  elif scenario_index == 26:
     s.message = 'Online test question #20.'
 
     s.figures[37] = 'C'
@@ -729,7 +731,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # thin s.walls
 
-  elif senario_index == 27:
+  elif scenario_index == 27:
     s.message = 'Thin s.walls block movement. The monster must go around the wall.'
 
     s.figures[35] = 'C'
@@ -760,7 +762,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # thin s.walls
 
-  elif senario_index == 28:
+  elif scenario_index == 28:
     s.message = 'Thin s.walls block melee. The monster moves through the doorway.'
 
     s.figures[22] = 'C'
@@ -791,7 +793,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # thin s.walls
 
-  elif senario_index == 29:
+  elif scenario_index == 29:
     s.message = 'Range follows proximity pathing, even melee attack A melee attack cannot be performed around a thin wall. The monster moves through the door to engage from behind.'
 
     s.figures[36] = 'C'
@@ -823,7 +825,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # thin s.walls
 
-  elif senario_index == 30:
+  elif scenario_index == 30:
     s.message = 'Range follows proximity pathing, even melee attack A melee attack cannot be performed around a doorway. The monster chooses the focus with the shorter path to an attack location.'
 
     s.figures[36] = 'C'
@@ -858,7 +860,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # basic test
 
-  elif senario_index == 31:
+  elif scenario_index == 31:
     s.message = 'The monster will not move if it can attack without disadvantage from its position.'
 
     s.figures[36] = 'C'
@@ -871,7 +873,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # ranged
 
-  elif senario_index == 32:
+  elif scenario_index == 32:
     s.message = 'The monster will not move if in range and line of sight of its focu'
 
     s.figures[29] = 'C'
@@ -886,7 +888,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # ranged
 
-  elif senario_index == 33:
+  elif scenario_index == 33:
     s.message = 'The monster will make the minimum move to get within range and line of sight.'
 
     s.figures[29] = 'C'
@@ -907,10 +909,10 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # ranged
 
-  elif senario_index in [ 34, 35, 36, 37, 38, 39, 40, 41, 42, 43 ]:
+  elif scenario_index in [ 34, 35, 36, 37, 38, 39, 40, 41, 42, 43 ]:
     s.message = 'Doorway line of sight. Use \'-l\' to draw visible hexe'
 
-    character = [ 15, 21, 22, 28, 29, 35, 36, 42, 43, 44 ][senario_index - 34]
+    character = [ 15, 21, 22, 28, 29, 35, 36, 42, 43, 44 ][scenario_index - 34]
     s.figures[character] = 'C'
 
     s.contents[0] = 'X'
@@ -946,15 +948,15 @@ def init_from_test_senario( s, senario_index ):
       { ( 32, character ), ( 33, character ), ( 26, character ) },
       { ( 18, character ), ( 11, character ), ( 5, character ) },
       { ( 3, character ) },
-    ][senario_index - 34]
+    ][scenario_index - 34]
 
   #######################################
   # ranged
 
-  elif senario_index in [ 44, 45, 46, 47, 48, 49, 50, 51, 52, 53 ]:
+  elif scenario_index in [ 44, 45, 46, 47, 48, 49, 50, 51, 52, 53 ]:
     s.message = 'Doorway line of sight. Use \'-l\' to draw visible hexe'
 
-    character = [ 7, 15, 21, 8, 16, 22, 9, 17, 23, 31 ][senario_index - 44]
+    character = [ 7, 15, 21, 8, 16, 22, 9, 17, 23, 31 ][scenario_index - 44]
     s.figures[character] = 'C'
 
     s.contents[34] = 'X'
@@ -980,13 +982,13 @@ def init_from_test_senario( s, senario_index ):
       { ( 50, character ), ( 44, character ), ( 37, character ) },
       { ( 50, character ), ( 44, character ), ( 37, character ) },
       { ( 35, character ) },
-    ][senario_index - 44]
+    ][scenario_index - 44]
 
   #######################################
   # https://boardgamegeek.com/image/3932301/codenamegreyfox
 
-  elif senario_index == 54:
-    s.message = 'The "V" terrain piece represents an unintuitive line of sight example. The monster does not have line of sight to the character from its initial position.'
+  elif scenario_index == 54:
+    s.message = 'The "V" terrain piece represents an unintuitive line of sight example. The monster does not have line of sight to the character from its initial position. (https://boardgamegeek.com/image/3932301/codenamegreyfox)'
 
     s.figures[76] = 'C'
 
@@ -1021,8 +1023,8 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # https://boardgamegeek.com/image/3932321/codenamegreyfox
 
-  elif senario_index == 55:
-    s.message = 'The monster cannot trace line of sight from the vertex coincident with the tip of the thin wall. The monster must step out to attack.'
+  elif scenario_index == 55:
+    s.message = 'The monster cannot trace line of sight from the vertex coincident with the tip of the thin wall. The monster must step out to attack. (https://boardgamegeek.com/image/3932321/codenamegreyfox)'
 
     s.figures[65] = 'C'
 
@@ -1057,7 +1059,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # ranged
 
-  elif senario_index == 56:
+  elif scenario_index == 56:
     s.message = 'Range is measured by pathing around walls. The character is not within range of the monster\'s initial position. The monster steps forward.'
 
     s.figures[36] = 'C'
@@ -1077,7 +1079,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # online test question #7
 
-  elif senario_index == 57:
+  elif scenario_index == 57:
     s.message = 'Online test question #7. The monster\'s only attack position is over the obsticle north of the character. With no other options, the monster will move through the trap.'
 
     s.figures[99] = 'C'
@@ -1117,7 +1119,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # ranged
 
-  elif senario_index == 58:
+  elif scenario_index == 58:
     s.message = 'Even if the cannot get to within range of its focus, it will get as close to an attack position as possible.'
 
     s.figures[29] = 'C'
@@ -1133,7 +1135,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # ranged
 
-  elif senario_index == 59:
+  elif scenario_index == 59:
     s.message = 'Even if the cannot get to within range of its focus, it will get as close to the nearest attack position as possible.'
 
     s.figures[30] = 'C'
@@ -1155,7 +1157,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # ranged
 
-  elif senario_index == 60:
+  elif scenario_index == 60:
     s.message = 'When using a ranged attack, the monster will step away from its target to avoid disadvantage.'
 
     s.figures[30] = 'C'
@@ -1179,7 +1181,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # ranged
 
-  elif senario_index == 61:
+  elif scenario_index == 61:
     s.message = 'When using a ranged attack while muddled, the monster will not step away from its target.'
 
     s.figures[30] = 'C'
@@ -1204,7 +1206,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # ranged
 
-  elif senario_index == 62:
+  elif scenario_index == 62:
     s.message = 'When using a ranged attack, the monster will not step onto a trap to avoid disadvantage.'
 
     s.figures[30] = 'C'
@@ -1230,7 +1232,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # plus attack
 
-  elif senario_index == 63:
+  elif scenario_index == 63:
     s.message = 'The monster will move the additional step to engage both its focus and an extra target.'
 
     s.figures[16] = 'C'
@@ -1248,7 +1250,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # plus attack
 
-  elif senario_index == 64:
+  elif scenario_index == 64:
     s.message = 'Online test question #8.'
 
     s.figures[16] = 'C'
@@ -1271,7 +1273,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # plus attack
 
-  elif senario_index == 65:
+  elif scenario_index == 65:
     s.message = 'Online test question #9.'
 
     s.figures[16] = 'C'
@@ -1295,7 +1297,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # plus attack
 
-  elif senario_index == 66:
+  elif scenario_index == 66:
     s.message = 'Online test question #10.'
 
     s.figures[16] = 'C'
@@ -1319,7 +1321,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 67:
+  elif scenario_index == 67:
     s.message = 'Online test question #11.'
 
     s.figures[15] = 'C'
@@ -1342,7 +1344,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 68:
+  elif scenario_index == 68:
     s.message = 'Online test question #12.'
 
     s.figures[15] = 'C'
@@ -1365,7 +1367,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 69:
+  elif scenario_index == 69:
     s.message = 'Online test question #14.'
 
     s.figures[17] = 'C'
@@ -1392,8 +1394,8 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 70:
-    s.message = 'The monster prioritizes additional targets based on their rank as a focu Here C30 is preferred because it is in closer proximity.'
+  elif scenario_index == 70:
+    s.message = 'The monster prioritizes additional targets based on their rank as a focus. Here C30 is preferred because it is in closer proximity.'
 
     s.figures[9] = 'C'
     s.initiatives[9] = 10
@@ -1413,8 +1415,8 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 71:
-    s.message = 'The monster prioritizes additional targets based on their rank as a focu Here C20 is preferred because of initiative.'
+  elif scenario_index == 71:
+    s.message = 'The monster prioritizes additional targets based on their rank as a focus. Here C20 is preferred because of initiative.'
 
     s.figures[17] = 'C'
     s.initiatives[17] = 10
@@ -1434,8 +1436,8 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 72:
-    s.message = 'The monster prioritizes additional targets based on their rank as a focu Here C30 is preferred because the path to attacking it is shorter.'
+  elif scenario_index == 72:
+    s.message = 'The monster prioritizes additional targets based on their rank as a focus. Here C30 is preferred because the path to attacking it is shorter.'
 
     s.figures[17] = 'C'
     s.initiatives[17] = 10
@@ -1457,8 +1459,8 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 73:
-    s.message = 'The monster prioritizes additional targets based on their rank as a focu Here it is a tie, so the players pick.'
+  elif scenario_index == 73:
+    s.message = 'The monster prioritizes additional targets based on their rank as a focus. Here it is a tie, so the players pick.'
 
     s.figures[17] = 'C'
     s.initiatives[17] = 10
@@ -1478,7 +1480,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 74:
+  elif scenario_index == 74:
     s.message = 'The monster only attacks additional targets if it can do so while still attacking its focus.'
 
     s.figures[9] = 'C'
@@ -1497,8 +1499,8 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 75:
-    s.message = 'The monster chooses extra targets based on their priority as a focu On ties, players choose.'
+  elif scenario_index == 75:
+    s.message = 'The monster chooses extra targets based on their priority as a focus. On ties, players choose.'
 
     s.figures[16] = 'C'
     s.initiatives[16] = 10
@@ -1523,7 +1525,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 76:
+  elif scenario_index == 76:
     s.message = 'The monster cannot reach any focus, so it does not move.'
 
     s.figures[30] = 'A'
@@ -1535,7 +1537,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 77:
+  elif scenario_index == 77:
     s.message = 'The monster cannot reach any focus, so it does not move.'
 
     s.figures[9] = 'C'
@@ -1562,7 +1564,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 78:
+  elif scenario_index == 78:
     s.message = 'The monster will not step on a trap to attack its focus if it has a trap-free path to attack on future turn'
 
     s.figures[28] = 'C'
@@ -1578,7 +1580,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 79:
+  elif scenario_index == 79:
     s.message = 'The monster moves in close to attack additional targets using its AoE.'
 
     s.figures[16] = 'C'
@@ -1597,7 +1599,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 80:
+  elif scenario_index == 80:
     s.message = 'The monster moves in close to attack an additional target using its AoE.'
 
     s.figures[16] = 'C'
@@ -1615,8 +1617,8 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 81:
-    s.message = 'When deciding how to use its AoE, the monster prioritizes targets based on their ranking as a focu The monster\'s first priority is to attack its focus, C30. After that, the next highest priority is C10.'
+  elif scenario_index == 81:
+    s.message = 'When deciding how to use its AoE, the monster prioritizes targets based on their ranking as a focus. The monster\'s first priority is to attack its focus, C30. After that, the next highest priority is C10.'
 
     s.figures[16] = 'C'
     s.initiatives[16] = 30
@@ -1637,15 +1639,15 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 82:
+  elif scenario_index == 82:
     s.message = 'The monster favors C10 over C20 as its secondary target. Even with an AoE and an added target, the monster is unable to attack all three characters. From one position the monster can use its AoE to attack two targets. From another, the monster can use its additional attack. The player can choose where the monster moves.'
 
     s.figures[16] = 'C'
     s.initiatives[16] = 30
     s.figures[22] = 'C'
     s.initiatives[22] = 10
-    s.figures[15] = 'C'
-    s.initiatives[15] = 20
+    s.figures[29] = 'C'
+    s.initiatives[29] = 20
 
     s.figures[18] = 'A'
 
@@ -1660,7 +1662,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 83:
+  elif scenario_index == 83:
     s.message = 'The monster moves to a position where it can attack all the characters, using both its AoE and its extra attack.'
 
     s.figures[16] = 'C'
@@ -1680,7 +1682,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 84:
+  elif scenario_index == 84:
     s.message = 'The path to melee range of C10 is shorter than the path to C20. However, the monster can attack C20 over the obsticle with its melee AoE. Thus, the path to an attack position on C20 is shorter. The monster focuses on C20.'
 
     s.figures[15] = 'C'
@@ -1704,7 +1706,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   # thin s.walls and AoE
 
-  elif senario_index == 85:
+  elif scenario_index == 85:
     s.message = 'AoE melee attacks do not require adjacency, nor do they test range. The monster attacks from outside the room. It does not need to step into the room, as would be required to use a non-AoE melee attack.'
 
     s.figures[36] = 'C'
@@ -1740,7 +1742,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 86:
+  elif scenario_index == 86:
     s.message = 'The mirrored image of an AoE pattern can be used. The players choose which group of characters the monster attacks. If attacking the second group, the monster uses the mirrored version of its AoE pattern.'
 
     s.figures[18] = 'C'
@@ -1764,7 +1766,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 87:
+  elif scenario_index == 87:
     s.message = 'The monster rotates its ranged AoE pattern as neccessary to attack the maximum number of charcters.'
 
     s.figures[15] = 'C'
@@ -1789,7 +1791,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 88:
+  elif scenario_index == 88:
     s.message = 'Traps do not block ranged attacks. The monster stands still and attacks the character.'
 
     s.figures[10] = 'C'
@@ -1810,7 +1812,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 89:
+  elif scenario_index == 89:
     s.message = 'The monster focuses on the character it has the shortest path to an attack location for, avoiding traps if possible. The monster moves towards C20.'
 
     s.figures[17] = 'C'
@@ -1833,7 +1835,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 90:
+  elif scenario_index == 90:
     s.message = 'Traps do not block proximity. With both characters at equal pathing distance, the monster focuses on the character in closer proximity, C20.'
 
     s.figures[17] = 'C'
@@ -1856,7 +1858,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 91:
+  elif scenario_index == 91:
     s.message = 'Walls do block proximity. With both characters at equal pathing distance and proximity, the monster focuses on the character with the lower initiative, C10.'
 
     s.figures[17] = 'C'
@@ -1879,7 +1881,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 92:
+  elif scenario_index == 92:
     s.message = 'The range of AoE attacks is not affected by walls. The monster attacks the character without moving by placing its AoE on the other side of the thin wall.'
 
     s.figures[29] = 'C'
@@ -1908,7 +1910,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 93:
+  elif scenario_index == 93:
     s.message = 'Online test question #15.'
 
     s.figures[11] = 'C'
@@ -1936,7 +1938,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 94:
+  elif scenario_index == 94:
     s.message = 'Online test question #16.'
 
     s.figures[25] = 'C'
@@ -1958,7 +1960,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 95:
+  elif scenario_index == 95:
     s.message = 'Online test question #17.'
 
     s.figures[25] = 'C'
@@ -1980,7 +1982,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 96:
+  elif scenario_index == 96:
     s.message = 'Online test question #18.'
 
     s.figures[25] = 'C'
@@ -1999,12 +2001,12 @@ def init_from_test_senario( s, senario_index ):
 
     s.ACTION_MOVE = 4
 
-    s.correct_answer = { ( 38, 25, 32 ) }
+    s.correct_answer = { ( 24, 32, 39 ) }
 
   #######################################
   #
 
-  elif senario_index == 97:
+  elif scenario_index == 97:
     s.message = 'Online test question #19.'
 
     s.figures[25] = 'C'
@@ -2021,12 +2023,12 @@ def init_from_test_senario( s, senario_index ):
     s.ACTION_MOVE = 6
     s.ACTION_TARGET = 3
 
-    s.correct_answer = { ( 33, 25, 32, 39 ) }
+    s.correct_answer = { ( 38, 32, 39, 46 ) }
 
   #######################################
   #
 
-  elif senario_index == 98:
+  elif scenario_index == 98:
     s.message = 'Difficult terrain requires two movement points to enter. The monster moves only three steps towards the character.'
 
     s.figures[52] = 'C'
@@ -2049,7 +2051,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 99:
+  elif scenario_index == 99:
     s.message = 'Difficult terrain requires two movement points to enter. The monster moves only two steps towards the character.'
 
     s.figures[52] = 'C'
@@ -2073,7 +2075,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 100:
+  elif scenario_index == 100:
     s.message = 'The path through the difficult terrain and the path around the difficult terrain require equal movement. The players choose.'
 
     s.figures[52] = 'C'
@@ -2101,7 +2103,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 101:
+  elif scenario_index == 101:
     s.message = 'The path around the difficult terrain is shorter than the path through the difficult terrain. The moster moves around it.'
 
     s.figures[52] = 'C'
@@ -2128,7 +2130,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 102:
+  elif scenario_index == 102:
     s.message = 'Flying monsters ignore the effects of difficult terrain. The monster moves a full four steps towards the character.'
 
     s.figures[52] = 'C'
@@ -2153,7 +2155,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 103:
+  elif scenario_index == 103:
     s.message = 'Jumping monsters ignore the effects of difficult terrain, except on the last hex of movement. The monster moves a full four steps towards the character.'
 
     s.figures[52] = 'C'
@@ -2178,7 +2180,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 104:
+  elif scenario_index == 104:
     s.message = 'Jumping monsters ignore the effects of difficult terrain, except on the last hex of movement. The monster moves only three steps towards the character.'
 
     s.figures[52] = 'C'
@@ -2210,7 +2212,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 105:
+  elif scenario_index == 105:
     s.message = 'The monster does not avoid disadvantage when it cannot attack the character. The monster stops adjacent to the character.'
 
     s.figures[37] = 'C'
@@ -2232,8 +2234,8 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 106:
-    s.message = 'A jumping monster cannot end its movement on an obsticle. The monster with path around the obsticle.'
+  elif scenario_index == 106:
+    s.message = 'There are two destinations that are equally valid assuming infinite movemnet for the jumping monster. THe players can choose either as the monster\'s destination. Because a jumping monster cannot end its movement on an obsticle, the monster will path around the obsticles. For one of the two destinations, the monster makes less progress towards the destination because the second step of movemnet does not take the monster closer to the destination.'
 
     s.figures[37] = 'C'
 
@@ -2245,12 +2247,12 @@ def init_from_test_senario( s, senario_index ):
     s.ACTION_MOVE = 2
     s.JUMPING = True
 
-    s.correct_answer = { ( 23, ) }
+    s.correct_answer = { ( 23, ), ( 32, ) }
 
   #######################################
   #
 
-  elif senario_index == 107:
+  elif scenario_index == 107:
     s.message = 'A monster being on an obsticle does not allow its allies to move through it. The monster is blocked by the wall of obsticles. The monster will not move.'
 
     s.figures[37] = 'C'
@@ -2274,7 +2276,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 108:
+  elif scenario_index == 108:
     s.message = 'The flying monster will path through characters to reach an optimal attack position.'
 
     s.figures[23] = 'C'
@@ -2297,7 +2299,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 109:
+  elif scenario_index == 109:
     s.message = 'The monster will use its extra attack to target its focus, using its aoe on secondary targets, because that targets the most characters.'
 
     s.figures[15] = 'C'
@@ -2321,7 +2323,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 110:
+  elif scenario_index == 110:
     s.message = 'A monster without an attack will move as if it had a melee attack.'
 
     s.figures[15] = 'C'
@@ -2337,7 +2339,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 111:
+  elif scenario_index == 111:
     s.message = 'The monster will step away to avoid disadvantage when making a range aoe attack.'
 
     s.figures[15] = 'C'
@@ -2355,7 +2357,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 112:
+  elif scenario_index == 112:
     s.message = 'The monster will avoid the trap to attack the character.'
 
     s.figures[15] = 'C'
@@ -2371,7 +2373,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 113:
+  elif scenario_index == 113:
     s.message = 'The jumping monster will avoid the trap to attack the character.'
 
     s.figures[15] = 'C'
@@ -2388,7 +2390,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 114:
+  elif scenario_index == 114:
     s.message = 'The flying monster will ignore the trap to attack the character.'
 
     s.figures[15] = 'C'
@@ -2405,7 +2407,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 115:
+  elif scenario_index == 115:
     s.message = 'With no other option, the monster will move onto the trap to attack the character.'
 
     s.figures[15] = 'C'
@@ -2426,7 +2428,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 116:
+  elif scenario_index == 116:
     s.message = 'AoE attacks require line of site. The monster will move around the wall.'
 
     s.figures[31] = 'C'
@@ -2446,7 +2448,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 117:
+  elif scenario_index == 117:
     s.message = 'The closest character with the lowest initiative is the monster\'s focus. The monster will place its AoE to attack its focus.'
 
     s.figures[16] = 'C'
@@ -2477,7 +2479,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 118:
+  elif scenario_index == 118:
     s.message = 'The closest character with the lowest initiative is the monster\'s focus. The monster will place its AoE to attack its focus, even if other placements hit more targets.'
 
     s.figures[16] = 'C'
@@ -2504,7 +2506,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 119:
+  elif scenario_index == 119:
     s.message = 'There are two equally good focuses, so the players can choose which group the monster attacks. This is true even though choosing one of the focuses allows the monster to attack more targets.'
 
     s.figures[16] = 'C'
@@ -2531,7 +2533,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 120:
+  elif scenario_index == 120:
     s.message = 'There are two equally good focuses, so the players can choose which group the monster attacks. This is true even though choosing one of the focuses allows the monster to attack more favorable targets.'
 
     s.figures[16] = 'C'
@@ -2562,7 +2564,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 121:
+  elif scenario_index == 121:
     s.message = 'The monster will place its AoE to hit its focus and the most favorable set of additional targets.'
 
     s.figures[58] = 'C'
@@ -2590,7 +2592,7 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  elif senario_index == 122:
+  elif scenario_index == 122:
     s.message = 'A monster with an AoE attack and a target count of zero will move as if it had a melee attack and not attack.'
 
     s.figures[59] = 'C'
@@ -2610,21 +2612,523 @@ def init_from_test_senario( s, senario_index ):
   #######################################
   #
 
-  # elif senario_index == 123:
-  #   s.message = ''
+  elif scenario_index == 123:
+    s.message = 'All of vertices of the monster\'s starting hex are touching walls, so the monster does not have line of sight to any other hex. It will step forward to gain los and attack the character.'
 
-  #   s.figures[59] = 'C'
+    s.figures[36] = 'C'
 
-  #   s.figures[36] = 'A'
+    s.contents[52] = 'X'
+    s.contents[66] = 'X'
+    s.contents[58] = 'X'
 
-  #   s.aoe[31] = True
-  #   s.aoe[24] = True
-  #   s.aoe[23] = True
+    s.figures[59] = 'A'
 
-  #   s.ACTION_MOVE = 2
-  #   s.ACTION_RANGE = 3
+    s.ACTION_MOVE = 2
+    s.ACTION_RANGE = 4
 
-  #   s.correct_answer = { ( 51, ) }
+    s.correct_answer = { ( 51, 36, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 124:
+    s.message = 'If a monster can attack its focus this turn, it will move to do so. That is true even when there is a more optimal attack location, if it cannot reach that more optimal location this turn.'
+
+    s.figures[26] = 'C'
+    s.figures[39] = 'C'
+
+    s.contents[29] = 'O'
+    s.contents[22] = 'O'
+    s.contents[16] = 'O'
+    s.contents[17] = 'O'
+    s.contents[18] = 'O'
+    s.contents[19] = 'O'
+    s.contents[20] = 'O'
+    s.contents[35] = 'O'
+    s.contents[43] = 'O'
+    s.contents[44] = 'O'
+    s.contents[45] = 'O'
+    s.contents[46] = 'O'
+    s.contents[47] = 'O'
+    s.contents[27] = 'O'
+    s.contents[34] = 'O'
+    s.contents[40] = 'O'
+    s.contents[31] = 'O'
+    s.contents[32] = 'O'
+
+    s.figures[36] = 'A'
+
+    s.ACTION_MOVE = 2
+    s.ACTION_TARGET = 2
+
+    s.correct_answer = { ( 38, 39, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 125:
+    s.message = 'If a monster cannot attack its focus this turn, it will move towards the most optimal attack location. That is true even if there is a closer attack location that is less optimal.'
+
+    s.figures[26] = 'C'
+    s.figures[39] = 'C'
+
+    s.contents[29] = 'O'
+    s.contents[22] = 'O'
+    s.contents[16] = 'O'
+    s.contents[17] = 'O'
+    s.contents[18] = 'O'
+    s.contents[19] = 'O'
+    s.contents[20] = 'O'
+    s.contents[35] = 'O'
+    s.contents[43] = 'O'
+    s.contents[44] = 'O'
+    s.contents[45] = 'O'
+    s.contents[46] = 'O'
+    s.contents[47] = 'O'
+    s.contents[27] = 'O'
+    s.contents[34] = 'O'
+    s.contents[40] = 'O'
+    s.contents[31] = 'O'
+    s.contents[32] = 'O'
+
+    s.figures[36] = 'A'
+
+    s.ACTION_MOVE = 1
+    s.ACTION_TARGET = 2
+
+    s.correct_answer = { ( 30, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 126:
+    s.message = 'If the monster has multiple attack options that target its focus plus a maximum number of additional charcters, it will favor additional targets that are closest in proximty first, then it will favor targets that have lower initiative. In this case, C20 is favored over C30 due to initiative. Note that if secondary targets were instead ranked based on their quality as a focus, C30 would have been favored. That is because only two steps are required to attack C30 individually, while three steps are required to attack C20 due to the obsticle. See this ruling (https://boardgamegeek.com/article/29431623#29431623). Still looking for full clarity (https://boardgamegeek.com/article/29455803#29455803).'
+
+    s.figures[33] = 'C'
+    s.initiatives[33] = 30
+    s.figures[39] = 'C'
+    s.initiatives[39] = 10
+    s.figures[47] = 'C'
+    s.initiatives[47] = 20
+
+    s.contents[45] = 'O'
+
+    s.figures[36] = 'A'
+
+    s.aoe[25] = True
+    s.aoe[26] = True
+
+    s.ACTION_MOVE = 3
+
+    s.correct_answer = { (32, 39, 47 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 127:
+    s.message = 'The players can choose either of the monster\'s two desintations, including the destination on difficult terrain, even though the monster can make less progress towards that destinatino. See ruling here (https://boardgamegeek.com/thread/2014493/monster-movement-question).'
+
+    s.figures[39] = 'C'
+
+    s.contents[38] = 'D'
+
+    s.figures[36] = 'A'
+
+    s.ACTION_MOVE = 2
+
+    s.correct_answer = { ( 31, ), ( 45, ), ( 37, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 128:
+    s.message = 'The players can choose either of the monster\'s two desintations, even though the monster can only make progress towards one of them. See ruling here (https://boardgamegeek.com/thread/2014493/monster-movement-question).'
+
+    s.figures[39] = 'C'
+    s.figures[31] = 'M'
+
+    s.contents[38] = 'O'
+
+    s.figures[37] = 'A'
+
+    s.ACTION_MOVE = 1
+
+    s.correct_answer = { ( 37, ), ( 45, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 129:
+    s.message = 'The players can choose any of the monster\'s three desintations, even though the monster can only make progress towards two of them. See ruling here (https://boardgamegeek.com/thread/2014493/monster-movement-question).'
+
+    s.figures[40] = 'C'
+    s.figures[31] = 'M'
+
+    s.contents[38] = 'O'
+
+    s.figures[37] = 'A'
+
+    s.ACTION_MOVE = 1
+
+    s.correct_answer = { ( 37, ), ( 45, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 130:
+    s.message = 'With only a single destination, the monster takes the best path to that destination. The players cannot choose to have the monster take the path along which the monster cannot make progress. Compare to scenario #129.'
+
+    s.figures[40] = 'C'
+    s.figures[31] = 'M'
+
+    s.contents[33] = 'O'
+    s.contents[38] = 'O'
+    s.contents[47] = 'O'
+
+    s.figures[37] = 'A'
+
+    s.ACTION_MOVE = 1
+
+    s.correct_answer = { ( 45, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 131:
+    s.message = 'Large number of walls and characters, high target attack, large range and move, and a large aoe to use when timing optimizations.'
+
+    s.figures[8] = 'C'
+    s.figures[17] = 'C'
+    s.figures[23] = 'C'
+    s.figures[26] = 'C'
+    s.figures[40] = 'C'
+    s.figures[46] = 'C'
+    s.figures[51] = 'C'
+    s.figures[54] = 'C'
+    s.figures[57] = 'C'
+    s.figures[58] = 'C'
+    s.figures[68] = 'C'
+    s.figures[80] = 'C'
+    s.figures[90] = 'C'
+    s.figures[92] = 'C'
+    s.figures[94] = 'C'
+    s.figures[102] = 'C'
+
+    s.contents[9] = 'X'
+    s.contents[25] = 'X'
+    s.contents[30] = 'X'
+    s.contents[38] = 'X'
+    s.contents[44] = 'X'
+    s.contents[47] = 'X'
+    s.contents[50] = 'X'
+    s.contents[53] = 'X'
+    s.contents[64] = 'X'
+    s.contents[65] = 'X'
+    s.contents[75] = 'X'
+    s.contents[76] = 'X'
+    s.contents[78] = 'X'
+    s.contents[88] = 'X'
+    s.contents[89] = 'X'
+    s.contents[93] = 'X'
+    s.contents[99] = 'X'
+    s.contents[104] = 'X'
+
+    s.figures[37] = 'A'
+
+    s.ACTION_MOVE = 7
+    s.ACTION_RANGE = 7
+    s.ACTION_TARGET = 5
+
+    s.aoe[17] = True
+    s.aoe[18] = True
+    s.aoe[23] = True
+    s.aoe[24] = True
+    s.aoe[25] = True
+    s.aoe[31] = True
+    s.aoe[32] = True
+
+    # s.correct_answer = {
+    #   ( 39, 8, 17, 23, 26, 46, 51, 58, ),
+    #   ( 52, 17, 23, 40, 46, 51, 57, 58, ),
+    #   ( 52, 17, 23, 26, 46, 51, 57, 58, ),
+    #   ( 33, 8, 17, 23, 40, 46, 51, 58, ),
+    #   ( 33, 8, 17, 23, 26, 46, 51, 58, ),
+    # }
+    s.correct_answer = {
+      ( 52, 17, 23, 26, 46, 51, 57, 58 ),
+      ( 52, 17, 23, 40, 46, 51, 57, 58 ),
+      ( 20, 8, 17, 23, 40, 46, 51, 58 ),
+    }
+
+  #######################################
+  #
+
+  elif scenario_index == 132:
+    s.message = 'The monster will take a longer path to avoid traps. That is true even if it means not being able to attack its focus this turn.'
+
+    s.figures[24] = 'C'
+
+    s.contents[22] = 'T'
+
+    s.contents[30] = 'O'
+    s.contents[31] = 'O'
+    s.contents[33] = 'O'
+
+    s.contents[28] = 'O'
+    s.contents[21] = 'O'
+    s.contents[15] = 'O'
+    s.contents[16] = 'O'
+    s.contents[17] = 'O'
+    s.contents[18] = 'O'
+    s.contents[25] = 'O'
+    s.contents[35] = 'O'
+    s.contents[43] = 'O'
+    s.contents[44] = 'O'
+    s.contents[45] = 'O'
+    s.contents[46] = 'O'
+    s.contents[39] = 'O'
+
+    s.figures[29] = 'A'
+
+    s.ACTION_MOVE = 2
+
+    s.correct_answer = { ( 37, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 133:
+    s.message = 'The monster first uses proximity to rank secondary targets, before initiative. Because of the wall line between the monster and C10, C10 is two proximity steps away. Thus, the monster prefers C30 as its second target.'
+
+    s.figures[38] = 'C'
+    s.initiatives[38] = 10
+    s.figures[44] = 'C'
+    s.initiatives[44] = 30
+    s.figures[45] = 'C'
+    s.initiatives[45] = 20
+
+    s.contents[59] = 'X'
+    s.contents[73] = 'X'
+    s.contents[31] = 'X'
+    s.contents[17] = 'X'
+
+    s.walls[23][1] = True
+    s.walls[37][1] = True
+    s.walls[51][1] = True
+    s.walls[65][1] = True
+
+    s.figures[30] = 'M'
+    s.figures[36] = 'M'
+
+    s.figures[37] = 'A'
+
+    s.ACTION_MOVE = 1
+    s.ACTION_RANGE = 2
+    s.ACTION_TARGET = 2
+
+    s.correct_answer = { ( 37, 44, 45 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 134:
+    s.message = 'Have clarification. Must measure range around thin wall. This answer is wrong. Waiting for clarification. See https://boardgamegeek.com/thread/2020826/question-about-measuring-range-aoe-attacks and https://boardgamegeek.com/thread/2020622/ranged-aoe-and-wall-hexes'
+
+    s.figures[47] = 'C'
+
+    s.contents[59] = 'X'
+    s.contents[73] = 'X'
+    s.contents[31] = 'X'
+    s.contents[17] = 'X'
+
+    s.walls[23][1] = True
+    s.walls[37][1] = True
+    s.walls[51][1] = True
+    s.walls[65][1] = True
+
+    s.figures[36] = 'A'
+
+    s.aoe[25] = True
+    s.aoe[24] = True
+    s.aoe[31] = True
+
+    s.ACTION_MOVE = 0
+    s.ACTION_RANGE = 2
+
+    s.correct_answer = { ( 36, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 135:
+    s.message = 'Have clarification. Cannot use wall as target point for aoe. This answer is wrong. Waiting for clarification. See https://boardgamegeek.com/thread/2020826/question-about-measuring-range-aoe-attacks and https://boardgamegeek.com/thread/2020622/ranged-aoe-and-wall-hexes'
+
+    s.figures[47] = 'C'
+
+    s.contents[59] = 'X'
+    s.contents[73] = 'X'
+    s.contents[31] = 'X'
+    s.contents[17] = 'X'
+    s.contents[38] = 'X'
+
+    s.walls[23][1] = True
+    s.walls[51][1] = True
+    s.walls[65][1] = True
+
+    s.figures[36] = 'A'
+
+    s.aoe[25] = True
+    s.aoe[24] = True
+    s.aoe[31] = True
+
+    s.ACTION_MOVE = 0
+    s.ACTION_RANGE = 2
+
+    s.correct_answer = { ( 36, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 136:
+    s.message = 'Have clarification. Cannot use wall as target point for aoe. This answer is wrong. Waiting for clarification. See https://boardgamegeek.com/thread/2020826/question-about-measuring-range-aoe-attacks and https://boardgamegeek.com/thread/2020622/ranged-aoe-and-wall-hexes'
+
+    s.figures[47] = 'C'
+
+    s.contents[59] = 'X'
+    s.contents[73] = 'X'
+    s.contents[31] = 'X'
+    s.contents[17] = 'X'
+    s.contents[38] = 'X'
+    s.contents[37] = 'X'
+
+    s.walls[23][1] = True
+    s.walls[51][1] = True
+    s.walls[65][1] = True
+
+    s.figures[36] = 'A'
+
+    s.aoe[25] = True
+    s.aoe[24] = True
+    s.aoe[31] = True
+
+    s.ACTION_MOVE = 0
+    s.ACTION_RANGE = 2
+
+    s.correct_answer = { ( 36, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 137:
+    s.message = 'https://boardgamegeek.com/article/29498431#29498431'
+
+    s.figures[53] = 'C'
+    s.initiatives[53] = 10
+    s.figures[34] = 'C'
+    s.initiatives[34] = 50
+    s.figures[24] = 'C'
+    s.initiatives[24] = 40
+    s.figures[76] = 'C'
+    s.initiatives[76] = 30
+    s.figures[74] = 'C'
+    s.initiatives[74] = 20
+
+    s.figures[49] = 'A'
+
+    s.ACTION_MOVE = 5
+    s.ACTION_RANGE = 2
+    s.ACTION_TARGET = 3
+
+    s.correct_answer = { ( 67, 53, 74, 76 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 138:
+    s.message = 'monsters are willing to move farther to avoid disadvantage against secondary targets'
+
+    s.figures[53] = 'C'
+    s.initiatives[53] = 10
+    s.figures[38] = 'C'
+    s.initiatives[38] = 30
+    s.figures[26] = 'C'
+    s.initiatives[26] = 20
+
+    s.figures[49] = 'A'
+
+    s.ACTION_MOVE = 6
+    s.ACTION_RANGE = 2
+    s.ACTION_TARGET = 3
+
+    s.correct_answer = { ( 40, 26, 38, 53 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 139:
+    s.message = 'monsters are willing to move farther to avoid disadvantage against secondary targets; but this one is muddled'
+
+    s.figures[53] = 'C'
+    s.initiatives[53] = 10
+    s.figures[38] = 'C'
+    s.initiatives[38] = 30
+    s.figures[26] = 'C'
+    s.initiatives[26] = 20
+
+    s.figures[49] = 'A'
+
+    s.ACTION_MOVE = 6
+    s.ACTION_RANGE = 2
+    s.ACTION_TARGET = 3
+    s.MUDDLED = True
+
+    s.correct_answer = { ( 39, 26, 38, 53 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 140:
+    s.message = 'monsters are willing to move farther to avoid disadvantage against secondary targets; but this one is muddled'
+
+    s.figures[53] = 'C'
+    s.initiatives[53] = 10
+    s.figures[38] = 'C'
+    s.initiatives[38] = 30
+    s.figures[26] = 'C'
+    s.initiatives[26] = 20
+
+    s.figures[49] = 'A'
+
+    s.ACTION_MOVE = 5
+    s.ACTION_RANGE = 2
+    s.ACTION_TARGET = 3
+
+    s.correct_answer = { ( 39, 26, 38, 53 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 141:
+    s.message = 'monster picks his secondary targets baed on how far it must move to attack them, then proximity, then initiative. Here both groups can be attacked in five steps. It picks the left targets due to proximty. It ends up moving six steps to avoid disadvantage, even though it could have attacked the right targets without disadvantage in five moves. That is because targets are picked based on distance to attack. Only after picking targets does the monster adjust its destination based on avoiding disadvantage.'
+
+    s.figures[53] = 'C'
+    s.initiatives[53] = 10
+    s.figures[32] = 'C'
+    s.initiatives[32] = 30
+    s.figures[26] = 'C'
+    s.initiatives[26] = 20
+    s.figures[81] = 'C'
+    s.initiatives[81] = 30
+    s.figures[82] = 'C'
+    s.initiatives[82] = 20
+
+    s.figures[49] = 'A'
+
+    s.ACTION_MOVE = 6
+    s.ACTION_RANGE = 2
+    s.ACTION_TARGET = 3
+
+    s.correct_answer = { ( 40, 26, 32, 53 ) }
 
   #######################################
 
@@ -2637,3 +3141,5 @@ def init_from_test_senario( s, senario_index ):
   for figure in s.figures:
     if figure not in [ ' ', 'C', 'A', 'M' ]:
       exit( 'invalid figure \'%s\'' % figure )
+
+  s.prepare_map()

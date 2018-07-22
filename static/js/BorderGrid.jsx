@@ -35,5 +35,5 @@ export default function BorderGrid( props ) {
       c={c}
     /> );
   }
-  return <g>{hexes}</g>;
+  return <g mask='url(#edge_fade)'>{hexes}</g>;
 }

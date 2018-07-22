@@ -1,7 +1,7 @@
 import React from 'react';
 import HexUtils from './HexUtils';
 
-const CONTENT_CLASS_NAMES = [
+const CLASS_NAMES = [
   'empty',
   'obsticle',
   'wall',
@@ -39,7 +39,7 @@ export default class Hex extends React.PureComponent {
   render() {
     return (
       <polygon
-        className={CONTENT_CLASS_NAMES[this.props.content]}
+        className={CLASS_NAMES[this.props.content]}
         points={HexUtils.getGridHexPoints( this.props.c, this.props.r )}
         pointerEvents={this.props.active ? 'all' : 'none'}
         onMouseDown={this.handleMouseDown}

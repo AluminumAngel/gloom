@@ -6,7 +6,7 @@ import senarios
 import solver
 from print_map import *
 
-chosen_senario_index = 1
+chosen_scenario_index = 1
 unit_tests = False
 print_los = False
 show_each_action_separately = False
@@ -22,63 +22,76 @@ for arg in sys.argv[1:]:
   elif arg == '--profile' or arg == '-p':
     profile = True
   else:
-    chosen_senario_index = int( arg )
+    chosen_scenario_index = int( arg )
 
 if unit_tests:
-  failures = solver.perform_unit_tests( chosen_senario_index )
+  failures = solver.perform_unit_tests( chosen_scenario_index )
 
 elif print_los:
-  senario = solver.Senario()
-  senarios.init_from_test_senario( senario, chosen_senario_index )
-  senario.prepare_map()
+  scenario = solver.Scenario()
+  senarios.init_from_test_scenario( scenario, chosen_scenario_index )
+  scenario.prepare_map()
 
-  character = senario.figures.index( 'C' )
-  visible_locations = senario.calculate_los_from_location( character )
-  print_map( senario, senario.MAP_WIDTH, senario.MAP_HEIGHT, senario.effective_walls, [ format_content( *_ ) for _ in zip( senario.figures, senario.contents ) ], [ format_numerical_label( _ ) for _ in range( 0, senario.MAP_SIZE ) ] )
-  print_map( senario, senario.MAP_WIDTH, senario.MAP_HEIGHT, senario.effective_walls, [ format_content( *_ ) for _ in zip( senario.figures, senario.contents ) ], [ format_los( _ ) for _ in visible_locations ] )
+  character = scenario.figures.index( 'C' )
+  sight = scenario.solve_sight( character )
+  visible_locations = [ False ] * scenario.MAP_SIZE
+  visible_locations[character] = True
+  for visible_range in sight:
+    for location in range( *visible_range ):
+      visible_locations[location] = True
 
-# TODO: i'm miss using std deviation here; should be dropping by root-N; i'm showing std error
+  print_map( scenario, scenario.MAP_WIDTH, scenario.MAP_HEIGHT, scenario.effective_walls, [ format_content( *_ ) for _ in zip( scenario.figures, scenario.contents ) ], [ format_numerical_label( _ ) for _ in range( 0, scenario.MAP_SIZE ) ] )
+  print_map( scenario, scenario.MAP_WIDTH, scenario.MAP_HEIGHT, scenario.effective_walls, [ format_content( *_ ) for _ in zip( scenario.figures, scenario.contents ) ], [ format_los( _ ) for _ in visible_locations ] )
+
 elif profile:
-  SAMPLE_COUNT = 10
+  SAMPLE_COUNT = 3
 
   results = {}
   for test in ( False, True ):
     results[test] = []
     print 'test parameters: %d' % test
     for sample in range( 0, SAMPLE_COUNT ):
-      senario = solver.Senario()
-      senarios.init_from_test_senario( senario, chosen_senario_index )
+      scenario = solver.Scenario()
+      senarios.init_from_test_scenario( scenario, chosen_scenario_index )
+      scenario.test_switch = test
 
       start = time.time()
-      senario.solve()
+      actions = scenario.solve_move()
+      # for action in actions:
+        # scenario.solve_sight( action['move'] )
+      # scenario.solve_sight( 27 )
+
       end = time.time()
       results[test].append( end - start )
       print 'run %d: %.2fs' % ( sample + 1, end - start )
 
     test_average = sum( _ for _ in results[test] ) / SAMPLE_COUNT
-    test_standard_deviation = math.sqrt(
+    test_error = math.sqrt(
       sum( ( _ - test_average )**2 for _ in results[test] ) / ( SAMPLE_COUNT - 1 )
-    )
+    ) / math.sqrt( SAMPLE_COUNT )
 
-    print 'average = %f +/- %f seconds' % ( test_average, test_standard_deviation )
+    print 'average = %f +/- %f seconds' % ( test_average, test_error )
     print
 
   zipped_results = zip( results[False], results[True] )
   average = sum( _[1] - _[0] for _ in zipped_results ) / SAMPLE_COUNT
-  standard_deviation = math.sqrt(
+  error = math.sqrt(
     sum( ( _[1] - _[0] - average )**2 for _ in zipped_results ) / ( SAMPLE_COUNT - 1 )
-  )
-  print 'delta = %f +/- %f seconds' % ( average, standard_deviation )
-  if -average > standard_deviation:
-    print 'SUCCESS; savings exceeds noise'
-  elif average > standard_deviation:
+  ) / math.sqrt( SAMPLE_COUNT )
+  print 'delta = %f +/- %f seconds' % ( average, error )
+  if -average > error:
+    a0 = sum( _ for _ in results[False] ) / SAMPLE_COUNT
+    a1 = sum( _ for _ in results[True] ) / SAMPLE_COUNT
+    savings = ( a0 - a1 ) / a0 * 100
+    print 'SUCCESS; savings exceeds noise; %.1f%% savings' % savings
+  elif average > error:
     print 'FAIL; new method is slower'
   else:
     print 'any savings is less than noise'
 
 else:
-  senario = solver.Senario()
-  senarios.init_from_test_senario( senario, chosen_senario_index )
-  senario.logging = True
-  senario.show_each_action_separately = show_each_action_separately
-  senario.solve()
+  scenario = solver.Scenario()
+  senarios.init_from_test_scenario( scenario, chosen_scenario_index )
+  scenario.logging = True
+  scenario.show_each_action_separately = show_each_action_separately
+  scenario.solve_move()

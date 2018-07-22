@@ -1,26 +1,21 @@
 import math
 import sys
+import itertools
 from settings import *
 
 def debug(expression):
   frame = sys._getframe(1)
   print '%s = %s' % ( expression, repr( eval( expression, frame.f_globals, frame.f_locals ) ) )
 
-def is_pair_equal( a1, a2, b1, b2 ):
-  return a1 == a2 and b1 == b2
 def is_pair_less_than( a1, a2, b1, b2 ):
   return a1 < a2 or ( a1 == a2 and b1 < b2 )
-def is_triple_equal( a1, a2, b1, b2, c1, c2 ):
-  return a1 == a2 and b1 == b2 and c1 == c2
-def is_triple_less_than( a1, a2, b1, b2, c1, c2 ):
-  return a1 < a2 or ( a1 == a2 and is_pair_less_than( b1, b2, c1, c2 ) )
 def is_tuple_equal( a, b ):
-  for ai, bi in zip( a, b ):
+  for ai, bi in itertools.izip( a, b ):
     if ai != bi:
       return False
   return True
 def is_tuple_less_than( a, b ):
-  for ai, bi in zip( a, b ):
+  for ai, bi in itertools.izip( a, b ):
     if ai == bi:
       continue
     return ai < bi

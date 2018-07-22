@@ -2,9 +2,9 @@ import React from 'react';
 import * as C from './defines';
 import * as BRUSH from './brushes';
 
-const FIGURE_FONT_SIZE = 0.7 * C.SCALE;
+const FONT_SIZE = 0.7 * C.SCALE;
 
-const FIGURE_CLASS_NAMES = [
+const CLASS_NAMES = [
   'character ',
   'monster ',
   'active-character ',
@@ -24,7 +24,7 @@ const ACTIVE_CHARACTER_TEXT = [
 ];
 
 export default function FigureIcon( props ) {
-  const className = FIGURE_CLASS_NAMES[props.figure - BRUSH.FIRST_FIGURE_BRUSH] + props.className;
+  const className = CLASS_NAMES[props.figure - BRUSH.FIRST_FIGURE_BRUSH] + props.className;
   var text;
   if ( props.figure === BRUSH.ACTIVE_MONSTER ) {
     text = ACTIVE_MONSTER_TEXT[props.flying];    
@@ -62,7 +62,7 @@ export default function FigureIcon( props ) {
         className={className}
         x={props.x}
         y={props.y + 4.5}
-        fontSize={FIGURE_FONT_SIZE}
+        fontSize={FONT_SIZE}
         pointerEvents='none'
       >
         {text}

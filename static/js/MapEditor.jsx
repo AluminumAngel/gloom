@@ -18,6 +18,27 @@ const NULL_INDEX = -1;
 
 const MAX_INITIATIVE = 9;
 
+const ACTION_WAITING_ON_SOLUTION = 0;
+const ACTION_WAITING_ON_VIEW = 1;
+const ACTION_NO_ACTIVE_FIGURE = 2;
+const ACTION_SCENARIO_TOO_COMPLEX = 3;
+const ACTION_NO_REQUEST = 4;
+const ACTION_REQUEST_SOLUTION = 5;
+const ACTION_REQUEST_START_VIEWS = 6;
+const ACTION_REQUEST_SOLUTION_VIEWS = 7;
+const ACTION_NONE_REQUIRED = 8;
+// const ACTION_NAMED = [
+//   'ACTION_WAITING_ON_SOLUTION',
+//   'ACTION_WAITING_ON_VIEW',
+//   'ACTION_NO_ACTIVE_FIGURE',
+//   'ACTION_SCENARIO_TOO_COMPLEX',
+//   'ACTION_NO_REQUEST',
+//   'ACTION_REQUEST_SOLUTION',
+//   'ACTION_REQUEST_START_VIEWS',
+//   'ACTION_REQUEST_SOLUTION_VIEWS',
+//   'ACTION_NONE_REQUIRED',
+// ];
+
 const MOVE_OPTIONS = [
   [ 0, 'none' ],
   [ 1, '1' ],
@@ -103,6 +124,29 @@ const NUMBER_WORDS = [
   'twelve',
 ];
 
+const STATE_KEYS = [
+  // tools state
+  // 'brush',
+  'rotate_grid',
+  // 'show_movement',
+  // 'show_reach',
+  // 'show_sight',
+
+  // scenario state
+  'grid',
+  'figures',
+  'initiatives',
+  'walls',
+  'active_figure_index',
+  'move',
+  'range',
+  'target',
+  'flying',
+  'muddled',
+  'aoe_grid',
+  'active_faction',
+];
+
 function isFigureAllowed( content ) {
   return content !== BRUSH.WALL;
 }
@@ -132,29 +176,29 @@ export default class MapEditor extends React.PureComponent {
     super( props );
 
     this.drag_ref = React.createRef();
+    this.localStorageAvailable = this.isLocalStorageAvailable();
 
     this.state = {
       // app state
       solution_pending: false,
+      views_pending: false,
+      scenario_id: 1,
+      drag_source_index: NULL_INDEX,
+      selection: NULL_INDEX,
 
       // tools state
       brush: BRUSH.ACTIVE_FIGURE,
-      selection: NULL_INDEX,
-      active_figure_index: NULL_INDEX,
-      drag_source_index: NULL_INDEX,
       rotate_grid: false,
-      next_initiative: 1,
-      senario_too_complex: false,
+      show_movement: !START_IN_LOS_MODE,
+      show_reach: false,
+      show_sight: START_IN_LOS_MODE,
 
-      // analystics data
-      target_count: 0,
-
-      // senario state
-      senario_id: 1,
+      // scenario state
       grid: Array( C.GRID_SIZE ).fill( 0 ),
       figures: Array( C.GRID_SIZE ).fill( 0 ),
       initiatives: Array( C.GRID_SIZE ).fill( 1 ),
       walls: Array( 3 * C.GRID_SIZE ).fill( false ),
+      active_figure_index: NULL_INDEX,
       move: 2,
       range: 0,
       target: 1,
@@ -163,14 +207,29 @@ export default class MapEditor extends React.PureComponent {
       aoe_grid: Array( C.AOE_SIZE ).fill( false ),
       active_faction: false,
 
+      // dependent state
+      scenario_too_complex: false,
+      next_initiative: 1,
+      target_count: 0,
+
       // solution state
-      solution_senario_id: 0,
-      actions: null,
+      solution_scenario_id: 0,
+      solution_actions: null,
+      solution_actions_reach: null,
+      solution_actions_sight: null,
+      solution_start_reach: null,
+      solution_start_sight: null,
       action_displayed: DISPLAY_ALL_ACTIONS,
       display_moves: Array( C.GRID_SIZE ).fill( false ),
       display_attacks: Array( C.GRID_SIZE ).fill( false ),
       display_aoe: Array( C.GRID_SIZE ).fill( false ),
+      display_reach: Array( C.GRID_SIZE ).fill( false ),
+      display_sight: Array( C.GRID_SIZE ).fill( false ),
     };
+    this.restoreState( this.state );
+    this.storeState( this.state );
+
+    this.componentDidUpdate();
 
     if ( !DEVELOPMENT ) {
       gtag( 'event', 'screen_view', {
@@ -181,18 +240,145 @@ export default class MapEditor extends React.PureComponent {
     }
   }
 
-  componentDidUpdate() {
-    setTimeout( () => {
-      if ( this.state.senario_id !== this.state.solution_senario_id ) {
-        if ( !this.state.solution_pending ) {
-          if ( this.state.active_figure_index !== NULL_INDEX ) {
-            if ( !this.state.senario_too_complex ) {
-              this.handleRequestSolution();
-            }
-          }
+  storeState( state ) {
+    if ( !this.localStorageAvailable ) return;
+
+    STATE_KEYS.forEach( ( key ) => {
+      if ( key in state ) {
+        localStorage.setItem( key, JSON.stringify( state[key] ) );
+      }
+    } );
+  }
+
+  restoreState( state ) {
+    if ( !this.localStorageAvailable ) return;
+
+    var previous_version = localStorage.getItem( 'version' )
+    if ( previous_version !== DATA_VERSION ) {
+      localStorage.clear();
+    }
+    else {
+      STATE_KEYS.forEach( ( key ) => {
+        var value = localStorage.getItem( key );
+        if ( value ) {
+          state[key] = JSON.parse( value );
         }
+      } );
+
+      state['next_initiative'] = this.determineNextInitiative( state.figures, state.initiatives, state.active_faction );
+      this.addDependentData( state );
+    }
+    
+    localStorage.setItem( 'version', DATA_VERSION );
+  }
+
+  isLocalStorageAvailable() {
+    // https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API
+    try {
+      var storage = window['localStorage'];
+      const test_key = '__gloom_storage_test__';
+      storage.setItem( test_key, test_key );
+      storage.removeItem( test_key );
+      return true;
+    }
+    catch ( e ) {
+      return e instanceof DOMException && (
+        e.code === 22 ||
+        e.code === 1014 ||
+        e.name === 'QuotaExceededError' ||
+        e.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+      ) && storage.length !== 0;
+    }
+  }
+
+  componentDidMount() {
+    this.reactToUpdate();
+  }
+
+  componentDidUpdate() {
+    this.reactToUpdate();
+  }
+
+  reactToUpdate() {
+    setTimeout( () => {
+      switch ( this.determineActionRequired() ) {
+        case ACTION_WAITING_ON_SOLUTION:
+        case ACTION_WAITING_ON_VIEW:
+        case ACTION_NO_ACTIVE_FIGURE:
+        case ACTION_SCENARIO_TOO_COMPLEX:
+        case ACTION_NO_REQUEST:
+        case ACTION_NONE_REQUIRED:
+          return;
+
+        case ACTION_REQUEST_SOLUTION:
+          this.handleRequestSolution();
+          return;
+
+        case ACTION_REQUEST_START_VIEWS:
+          this.handleRequestViewsForStart();
+          return;
+
+        case ACTION_REQUEST_SOLUTION_VIEWS:
+          this.handleRequestViewsForActions();
+          return;
       }
     }, 0 );
+  }
+
+  determineActionRequired() {
+    if ( this.state.solution_pending ) {
+      return ACTION_WAITING_ON_SOLUTION;
+    }
+    if ( this.state.views_pending ) {
+      return ACTION_WAITING_ON_VIEW;
+    }
+
+    if ( this.state.active_figure_index === NULL_INDEX ) {
+      return ACTION_NO_ACTIVE_FIGURE;
+    }
+
+    if ( this.state.scenario_id !== this.state.solution_scenario_id ) {
+      if ( this.state.show_movement ) {
+        if ( !this.state.scenario_too_complex ) {
+          return ACTION_REQUEST_SOLUTION;
+        }
+        else {
+          return ACTION_SCENARIO_TOO_COMPLEX;
+        }
+      }
+      else if ( this.state.show_reach || this.state.show_sight ) {
+        return ACTION_REQUEST_START_VIEWS;
+      }
+      else {
+        return ACTION_NO_REQUEST;
+      }
+    }
+    else {
+      if ( this.state.show_movement ) {
+        if ( !this.state.solution_actions ) {
+          if ( !this.state.scenario_too_complex ) {
+            return ACTION_REQUEST_SOLUTION;
+          }
+          else {
+            return ACTION_SCENARIO_TOO_COMPLEX;
+          }
+        }
+        else if ( ( this.state.show_reach && !this.state.solution_actions_reach ) || ( this.state.show_sight && !this.state.solution_actions_sight ) ) {
+          return ACTION_REQUEST_SOLUTION_VIEWS;
+        }
+        else {
+          return ACTION_NONE_REQUIRED;
+        }
+      }
+      else {
+        if ( ( this.state.show_reach && !this.state.solution_start_reach ) || ( this.state.show_sight && !this.state.solution_start_sight ) ) {
+          return ACTION_REQUEST_START_VIEWS;
+        }
+        else {
+          return ACTION_NONE_REQUIRED;
+        }
+      }
+    }
   }
 
   handleWallClick = ( primary, index ) => {
@@ -205,7 +391,7 @@ export default class MapEditor extends React.PureComponent {
       wall = false;
     }
     walls[index] = wall;
-    this.setSenario( {
+    this.setScenario( {
       walls: walls,
       selection: NULL_INDEX,
     } );
@@ -221,7 +407,7 @@ export default class MapEditor extends React.PureComponent {
       aoe = false;
     }
     aoe_grid[index] = aoe;
-    this.setSenario( {
+    this.setScenario( {
       aoe_grid: aoe_grid,
     } );
   };
@@ -307,7 +493,7 @@ export default class MapEditor extends React.PureComponent {
       active_figure_index = index;
     }
 
-    this.setSenario( {
+    this.setScenario( {
       figures: figures,
       initiatives: initiatives,
       selection: selection,
@@ -408,15 +594,17 @@ export default class MapEditor extends React.PureComponent {
             selection = NULL_INDEX;
           }
           else {
-            figures = this.state.figures.slice();
-            figures[index] = this.activeFactionBrush();
-            initiatives = this.state.initiatives.slice();
-            initiatives[index] = 1;
-            if ( active_figure_index !== NULL_INDEX ) {
-              figures[active_figure_index] = BRUSH.EMPTY;
+            if ( isFigureAllowed( this.state.grid[index] ) ) {
+              figures = this.state.figures.slice();
+              figures[index] = this.activeFactionBrush();
+              initiatives = this.state.initiatives.slice();
+              initiatives[index] = 1;
+              if ( active_figure_index !== NULL_INDEX ) {
+                figures[active_figure_index] = BRUSH.EMPTY;
+              }
+              active_figure_index = index;
+              selection = NULL_INDEX;
             }
-            active_figure_index = index;
-            selection = NULL_INDEX;
           }
         }
         else if ( isFigureBrush( this.state.brush ) ) {
@@ -437,20 +625,22 @@ export default class MapEditor extends React.PureComponent {
             }
           }
           else {
-            figures = this.state.figures.slice();
-            figures[index] = this.state.brush;
-            if ( active_figure_index === index ) {
-              active_figure_index = NULL_INDEX;
-            }
-            if ( this.state.brush === this.inactiveFactionBrush() ) {
-              initiatives = this.state.initiatives.slice();
-              initiatives[index] = this.state.next_initiative;
-              selection = index;
-            }
-            else {
-              initiatives = this.state.initiatives.slice();
-              initiatives[index] = 1;
-              selection = NULL_INDEX;
+            if ( isFigureAllowed( this.state.grid[index] ) ) {
+              figures = this.state.figures.slice();
+              figures[index] = this.state.brush;
+              if ( active_figure_index === index ) {
+                active_figure_index = NULL_INDEX;
+              }
+              if ( this.state.brush === this.inactiveFactionBrush() ) {
+                initiatives = this.state.initiatives.slice();
+                initiatives[index] = this.state.next_initiative;
+                selection = index;
+              }
+              else {
+                initiatives = this.state.initiatives.slice();
+                initiatives[index] = 1;
+                selection = NULL_INDEX;
+              }
             }
           }
         }
@@ -466,6 +656,9 @@ export default class MapEditor extends React.PureComponent {
             if ( figure !== BRUSH.EMPTY && !isFigureAllowed( this.state.brush ) ) {
               figures = this.state.figures.slice();
               figures[index] = BRUSH.EMPTY;
+              if ( active_figure_index === index ) {
+                active_figure_index = NULL_INDEX;
+              }
             }
             selection = NULL_INDEX;
           }
@@ -490,9 +683,9 @@ export default class MapEditor extends React.PureComponent {
       }
     }
 
-    const senario_changed = grid || figures || initiatives || active_figure_index != this.state.active_figure_index;
-    if ( senario_changed || selection != this.state.selection ) {
-      if ( senario_changed ) {
+    const scenario_changed = grid || figures || initiatives || active_figure_index != this.state.active_figure_index;
+    if ( scenario_changed || selection != this.state.selection ) {
+      if ( scenario_changed ) {
 
         // TODO: often don't need to do this
         const next_initiative = this.determineNextInitiative(
@@ -501,21 +694,21 @@ export default class MapEditor extends React.PureComponent {
           this.state.active_faction
         );
 
-        var senario_update = {
+        var scenario_update = {
           selection: selection,
           active_figure_index: active_figure_index,
           next_initiative: next_initiative,
         };
         if ( grid ) {
-          senario_update.grid = grid;
+          scenario_update.grid = grid;
         }
         if ( figures ) {
-          senario_update.figures = figures;
+          scenario_update.figures = figures;
         }
         if ( initiatives ) {
-          senario_update.initiatives = initiatives;
+          scenario_update.initiatives = initiatives;
         }
-        this.setSenario( senario_update );
+        this.setScenario( scenario_update );
       }
       else {
         this.setState( {
@@ -526,33 +719,47 @@ export default class MapEditor extends React.PureComponent {
   };
 
   handleBrushSelection = ( brush ) => {
-    this.setState( {
+    this.setToolsState( {
       brush: brush
     } );
   };
 
   handleMapClear = () => {
-    this.setSenario( {
+    this.setScenario( {
+      selection: NULL_INDEX,
+
       grid: Array( C.GRID_SIZE ).fill( BRUSH.EMPTY ),
       figures: Array( C.GRID_SIZE ).fill( BRUSH.EMPTY ),
       initiatives: Array( C.GRID_SIZE ).fill( 1 ),
       walls: Array( 3 * C.GRID_SIZE ).fill( false ),
-      selection: NULL_INDEX,
       active_figure_index: NULL_INDEX,
+
       next_initiative: 1,
     } );
   };
 
   handleAOEClear = () => {
-    this.setSenario( {
+    this.setScenario( {
       aoe_grid: Array( C.AOE_SIZE ).fill( false ),
     } );
   };
 
   handleRotateMapChanged = () => {
-    this.setState( {
+    this.setToolsState( {
       rotate_grid: !this.state.rotate_grid,
     } );
+  };
+
+  handleDisplayMovementChanged = () => {
+    this.setReachSightDisplayed( !this.state.show_movement, this.state.show_reach, this.state.show_sight )
+  };
+
+  handleDisplayReachChanged = () => {
+    this.setReachSightDisplayed( this.state.show_movement, !this.state.show_reach, false )
+  };
+
+  handleDisplaySightChanged = () => {
+    this.setReachSightDisplayed( this.state.show_movement, false, !this.state.show_sight )
   };
 
   handleActiveFactionChanged = () => {
@@ -567,7 +774,7 @@ export default class MapEditor extends React.PureComponent {
     const active_faction = !this.state.active_faction;
     const next_initiative = this.determineNextInitiative( figures, this.state.initiatives, active_faction );
 
-    this.setSenario( {
+    this.setScenario( {
       figures: figures,
       active_figure_index: NULL_INDEX,
       selection: NULL_INDEX,
@@ -577,31 +784,31 @@ export default class MapEditor extends React.PureComponent {
   };
 
   handleMoveChange = ( value ) => {
-    this.setSenario( {
+    this.setScenario( {
       move: value,
     } );
   };
 
   handleRangeChange = ( value ) => {
-    this.setSenario( {
+    this.setScenario( {
       range: value,
     } );
   };
 
   handleTargetChange = ( value ) => {
-    this.setSenario( {
+    this.setScenario( {
       target: value,
     } );
   };
 
   handleFlyingChange = ( value ) => {
-    this.setSenario( {
+    this.setScenario( {
       flying: value,
     } );
   };
 
   handleMuddledChange = ( value ) => {
-    this.setSenario( {
+    this.setScenario( {
       muddled: value,
     } );
   };
@@ -614,46 +821,224 @@ export default class MapEditor extends React.PureComponent {
 
       var next_initiative = this.determineNextInitiative( this.state.figures, initiatives, this.state.active_faction );
 
-      this.setSenario( {
+      this.setScenario( {
         initiatives: initiatives,
         next_initiative: next_initiative,
       } );
     }
   };
 
-  handleSenarioSelection = ( senario ) => {
-    this.setState( {
-      senario: senario,
-    } );
-  };
-
   unpackSolution( solution ) {
+    var solution_state;
+    if ( this.state.solution_scenario_id !== solution.scenario_id ) {
+      solution_state = {
+        solution_scenario_id: solution.scenario_id,
+
+        solution_actions: solution.actions.slice(),
+        solution_actions_reach: solution.reach ? solution.reach.slice() : null,
+        solution_actions_sight: solution.sight ? solution.sight.slice() : null,
+        solution_start_reach: null,
+        solution_start_sight: null,
+      };
+    }
+    else {
+      solution_state = {
+        solution_actions: solution.actions.slice(),
+        solution_actions_reach: solution.reach ? solution.reach.slice() : null,
+        solution_actions_sight: solution.sight ? solution.sight.slice() : null,
+      }
+    }
+
+    // if possible, use view data for the start views
+    if ( solution.reach || solution.sight ) {
+      for ( var index = 0; index < solution.actions.length; index++ ) {
+        if ( solution.actions[index].move === this.state.active_figure_index ) {
+          if ( solution.reach ) {
+            solution_state['solution_start_reach'] = solution.reach[index].slice();
+          }
+          if ( solution.sight ) {
+            solution_state['solution_start_sight'] = solution.sight[index].slice();
+          }
+          break;        
+        }
+      }
+    }
+
+    this.setDisplayedSolution( DISPLAY_ALL_ACTIONS, this.state.show_movement, this.state.show_reach, this.state.show_sight, solution_state );
+  }
+
+  unpackViewsForActions( views ) {
+    if ( this.state.solution_scenario_id !== views.scenario_id ) {
+      return;
+    }
+
+    var solution_state = {
+      solution_actions_reach: views.reach ? views.reach.slice() : null,
+      solution_actions_sight: views.sight ? views.sight.slice() : null,
+    };
+    this.setDisplayedSolution( this.state.action_displayed, this.state.show_movement, this.state.show_reach, this.state.show_sight, solution_state );
+  }
+
+  unpackViewsForStart( views ) {
+    var solution_state;
+    if ( this.state.solution_scenario_id !== views.scenario_id ) {
+      solution_state = {
+        solution_scenario_id: views.scenario_id,
+
+        solution_actions: null,
+        solution_actions_reach: null,
+        solution_actions_sight: null,
+        solution_start_reach: views.reach ? views.reach[0].slice() : null,
+        solution_start_sight: views.sight ? views.sight[0].slice() : null,
+      };
+    }
+    else {
+      solution_state = {
+        solution_start_reach: views.reach ? views.reach[0].slice() : null,
+        solution_start_sight: views.sight ? views.sight[0].slice() : null,
+      };
+    }
+    this.setDisplayedSolution( this.state.action_displayed, this.state.show_movement, this.state.show_reach, this.state.show_sight, solution_state );
+  }
+
+  setActionDisplayed( action_displayed ) {
+    if ( action_displayed === this.state.action_displayed ) {
+      return;
+    }
+    this.setDisplayedSolution( action_displayed, this.state.show_movement, this.state.show_reach, this.state.show_sight, null );
+  }
+
+  setReachSightDisplayed( show_movement, show_reach, show_sight ) {
+    if ( show_movement === this.state.show_movement ) {
+      if ( show_reach === this.state.show_reach ) {
+        if ( show_sight === this.state.show_sight ) {
+          return;
+        }
+      }
+    }
+
+    var action_displayed;
+    if ( show_movement && !this.state.show_movement ) {
+      action_displayed = DISPLAY_ALL_ACTIONS;
+    } else {
+      action_displayed = this.state.action_displayed;
+    }
+
+    this.setDisplayedSolution( action_displayed, show_movement, show_reach, show_sight, null );
+  }
+
+  setDisplayedSolution( action_displayed, show_movement, show_reach, show_sight, solution_state ) {
+    var solution_actions = solution_state && solution_state.solution_actions ? solution_state.solution_actions : this.state.solution_actions;
+    var solution_actions_reach = solution_state && solution_state.solution_actions_reach ? solution_state.solution_actions_reach : this.state.solution_actions_reach;
+    var solution_actions_sight = solution_state && solution_state.solution_actions_sight ? solution_state.solution_actions_sight : this.state.solution_actions_sight;
+    var solution_start_reach = solution_state && solution_state.solution_start_reach ? solution_state.solution_start_reach : this.state.solution_start_reach;
+    var solution_start_sight = solution_state && solution_state.solution_start_sight ? solution_state.solution_start_sight : this.state.solution_start_sight;
+    
     var moves = Array( C.GRID_SIZE ).fill( false );
     var attacks = Array( C.GRID_SIZE ).fill( false );
     var aoe = Array( C.GRID_SIZE ).fill( false );
+    var reach = Array( C.GRID_SIZE ).fill( false );
+    var sight = Array( C.GRID_SIZE ).fill( false );
 
-    solution.actions.forEach( ( action ) => {
-      moves[action.move] = true;
-      action.attacks.forEach( ( location ) => {
-        attacks[location] = true;
-      } );
-      action.aoe.forEach( ( location ) => {
-        aoe[location] = true;
-      } );
-    } );
-    this.setState( {
-      solution_senario_id: solution.senario_id,
-      actions: solution.actions.slice(),
-      action_displayed: DISPLAY_ALL_ACTIONS,
+    if ( show_movement ) {
+      if ( solution_actions ) { 
+        if ( action_displayed === DISPLAY_ALL_ACTIONS ) {
+          for ( var index = 0; index < solution_actions.length; index++ ) {
+            moves[solution_actions[index].move] = true;
+            solution_actions[index].attacks.forEach( ( location ) => {
+              attacks[location] = true;
+            } );
+            solution_actions[index].aoe.forEach( ( location ) => {
+              aoe[location] = true;
+            } );
+            if ( show_reach && solution_actions_reach ) {
+              solution_actions_reach[index].forEach( ( range ) => {
+                for ( var location = range[0]; location < range[1]; location++ ) {
+                  reach[location] = true;
+                }
+              } );
+            }
+            if ( show_sight && solution_actions_sight ) {
+              solution_actions_sight[index].forEach( ( range ) => {
+                for ( var location = range[0]; location < range[1]; location++ ) {
+                  sight[location] = true;
+                }
+              } );
+            }
+          }
+        }
+        else {
+          moves[solution_actions[action_displayed].move] = true;
+          solution_actions[action_displayed].attacks.forEach( ( location ) => {
+            attacks[location] = true;
+          } );
+          solution_actions[action_displayed].aoe.forEach( ( location ) => {
+            aoe[location] = true;
+          } );
+          if ( show_reach && solution_actions_reach ) {
+            solution_actions_reach[action_displayed].forEach( ( range ) => {
+              for ( var location = range[0]; location < range[1]; location++ ) {
+                reach[location] = true;
+              }
+            } );
+          }
+          if ( show_sight && solution_actions_sight ) {
+            solution_actions_sight[action_displayed].forEach( ( range ) => {
+              for ( var location = range[0]; location < range[1]; location++ ) {
+                sight[location] = true;
+              }
+            } );
+          }
+        }
+      }
+    }
+    else {
+      if ( show_reach && solution_start_reach ) {
+        solution_start_reach.forEach( ( range ) => {
+          for ( var location = range[0]; location < range[1]; location++ ) {
+            reach[location] = true;
+          }
+        } );
+      }
+      if ( show_sight && solution_start_sight ) {
+        solution_start_sight.forEach( ( range ) => {
+          for ( var location = range[0]; location < range[1]; location++ ) {
+            sight[location] = true;
+          }
+        } );
+      }
+    }
+
+    var display_state = {
+      action_displayed: action_displayed,
+      show_movement: show_movement,
+      show_reach: show_reach,
+      show_sight: show_sight,
       display_moves: moves,
       display_attacks: attacks,
       display_aoe: aoe,
-    } );
+      display_reach: reach,
+      display_sight: sight,
+    };
+    this.setToolsState( Object.assign( display_state, solution_state ) );
   }
 
-  packSenario() {
-    var senario = {
-      senario_id: this.state.senario_id,
+  getSolveViewLevel() {
+    if ( this.state.show_sight ) {
+      return 2;
+    }
+    else if ( this.state.show_reach ) {
+      return 1;
+    }
+    else {
+      return 0;
+    }
+  }
+
+  packScenario() {
+    var scenario = {
+      scenario_id: this.state.scenario_id,
+      solve_view: this.getSolveViewLevel(),
 
       active_figure: this.state.active_figure_index,
       move: this.state.move,
@@ -670,15 +1055,15 @@ export default class MapEditor extends React.PureComponent {
 
     this.state.aoe_grid.forEach( ( element, index ) => {
       if ( element ) {
-        senario.aoe.push( index );
+        scenario.aoe.push( index );
       }
     } );
 
     function add_elements( map_layer, key, brush ) {
-      senario.map[key] = [];
+      scenario.map[key] = [];
       map_layer.forEach( ( element, index ) => {
         if ( element === brush ) {
-          senario.map[key].push( index );
+          scenario.map[key].push( index );
         }
       } );
     }
@@ -693,95 +1078,130 @@ export default class MapEditor extends React.PureComponent {
     add_elements( this.state.grid, 'difficult', BRUSH.DIFFICULT_TERRAIN );
 
     const inactive_faction_brush = this.inactiveFactionBrush();
-    senario.map.initiatives = [];
+    scenario.map.initiatives = [];
     this.state.figures.forEach( ( figure, index ) => {
       if ( figure === inactive_faction_brush ) {
-        senario.map.initiatives.push( this.state.initiatives[index] );
+        scenario.map.initiatives.push( this.state.initiatives[index] );
       }
     } );
 
-    senario.map.thin_walls = [];
+    scenario.map.thin_walls = [];
     this.state.walls.forEach( ( wall, index ) => {
       if ( wall ) {
-        senario.map.thin_walls.push( [ Math.trunc( index / 3 ), index % 3 ] );
+        scenario.map.thin_walls.push( [ Math.trunc( index / 3 ), index % 3 ] );
       }
     } );
 
-    return senario;
+    return scenario;
   }
 
-  unpackSenario( senario ) {
-    var grid = Array( C.GRID_SIZE ).fill( 0 );
-    var figures = Array( C.GRID_SIZE ).fill( 0 );
-    var initiatives = Array( C.GRID_SIZE ).fill( 1 );
-    var walls = Array( 3 * C.GRID_SIZE ).fill( false );
-    var aoe_grid = Array( C.AOE_SIZE ).fill( false );
+  // TODO: clean
+  packScenarioForViews() {
+    var scenario = {
+      scenario_id: this.state.scenario_id,
+      solve_view: this.getSolveViewLevel(),
 
-    function get_index( c, r ) {
-      return r + c * C.GRID_HEIGHT;
-    }
+      range: this.state.range,
+      target: this.state.target,
 
-    // TODO: clean data
-    // TODO: don't allow more than one active monster
-    // TODO: validate characters on walls and obstables
-    // TODO: validate thins vs standard walls
+      width: C.GRID_WIDTH,
+      height: C.GRID_HEIGHT,
+      map: {},
+    };
 
-    var map = senario.map;
     function add_elements( map_layer, key, brush ) {
-      map[key].forEach( ( item ) => {
-        map_layer[get_index( item[0], item[1] )] = brush;
+      scenario.map[key] = [];
+      map_layer.forEach( ( element, index ) => {
+        if ( element === brush ) {
+          scenario.map[key].push( index );
+        }
       } );
     }
 
-    add_elements( figures, 'characters', BRUSH.CHARACTER );
-    add_elements( figures, 'monsters', BRUSH.MONSTER  );
-    add_elements( grid, 'walls', BRUSH.WALL );
-    add_elements( grid, 'obsticles', BRUSH.OBSTICLE );
-    add_elements( grid, 'traps', BRUSH.TRAP );
-    add_elements( grid, 'hazardous', BRUSH.HAZARDOUS_TERRAIN );
-    add_elements( grid, 'difficult', BRUSH.DIFFICULT_TERRAIN );
+    add_elements( this.state.grid, 'walls', BRUSH.WALL );
 
-    for ( var i = 0; i < map['initiatives'].length; i++ )
-    {
-      initiatives[get_index(map['characters'][i][0],map['characters'][i][1])] = map['initiatives'][i];
-    }
-
-    for ( var i = 0; i < map['thin_walls'][0].length; i++ )
-    {
-      walls[0+3*get_index(map['thin_walls'][0][i][0], map['thin_walls'][0][i][1])] = true;
-    }
-    for ( var i = 0; i < map['thin_walls'][1].length; i++ )
-    {
-      walls[1+3*get_index(map['thin_walls'][1][i][0], map['thin_walls'][1][i][1])] = true;
-    }
-    for ( var i = 0; i < map['thin_walls'][2].length; i++ )
-    {
-      walls[2+3*get_index(map['thin_walls'][2][i][0], map['thin_walls'][2][i][1])] = true;
-    }
-
-    for ( var i = 0; i < senario.aoe.length; i++ )
-    {
-      aoe_grid[senario.aoe[i]] = true;
-    }
-
-    const active_figure_index = get_index( senario.active_figure[0], senario.active_figure[1] );
-
-    this.setSenario( {
-      grid: grid,
-      figures: figures,
-      initiatives: initiatives,
-      walls: walls,
-      selection: NULL_INDEX,
-      active_figure_index: active_figure_index,
-
-      move: senario.move,
-      range: senario.range,
-      target: senario.target,
-      flying: senario.flying,
-      muddled: senario.muddled,
-      aoe_grid: aoe_grid,
+    scenario.map.thin_walls = [];
+    this.state.walls.forEach( ( wall, index ) => {
+      if ( wall ) {
+        scenario.map.thin_walls.push( [ Math.trunc( index / 3 ), index % 3 ] );
+      }
     } );
-  }
+
+    return scenario;
+  }  
+
+  // unpackscenario( scenario ) {
+  //   var grid = Array( C.GRID_SIZE ).fill( 0 );
+  //   var figures = Array( C.GRID_SIZE ).fill( 0 );
+  //   var initiatives = Array( C.GRID_SIZE ).fill( 1 );
+  //   var walls = Array( 3 * C.GRID_SIZE ).fill( false );
+  //   var aoe_grid = Array( C.AOE_SIZE ).fill( false );
+
+  //   function get_index( c, r ) {
+  //     return r + c * C.GRID_HEIGHT;
+  //   }
+
+  //   // TODO: clean data
+  //   // TODO: don't allow more than one active monster
+  //   // TODO: validate characters on walls and obstables
+  //   // TODO: validate thins vs standard walls
+
+  //   var map = scenario.map;
+  //   function add_elements( map_layer, key, brush ) {
+  //     map[key].forEach( ( item ) => {
+  //       map_layer[get_index( item[0], item[1] )] = brush;
+  //     } );
+  //   }
+
+  //   add_elements( figures, 'characters', BRUSH.CHARACTER );
+  //   add_elements( figures, 'monsters', BRUSH.MONSTER  );
+  //   add_elements( grid, 'walls', BRUSH.WALL );
+  //   add_elements( grid, 'obsticles', BRUSH.OBSTICLE );
+  //   add_elements( grid, 'traps', BRUSH.TRAP );
+  //   add_elements( grid, 'hazardous', BRUSH.HAZARDOUS_TERRAIN );
+  //   add_elements( grid, 'difficult', BRUSH.DIFFICULT_TERRAIN );
+
+  //   for ( var i = 0; i < map['initiatives'].length; i++ )
+  //   {
+  //     initiatives[get_index(map['characters'][i][0],map['characters'][i][1])] = map['initiatives'][i];
+  //   }
+
+  //   for ( var i = 0; i < map['thin_walls'][0].length; i++ )
+  //   {
+  //     walls[0+3*get_index(map['thin_walls'][0][i][0], map['thin_walls'][0][i][1])] = true;
+  //   }
+  //   for ( var i = 0; i < map['thin_walls'][1].length; i++ )
+  //   {
+  //     walls[1+3*get_index(map['thin_walls'][1][i][0], map['thin_walls'][1][i][1])] = true;
+  //   }
+  //   for ( var i = 0; i < map['thin_walls'][2].length; i++ )
+  //   {
+  //     walls[2+3*get_index(map['thin_walls'][2][i][0], map['thin_walls'][2][i][1])] = true;
+  //   }
+
+  //   for ( var i = 0; i < scenario.aoe.length; i++ )
+  //   {
+  //     aoe_grid[scenario.aoe[i]] = true;
+  //   }
+
+  //   const active_figure_index = get_index( scenario.active_figure[0], scenario.active_figure[1] );
+
+  //   this.setScenario( {
+  //     grid: grid,
+  //     figures: figures,
+  //     initiatives: initiatives,
+  //     walls: walls,
+  //     selection: NULL_INDEX,
+  //     active_figure_index: active_figure_index,
+
+  //     move: scenario.move,
+  //     range: scenario.range,
+  //     target: scenario.target,
+  //     flying: scenario.flying,
+  //     muddled: scenario.muddled,
+  //     aoe_grid: aoe_grid,
+  //   } );
+  // }
 
   handleRequestSolution = () => {
     if ( !DEVELOPMENT ) {
@@ -792,11 +1212,11 @@ export default class MapEditor extends React.PureComponent {
       } );
     }
 
-    var senario = this.packSenario();
+    var scenario = this.packScenario();
     this.setState( {
       solution_pending: true,
     } );
-    axios.put( URL_FOR.solve, senario )
+    axios.put( URL_FOR.solve, scenario )
       .then( ( response ) => {
         this.setState( {
           solution_pending: false,
@@ -804,30 +1224,95 @@ export default class MapEditor extends React.PureComponent {
         this.unpackSolution( response.data );
       } )
       .catch( () => {
-        console.log( 'solution failed' );
         this.setState( {
           solution_pending: false,
         } );
       } );
   };
 
-  handleRequestSenario = () => {
-    axios.get( URL_FOR.senario )
+  // TODO: clean
+  handleRequestViewsForActions = () => {
+    var viewpoints = [];
+    for ( var i = 0; i < this.state.solution_actions.length; i++ ) {
+      viewpoints.push( this.state.solution_actions[i]['move'] );
+    }
+
+    if ( !DEVELOPMENT ) {
+      gtag( 'event', 'request', {
+        event_category: 'SolutionViews',
+        event_label: this.getSolveViewLevel() > 1 ? 'sight' : 'reach',
+        value: viewpoints.length,
+      } );
+    }
+
+    var views_request = this.packScenarioForViews();
+    views_request['viewpoints'] = viewpoints;
+    this.setState( {
+      views_pending: true,
+    } );
+    axios.put( URL_FOR.views, views_request )
       .then( ( response ) => {
-        this.unpackSenario( response.data );
+        this.setState( {
+          views_pending: false,
+        } );
+        this.unpackViewsForActions( response.data );
       } )
       .catch( () => {
+        this.setState( {
+          views_pending: false,
+        } );
       } );
   };
 
+  // TODO: clean
+  handleRequestViewsForStart = () => {
+    var viewpoints = [ this.state.active_figure_index ];
+
+    if ( !DEVELOPMENT ) {
+      gtag( 'event', 'request', {
+        event_category: 'StartViews',
+        event_label: this.getSolveViewLevel() > 1 ? 'sight' : 'reach',
+        value: viewpoints.length,
+      } );
+    }
+
+    var views_request = this.packScenarioForViews();
+    views_request['viewpoints'] = viewpoints;
+    this.setState( {
+      views_pending: true,
+    } );
+    axios.put( URL_FOR.views, views_request )
+      .then( ( response ) => {
+        // TODO: this is an extra setState()
+        this.setState( {
+          views_pending: false,
+        } );
+        this.unpackViewsForStart( response.data );
+      } )
+      .catch( () => {
+        this.setState( {
+          views_pending: false,
+        } );
+      } );
+  };
+
+  // handleRequestScenario = () => {
+  //   axios.get( URL_FOR.scenario )
+  //     .then( ( response ) => {
+  //       this.unpackscenario( response.data );
+  //     } )
+  //     .catch( () => {
+  //     } );
+  // };
+
   handlePreviousAction = () => {
     var action_displayed = this.state.action_displayed;
-    if ( this.state.actions && this.state.actions.length > 1 ) {
+    if ( this.state.solution_actions && this.state.solution_actions.length > 1 ) {
       if ( action_displayed === DISPLAY_ALL_ACTIONS ) {
-        action_displayed = this.state.actions.length - 1;
+        action_displayed = this.state.solution_actions.length - 1;
       }
       else if ( action_displayed === 0 ) {
-        action_displayed = this.state.actions.length - 1;
+        action_displayed = this.state.solution_actions.length - 1;
       }
       else {
         action_displayed -= 1;
@@ -838,11 +1323,11 @@ export default class MapEditor extends React.PureComponent {
 
   handleNextAction = () => {
     var action_displayed = this.state.action_displayed;
-    if ( this.state.actions && this.state.actions.length > 1 ) {
+    if ( this.state.solution_actions && this.state.solution_actions.length > 1 ) {
       if ( action_displayed === DISPLAY_ALL_ACTIONS ) {
         action_displayed = 0;
       }
-      else if ( action_displayed === this.state.actions.length - 1 ) {
+      else if ( action_displayed === this.state.solution_actions.length - 1 ) {
         action_displayed = 0;
       }
       else {
@@ -854,72 +1339,37 @@ export default class MapEditor extends React.PureComponent {
 
   handleAllActions = () => {
     var action_displayed = this.state.action_displayed;
-    if ( this.state.actions && this.state.actions.length > 1 ) {
+    if ( this.state.solution_actions && this.state.solution_actions.length > 1 ) {
       action_displayed = DISPLAY_ALL_ACTIONS;
     }
     this.setActionDisplayed( action_displayed );
   };
 
-  setActionDisplayed( action_displayed ) {
-    if ( action_displayed === this.state.action_displayed ) {
-      return;
-    }
-    
-    var moves = Array( C.GRID_SIZE ).fill( false );
-    var attacks = Array( C.GRID_SIZE ).fill( false );
-    var aoe = Array( C.GRID_SIZE ).fill( false );
-
-    function applyAction( action ) {
-      moves[action.move] = true;
-      action.attacks.forEach( ( location ) => {
-        attacks[location] = true;
-      } );
-      action.aoe.forEach( ( location ) => {
-        aoe[location] = true;
-      } );
-    }
-
-    if ( action_displayed === DISPLAY_ALL_ACTIONS ) {
-      this.state.actions.forEach( ( action ) => {
-        applyAction( action );
-      } );
-    }
-    else {
-      applyAction( this.state.actions[action_displayed] );
-    }
-
-    this.setState( {
-      action_displayed: action_displayed,
-      display_moves: moves,
-      display_attacks: attacks,
-      display_aoe: aoe,
-    } );
-  }
-
-  setSenario( senario ) {
-    // TEMP
-    // Determine if the senario is too complex to request a solution.
-    // If there are more than 20 characters.
-    // If its a ranged aoe and the target count is above 3.
-    senario.senario_too_complex = false;
-    senario.target_count = 0;
+  addDependentData( scenario ) {
+    scenario.target_count = 0;
     var inactive_faction_brush = this.inactiveFactionBrush();
-    var figures = senario.figures !== undefined ? senario.figures : this.state.figures;
+    var figures = scenario.figures !== undefined ? scenario.figures : this.state.figures;
     figures.forEach( ( figure ) => {
       if ( figure === inactive_faction_brush ) {
-        senario.target_count++;
+        scenario.target_count++;
       }
     } );
-    if ( senario.target_count > 20 ) {
-      senario.senario_too_complex = true;
+
+    // TEMP (need to retime with new optimizations)
+    // Determine if the scenario is too complex to request a solution.
+    // If there are more than 20 characters.
+    // If its a ranged aoe and the target count is above 3.
+    scenario.scenario_too_complex = false;
+    if ( scenario.target_count > 20 ) {
+      scenario.scenario_too_complex = true;
     }
     else {
-      var target = senario.target !== undefined ? senario.target : this.state.target;
+      var target = scenario.target !== undefined ? scenario.target : this.state.target;
       if ( target > 3 ) {
-        var range = senario.range !== undefined ? senario.range : this.state.range;
+        var range = scenario.range !== undefined ? scenario.range : this.state.range;
         if ( range > 1 ) {
           var active_aoe = false;
-          var aoe_grid = senario.aoe_grid !== undefined ? senario.aoe_grid : this.state.aoe_grid;
+          var aoe_grid = scenario.aoe_grid !== undefined ? scenario.aoe_grid : this.state.aoe_grid;
           for ( var index = 0; index < aoe_grid.length; index++ ) {
             if ( aoe_grid[index] ) {
               active_aoe = true;
@@ -927,92 +1377,111 @@ export default class MapEditor extends React.PureComponent {
             }
           }
           if ( active_aoe ) {
-            senario.senario_too_complex = true;
+            scenario.scenario_too_complex = true;
           }
         }
       }
     }
+  }
 
-    senario.senario_id = ( this.state.senario_id + 1 ) % ( 256 * 256 * 256 );
-    this.setState( senario );
+  setScenario( scenario ) {
+    this.storeState( scenario );
+
+    this.addDependentData( scenario );
+
+    scenario.scenario_id = ( this.state.scenario_id + 1 ) % ( 256 * 256 * 256 );
+    this.setState( scenario );
+  }
+
+  setToolsState( tools_state ) {
+    this.storeState( tools_state );
+    this.setState( tools_state );
   }
 
   isDisplayingSolution() {
     if ( this.state.drag_source_index !== NULL_INDEX ) {
       return false;
     }
-    return this.state.senario_id === this.state.solution_senario_id;
+    return this.state.scenario_id === this.state.solution_scenario_id;
   }
 
   render() {
     const display_solution = this.isDisplayingSolution();
-    const solution_count = this.state.actions ? this.state.actions.length : 0;
+    const solution_count = this.state.solution_actions ? this.state.solution_actions.length : 0;
     const multiple_actions = display_solution && solution_count > 1;
 
+    const active_faction_string = this.state.active_faction ? 'character' : 'monster';
+    const inactive_faction_string = this.state.active_faction ? 'monster' : 'character';
+
+    const action = this.determineActionRequired();
+
+    var display_move_solution = false;
+
     var status_label;
-    const solving = ( this.state.solution_pending || this.state.senario_id !== this.state.solution_senario_id )
-      && this.state.active_figure_index !== NULL_INDEX;
-    if ( solving ) {
-      if ( this.state.senario_too_complex ) {
-        const faction_string = this.state.active_faction ? 'monsters' : 'characters';
-        status_label = (
-          <span>
-            Too complex. Reduce the target count, area of effect, or {faction_string}.
-          </span>
-        );
-      }
-      else {
-        status_label = (
-          <span><div className='mr-2 throbber'></div> Solving...</span>
-        );
-      }
-    }
-    else {
-      var status_message;
-      if ( display_solution ) {
-        if ( this.state.actions ) {
-          if ( this.state.actions.length === 1 ) {
-            if ( this.state.actions[0].attacks.length === 0 && this.state.actions[0].move === this.state.active_figure_index ) {
-              const faction_string = this.state.active_faction ? 'character' : 'monster';
-              status_message = 'The ' + faction_string + ' will not move.';
+    switch ( action ) {
+      case ACTION_WAITING_ON_SOLUTION:
+      case ACTION_REQUEST_SOLUTION:
+        status_label = <span><div className='mr-2 throbber'></div> Solving...</span>
+        break;
+
+      case ACTION_WAITING_ON_VIEW:
+      case ACTION_REQUEST_START_VIEWS:
+      case ACTION_REQUEST_SOLUTION_VIEWS:
+        status_label = <span><div className='mr-2 throbber'></div> Calculating...</span>
+        break;
+
+      case ACTION_NO_ACTIVE_FIGURE:
+      case ACTION_NO_REQUEST:
+        status_label = null
+        break;
+
+      case ACTION_SCENARIO_TOO_COMPLEX:
+        status_label = <span>Too complex. Reduce the target count, area of effect, or {faction_string}.</span>
+        break;
+
+      case ACTION_NONE_REQUIRED:
+        var status_message;
+        if ( this.state.show_movement ) {
+          display_move_solution = true;
+          if ( this.state.solution_actions ) {
+            if ( this.state.solution_actions.length === 1 ) {
+              if ( this.state.solution_actions[0].attacks.length === 0 && this.state.solution_actions[0].move === this.state.active_figure_index ) {
+                status_message = 'The ' + active_faction_string + ' takes no action.';
+              }
+              else {
+                status_message = 'Showing the only movement option.';
+              }
+            }
+            else if ( this.state.action_displayed === DISPLAY_ALL_ACTIONS ) {
+              status_message = 'Showing ' + getNumberWord( solution_count ) + ' movement options.';
             }
             else {
-              status_message = 'Showing the only movement option.';
+              status_message = 'Showing the ' + getOrdinalWord( this.state.action_displayed + 1 ) + ' of ' + getNumberWord( solution_count ) + ' movement options.';
+              if ( this.state.solution_actions[this.state.action_displayed].move === this.state.active_figure_index && this.state.solution_actions[this.state.action_displayed].attacks.length === 0 ) {
+                status_message += ' No action taken.';
+              }
             }
           }
-          else if ( this.state.action_displayed === DISPLAY_ALL_ACTIONS ) {
-            status_message = 'Showing ' + getNumberWord( solution_count ) + ' movement options.';
-          }
-          else {
-            status_message = 'Showing the ' + getOrdinalWord( this.state.action_displayed + 1 ) + ' of ' + getNumberWord( solution_count ) + ' movement options.';
-          }
         }
-      } 
-      else {
-        status_message = '';
-      }
-      status_label = (
-        <span>
-          {status_message}
-        </span>
-      );
-    }
+        else if ( this.state.show_reach ) {
+          status_message = 'Showing range.';
+        }
+        else if ( this.state.show_sight ) {
+          status_message = 'Showing line of sight.';
+        }
+        else {
+          status_message = '';
+        }
+        status_label = <span>{status_message}</span>
+        break;
+    }    
 
     const x_margin = C.GRID_MARGIN + ( this.state.rotate_grid ? 0 : C.GRID_DELTA );
     const y_margin = C.GRID_MARGIN + ( this.state.rotate_grid ? C.GRID_DELTA : 0 );
     const view_box = ( -x_margin ) + ' ' + ( -y_margin ) + ' ' + ( C.GRID_EXTENT ) + ' ' + ( C.GRID_EXTENT );
 
-    // TODO: clean
-    var x_grad;
-    var y_grad;
-    if ( !this.state.rotate_grid ) {
-      x_grad = ( <rect x={0} y={-y_margin} width={C.GRID_EXTENT - 2 * x_margin} height={y_margin} fill='url(#fadeGrad)'/> );
-      y_grad = ( <rect x={C.GRID_EXTENT - 2 * x_margin} y={-y_margin} width={x_margin} height={C.GRID_EXTENT} fill='url(#fadeGradHR)'/> );
-    }
-    else {
-      x_grad = ( <rect x={-x_margin} y={-y_margin} width={C.GRID_EXTENT} height={y_margin} fill='url(#fadeGrad)'/> );
-      y_grad = ( <rect x={C.GRID_EXTENT - 2 * x_margin} y={0} width={x_margin} height={C.GRID_EXTENT - 2 * y_margin} fill='url(#fadeGradHR)'/> );
-    }
+    const x_fade_margin = C.GRID_MARGIN + C.GRID_DELTA;
+    const y_fade_margin = C.GRID_MARGIN;
 
     var class_name = 'container-fluid';
     if ( this.drag_ref.current && this.drag_ref.current.active ) {
@@ -1089,15 +1558,10 @@ export default class MapEditor extends React.PureComponent {
                 options={MUDDLED_OPTIONS}
                 value={this.state.muddled}
                 onChange={this.handleMuddledChange}
-                tooltip={this.state.active_faction
-                  ?
-                    <React.Fragment>
-                      Set whether the active character is muddled.
-                    </React.Fragment>
-                  :
-                    <React.Fragment>
-                      Set whether the active monster is muddled.
-                    </React.Fragment>
+                tooltip={
+                  <React.Fragment>
+                    Set whether the active {active_faction_string} is muddled.
+                  </React.Fragment>
                 }
               />
               <NumberSelector
@@ -1106,15 +1570,10 @@ export default class MapEditor extends React.PureComponent {
                 value={this.state.selection == -1 ? 1 : this.state.initiatives[this.state.selection]}
                 disabled={this.state.selection == -1}
                 onChange={this.handleInitiativeChange}
-                tooltip={this.state.active_faction
-                  ?
-                    <React.Fragment>
-                      Set the initiative rank of the selected monster.
-                    </React.Fragment>
-                  :
-                    <React.Fragment>
-                      Set the initiative rank of the selected character.
-                    </React.Fragment>
+                tooltip={
+                  <React.Fragment>
+                    Set the initiative rank of the selected {inactive_faction_string}.
+                  </React.Fragment>
                 }
               />
           </div>
@@ -1129,7 +1588,7 @@ export default class MapEditor extends React.PureComponent {
                   type='button'
                   className='px-3 btn btn-sm btn-dark'
                   id='previous-action-button'
-                  disabled={!multiple_actions}
+                  disabled={!multiple_actions || !display_move_solution}
                   onClick={this.handlePreviousAction}
                 >
                   &lt;&lt;
@@ -1145,7 +1604,7 @@ export default class MapEditor extends React.PureComponent {
                   type='button'
                   className='px-3 btn btn-sm btn-dark'
                   id='all-actions-button'
-                  disabled={!multiple_actions}
+                  disabled={!multiple_actions || !display_move_solution}
                   onClick={this.handleAllActions}
                 >
                   Show All Options
@@ -1161,7 +1620,7 @@ export default class MapEditor extends React.PureComponent {
                   type='button'
                   className='px-3 btn btn-sm btn-dark'
                   id='next-action-button'
-                  disabled={!multiple_actions}
+                  disabled={!multiple_actions || !display_move_solution}
                   onClick={this.handleNextAction}
                 >
                   &gt;&gt;
@@ -1181,33 +1640,32 @@ export default class MapEditor extends React.PureComponent {
               width={C.GRID_EXTENT}
               height={C.GRID_EXTENT}
               viewBox={view_box}
-              mask='url(#edge_fade)'
               onMouseUp={this.handleGridMouseUp}
               onMouseLeave={this.handleGridMouseLeave}
             >
               <defs>
                 <linearGradient id='fadeGrad' y2='1' x2='0'>
-                  <stop offset='0' stopColor='white' stopOpacity='0'/>
-                  <stop offset='1' stopColor='white' stopOpacity='1'/>
+                  <stop offset='0' stopColor='black'/>
+                  <stop offset='1' stopColor='white'/>
                 </linearGradient>
                 <linearGradient id='fadeGradR' y2='1' x2='0'>
-                  <stop offset='0' stopColor='white' stopOpacity='1'/>
-                  <stop offset='1' stopColor='white' stopOpacity='0'/>
+                  <stop offset='0' stopColor='white'/>
+                  <stop offset='1' stopColor='black'/>
                 </linearGradient>
                 <linearGradient id='fadeGradH' y2='0' x2='1'>
-                  <stop offset='0' stopColor='white' stopOpacity='0'/>
-                  <stop offset='1' stopColor='white' stopOpacity='1'/>
+                  <stop offset='0' stopColor='black'/>
+                  <stop offset='1' stopColor='white'/>
                 </linearGradient>
                 <linearGradient id='fadeGradHR' y2='0' x2='1'>
-                  <stop offset='0' stopColor='white' stopOpacity='1'/>
-                  <stop offset='1' stopColor='white' stopOpacity='0'/>
+                  <stop offset='0' stopColor='white'/>
+                  <stop offset='1' stopColor='black'/>
                 </linearGradient>
                 <mask id='edge_fade' maskContentUnits='userSpaceOnUse'>
-                  {x_grad}
-                  <rect x={-x_margin} y={-y_margin} width={x_margin} height={C.GRID_EXTENT} fill='url(#fadeGradH)'/>
-                  <rect x={-x_margin} y={C.GRID_EXTENT - 2.0 * y_margin} width={C.GRID_EXTENT} height={y_margin} fill='url(#fadeGradR)'/>
-                  {y_grad}
-                  <rect x={0} y={0} width={C.GRID_EXTENT - 2.0 * x_margin} height={C.GRID_EXTENT - 2.0 * y_margin} fill='white'/>
+                  <rect x={-x_fade_margin} y={-y_fade_margin} width={x_fade_margin} height={C.GRID_SCALED_HEIGHT + 2 * y_fade_margin} fill='url(#fadeGradH)'/>
+                  <rect x={C.GRID_SCALED_WIDTH} y={-y_fade_margin} width={x_fade_margin} height={C.GRID_SCALED_HEIGHT + 2 * y_fade_margin} fill='url(#fadeGradHR)'/>
+                  <rect x={0} y={-y_fade_margin} width={C.GRID_SCALED_WIDTH} height={y_fade_margin} fill='url(#fadeGrad)'/>
+                  <rect x={0} y={C.GRID_SCALED_HEIGHT} width={C.GRID_SCALED_WIDTH} height={y_fade_margin} fill='url(#fadeGradR)'/>
+                  <rect x={0} y={0} width={C.GRID_SCALED_WIDTH} height={C.GRID_SCALED_HEIGHT} fill='white'/>
                 </mask>
               </defs>
 
@@ -1220,14 +1678,23 @@ export default class MapEditor extends React.PureComponent {
                   onHexMouseUp={this.handleHexMouseUp}
                 />
                 <BorderGrid/>
+                <WallGrid
+                  walls={this.state.walls}
+                  activeWalls={this.state.brush == BRUSH.THIN_WALL}
+                  onWallClick={this.handleWallClick}
+                />
                 <OverlayHexGrid
                   displaySolution={display_solution}
+                  showReach={this.state.show_reach}
+                  showSight={this.state.show_sight}
                   aoe={this.state.display_aoe}
+                  reach={this.state.display_reach}
+                  sight={this.state.display_sight}
                 />
                 <FigureGrid
                   figures={this.state.figures}
                   initiatives={this.state.initiatives}
-                  displaySolution={display_solution} 
+                  displaySolution={display_move_solution}
                   moves={this.state.display_moves}
                   attacks={this.state.display_attacks}
                   flying={this.state.flying}
@@ -1236,11 +1703,6 @@ export default class MapEditor extends React.PureComponent {
                   dragSourceIndex={this.state.drag_source_index}
                   activeFaction={this.state.active_faction}
                   activeFigureIndex={this.state.active_figure_index}
-                />
-                <WallGrid
-                  walls={this.state.walls}
-                  activeWalls={this.state.brush == BRUSH.THIN_WALL}
-                  onWallClick={this.handleWallClick}
                 />
                 <DragFigure
                   ref={this.drag_ref}
@@ -1296,6 +1758,51 @@ export default class MapEditor extends React.PureComponent {
               >
                 Clear Area of Effect
               </button>
+            </div>
+           <div className='w-75 mt-auto mb-5 btn-group-vertical'>
+              <button
+                type='button'
+                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_movement ? ' active' : '' )}
+                id='show-movement-button'
+                onClick={this.handleDisplayMovementChanged}
+              >
+                Show Movement
+              </button>
+              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-movement-button'>
+                <div className='text-left'>
+                  Show the movement options for the active {active_faction_string}.
+                  <p/>
+                  Unset to test range or line of sight from the active {active_faction_string}'s initial location.
+                </div>
+              </UncontrolledTooltip>
+              <button
+                type='button'
+                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_reach ? ' active' : '' )}
+                id='show-reach-button'
+                onClick={this.handleDisplayReachChanged}
+              >
+                Show Range
+              </button>
+              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-reach-button'>
+                <div className='text-left'>
+                  Show the range of the active {active_faction_string}'s attack.
+                  <p/>
+                  For a ranged area of effect attack, only a single hex of the area needs to be within the attack's range, though all targets must be within line of sight.
+                </div>
+              </UncontrolledTooltip>
+              <button
+                type='button'
+                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_sight ? ' active' : '' )}
+                id='show-sight-button'
+                onClick={this.handleDisplaySightChanged}
+              >
+                Show Line of Sight
+              </button>
+              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-sight-button'>
+                <div className='text-left'>
+                  Show the active {active_faction_string}'s line of sight.
+                </div>
+              </UncontrolledTooltip>
             </div>
           </div>
         </div>

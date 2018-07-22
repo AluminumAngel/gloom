@@ -4,8 +4,7 @@ import Figure from './Figure';
 
 export default function FigureGrid( props ) {
   var figures = [];
-  var index = 0;
-  for ( var c = 0; c < C.GRID_WIDTH; c++ ) {
+  for ( var c = 0, index = 0; c < C.GRID_WIDTH; c++ ) {
     for ( var r = 0; r < C.GRID_HEIGHT; r++, index++ ) {
       figures.push( <Figure
         key={index}

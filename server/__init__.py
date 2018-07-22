@@ -12,7 +12,8 @@ from production import production
 debug = not production
 
 title = 'Gloomhaven Monster Mover'
-version = '1.4.1'
+version = '2.1.1'
+client_local_storage_version = '1.0.0'
 
 # Routes
 
@@ -20,62 +21,100 @@ version = '1.4.1'
 def root():
   return templates( 'index.html' )
 
+@app.route( '/los' )
+def los():
+  return templates( 'index.html', params={ 'los_mode': True } )
+
 @app.route( '/templates/<filename>' )
-def templates( filename ):
+def templates( filename, params={} ):
   template_version = version
   if debug:
     template_version += '.' + str( time.time() )
-    
+
   return render_template(
     filename,
     debug_server=debug,
     title=title,
-    version=template_version
+    version=template_version,
+    client_local_storage_version=client_local_storage_version,
+    **params
   )
 
 @app.route( '/solve', methods=[ 'PUT' ] )
 def solve():
-  packed_senario = request.json
+  packed_scenario = request.json
   if not production:
-    print packed_senario
+    print packed_scenario
 
-  # todo: validate packed senario format
-  map_width = packed_senario['width']
-  map_height = packed_senario['height']
-  senario_id = packed_senario['senario_id']
+  # todo: validate packed scenario format
+  map_width = packed_scenario['width']
+  map_height = packed_scenario['height']
+  scenario_id = packed_scenario['scenario_id']
+  solve_view = packed_scenario['solve_view']
 
-  s = solver.Senario()
+  s = solver.Scenario()
   if not production:
     s.logging = True
   senarios.init( s, map_width, map_height, 7, 7 )
-  s.unpack_senario( packed_senario )
-  actions = s.solve()
-  if not production:
-    print actions
+  s.unpack_scenario( packed_scenario )
+  actions, reach, sight = s.solve( solve_view > 0, solve_view > 1 )
 
   solution = {
-    'senario_id': senario_id,
+    'scenario_id': scenario_id,
     'actions': actions,
   }
+  if reach:
+    solution['reach'] = reach
+  if sight:
+    solution['sight'] = sight
 
-  return jsonify(
-    solution
-  )
-
-@app.route( '/senario/<senario_index>' )
-def senario( senario_index ):
-  # todo: validate senario_index is legal
-  senario_index = int( senario_index )
-
-  s = solver.Senario()
-  senarios.init_from_test_senario( s, senario_index )
-  packed_senario = s.pack_senario()
   if not production:
-    print packed_senario
+    print solution
+  return jsonify( solution )
 
-  return jsonify(
-    packed_senario
-  )
+@app.route( '/views', methods=[ 'PUT' ] )
+def views():
+  packed_scenario = request.json
+  if not production:
+    print packed_scenario
+
+  # todo: validate packed scenario format
+  map_width = packed_scenario['width']
+  map_height = packed_scenario['height']
+  scenario_id = packed_scenario['scenario_id']
+  viewpoints = packed_scenario['viewpoints']
+  solve_view = packed_scenario['solve_view']
+
+  s = solver.Scenario()
+  if not production:
+    s.logging = True
+  senarios.init( s, map_width, map_height, 7, 7 )
+  s.unpack_scenario_forviews( packed_scenario )
+
+  solution = {
+    'scenario_id': scenario_id,
+  }
+  if solve_view > 0:
+    solution['reach'] = s.solve_reaches( viewpoints )
+  if solve_view > 1:
+    solution['sight'] = s.solve_sights( viewpoints )
+
+  if not production:
+    print solution
+  return jsonify( solution )
+
+@app.route( '/scenario/<scenario_index>' )
+def scenario( scenario_index ):
+  # todo: validate scenario_index is legal
+  scenario_index = int( scenario_index )
+
+  s = solver.Scenario()
+  senarios.init_from_test_scenario( s, scenario_index )
+  packed_scenario = s.pack_scenario()
+  if not production:
+    print packed_scenario
+
+  return jsonify( packed_scenario )
 
 # Debug Server
 if __name__ == '__main__':

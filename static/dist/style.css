@@ -41,17 +41,26 @@ polygon.difficult-terrain {
 }
 
 polygon.aoe-coverage {
-  fill: darkred;
-  opacity: 0.7;
+  fill: red;
+  fill-opacity: 0.3;
+  stroke: red;
+  stroke-opacity: 1.0;
 }
 
 polygon.aoe-center {
   fill: gray;
 }
 
-polygon.aoe {
-  fill: darkred;
-  opacity: 0.7;
+polygon.reach {
+  fill: #997300;
+  opacity: 0.3;
+  stroke-opacity: 0;
+}
+
+polygon.sight {
+  fill: #3e64a3;
+  opacity: 0.3;
+  stroke-opacity: 0;
 }
 
 circle.character {
@@ -93,11 +102,11 @@ circle.selection-highlight {
   opacity: 0.5;
 }
 
-path.play-senario-fill {
+path.play-scenario-fill {
   fill: #606060;
 }
 
-path.play-senario-stroke {
+path.play-scenario-stroke {
   fill: #000000;
 }
 
