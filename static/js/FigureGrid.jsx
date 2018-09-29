@@ -8,13 +8,16 @@ export default function FigureGrid( props ) {
     for ( var r = 0; r < C.GRID_HEIGHT; r++, index++ ) {
       figures.push( <Figure
         key={index}
+        id={index}
         r={r}
         c={c}
         figure={props.figures[index]}
         initiative={props.initiatives[index]}
         displaySolution={props.displaySolution}
         move={props.moves[index]}
+        destination={props.destinations && props.destinations[index]}
         attack={props.attacks[index]}
+        focus={props.focuses && props.focuses[index]}
         flying={props.flying}
         selected={props.selection === index}
         rotate={props.rotate}
@@ -24,5 +27,5 @@ export default function FigureGrid( props ) {
       /> );
     }
   }
-  return <g>{figures}</g>;
+  return <React.Fragment>{figures}</React.Fragment>;
 }

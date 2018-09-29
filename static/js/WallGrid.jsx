@@ -21,5 +21,5 @@ export default function WallGrid( props ) {
       }
     }
   }
-  return <g>{walls}</g>;
+  return <React.Fragment>{walls}</React.Fragment>;
 }

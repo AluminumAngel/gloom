@@ -34,6 +34,7 @@ export default function BrushPicker( props ) {
               <path className='play-scenario-stroke' d='M94.5,63l84,78.75l-40.4209,3.6709l23.625,51.4541l-15.2373,6.8291l-22.55859,-51.9873l-29.40821,26.7832v-115.5M94.5,52.5c-1.5791,0 -2.625,0.53321 -4.2041,1.0459c-3.6709,1.5791 -6.2959,5.25 -6.2959,9.4541v115.5c0,4.2041 2.625,7.875 6.2959,9.4541c1.5791,1.0459 3.1582,1.0459 4.2041,1.0459c2.625,0 5.25,-1.0459 7.3418,-2.625l17.8623,-16.7959l16.2627,38.32911c1.06641,2.625 3.1582,4.71679 5.7832,5.76269c1.0459,0.5332 2.625,0.5332 3.6709,0.5332c1.5791,0 2.625,-0.5332 4.2041,-1.04589l15.2168,-6.82911c2.625,-1.04589 4.7373,-3.1582 5.7832,-5.7832c1.0459,-2.625 1.0459,-5.76269 0,-7.875l-17.3291,-37.7959l25.73731,-2.09179c4.18359,-0.53321 7.875,-3.15821 8.92089,-6.82911c1.57911,-3.67089 0.5127,-8.4082 -2.625,-11.0332l-84,-78.75c-1.5791,-2.625 -4.2041,-3.6709 -6.8291,-3.6709z'/>
             </g>
           }
+          tooltipPlacement='right-start'
           tooltip={props.activeFaction
             ?
               <React.Fragment>
@@ -176,20 +177,20 @@ export default function BrushPicker( props ) {
           }
         />
         <BrushButton
-          brush={BRUSH.OBSTICLE}
+          brush={BRUSH.OBSTACLE}
           selection={props.selection}
           onClick={props.onSelection}
-          text='Obsticle'
+          text='Obstacle'
           icon={
             <polygon
-              className='obsticle'
+              className='obstacle'
               points={BASE_HEX_POINTS}
               pointerEvents='none'
             />
           }
           tooltip={
             <React.Fragment>
-              Left-click the board to add or remove an obsticle.
+              Left-click the board to add or remove an obstacle.
               <p/>
               Right-click any overlay tile to remove it.
             </React.Fragment>

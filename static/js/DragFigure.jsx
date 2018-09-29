@@ -103,9 +103,7 @@ export default class DragFigure extends React.PureComponent {
   }
 
   render() {
-    if ( !this.state.dragging ) {
-      return null;
-    }
+    if ( !this.state.dragging ) return null;
 
     return (
       <FigureTransform rotate={this.state.rotated} x={this.state.x} y={this.state.y}>

@@ -19,5 +19,5 @@ export default function HexGrid( props ) {
       /> );
     }
   }
-  return <g>{hexes}</g>;
+  return <React.Fragment>{hexes}</React.Fragment>;
 }

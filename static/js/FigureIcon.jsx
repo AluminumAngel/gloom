@@ -9,6 +9,8 @@ const CLASS_NAMES = [
   'monster ',
   'active-character ',
   'active-monster ',
+  'active-character ',
+  'active-monster ',
 ];
 
 const ACTIVE_MONSTER_TEXT = [
@@ -27,10 +29,13 @@ export default function FigureIcon( props ) {
   const className = CLASS_NAMES[props.figure - BRUSH.FIRST_FIGURE_BRUSH] + props.className;
   var text;
   if ( props.figure === BRUSH.ACTIVE_MONSTER ) {
-    text = ACTIVE_MONSTER_TEXT[props.flying];    
+    text = ACTIVE_MONSTER_TEXT[props.flying];
   }
   else if ( props.figure === BRUSH.ACTIVE_CHARACTER ) {
-    text = ACTIVE_CHARACTER_TEXT[props.flying];    
+    text = ACTIVE_CHARACTER_TEXT[props.flying];
+  }
+  else if ( props.figure === BRUSH.MONSTER_DESTINATION || props.figure === BRUSH.CHARACTER_DESTINATION ) {
+    text = '\u2715';
   }
   else if ( props.activeFaction ) {
     if ( props.figure === BRUSH.MONSTER ) {

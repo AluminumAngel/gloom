@@ -3,15 +3,11 @@ import { UncontrolledTooltip } from 'reactstrap';
 import axios from 'axios';
 import * as C from './defines';
 import * as BRUSH from './brushes';
+import HexUtils from './HexUtils';
 import AOEHexGrid from './AOEHexGrid';
-import BorderGrid from './BorderGrid';
 import BrushPicker from './BrushPicker';
-import DragFigure from './DragFigure';
-import FigureGrid from './FigureGrid';
-import HexGrid from './HexGrid';
-import NumberSelector from './NumberSelector';
-import OverlayHexGrid from './OverlayHexGrid';
-import WallGrid from './WallGrid';
+import Grid from './Grid';
+import PropertyEditor from './PropertyEditor';
 
 const DISPLAY_ALL_ACTIONS = -1;
 const NULL_INDEX = -1;
@@ -27,70 +23,6 @@ const ACTION_REQUEST_SOLUTION = 5;
 const ACTION_REQUEST_START_VIEWS = 6;
 const ACTION_REQUEST_SOLUTION_VIEWS = 7;
 const ACTION_NONE_REQUIRED = 8;
-// const ACTION_NAMED = [
-//   'ACTION_WAITING_ON_SOLUTION',
-//   'ACTION_WAITING_ON_VIEW',
-//   'ACTION_NO_ACTIVE_FIGURE',
-//   'ACTION_SCENARIO_TOO_COMPLEX',
-//   'ACTION_NO_REQUEST',
-//   'ACTION_REQUEST_SOLUTION',
-//   'ACTION_REQUEST_START_VIEWS',
-//   'ACTION_REQUEST_SOLUTION_VIEWS',
-//   'ACTION_NONE_REQUIRED',
-// ];
-
-const MOVE_OPTIONS = [
-  [ 0, 'none' ],
-  [ 1, '1' ],
-  [ 2, '2' ],
-  [ 3, '3' ],
-  [ 4, '4' ],
-  [ 5, '5' ],
-  [ 6, '6' ],
-  [ 7, '7' ],
-  [ 8, '8' ],
-  [ 9, '9' ],
-];
-const RANGE_OPTIONS = [
-  [ 0, 'melee' ],
-  [ 1, '1' ],
-  [ 2, '2' ],
-  [ 3, '3' ],
-  [ 4, '4' ],
-  [ 5, '5' ],
-  [ 6, '6' ],
-  [ 7, '7' ],
-  [ 8, '8' ],
-  [ 9, '9' ],
-];
-const TARGET_OPTIONS = [
-  [ 0, 'no attack' ],
-  [ 1, '1' ],
-  [ 2, '2' ],
-  [ 3, '3' ],
-  [ 4, '4' ],
-  [ 5, '5' ],
-];
-const FLYING_OPTIONS = [
-  [ 0, 'none' ],
-  [ 1, 'jumping' ],
-  [ 2, 'flying' ],
-];
-const MUDDLED_OPTIONS = [
-  [ 0, 'no' ],
-  [ 1, 'yes' ],
-];
-const INITIATIVE_OPTIONS = [
-  [ 1, '1' ],
-  [ 2, '2' ],
-  [ 3, '3' ],
-  [ 4, '4' ],
-  [ 5, '5' ],
-  [ 6, '6' ],
-  [ 7, '7' ],
-  [ 8, '8' ],
-  [ MAX_INITIATIVE, '9' ],
-];
 
 const ORDINAL_SUFFIXES = [
   'th',
@@ -128,6 +60,10 @@ const STATE_KEYS = [
   // tools state
   // 'brush',
   'rotate_grid',
+  // 'show_focus',
+  // 'show_destination',
+  // 'show_sightline',
+  // 'show_obstruction',
   // 'show_movement',
   // 'show_reach',
   // 'show_sight',
@@ -189,6 +125,10 @@ export default class MapEditor extends React.PureComponent {
       // tools state
       brush: BRUSH.ACTIVE_FIGURE,
       rotate_grid: false,
+      show_focus: false,
+      show_destination: false,
+      show_sightline: true,
+      show_obstruction: true,
       show_movement: !START_IN_LOS_MODE,
       show_reach: false,
       show_sight: START_IN_LOS_MODE,
@@ -223,6 +163,13 @@ export default class MapEditor extends React.PureComponent {
       display_moves: Array( C.GRID_SIZE ).fill( false ),
       display_attacks: Array( C.GRID_SIZE ).fill( false ),
       display_aoe: Array( C.GRID_SIZE ).fill( false ),
+      display_focuses: Array( C.GRID_SIZE ).fill( false ),
+      display_destinations: Array( C.GRID_SIZE ).fill( false ),
+      display_sightline_lines: Array(),
+      display_sightline_points: Array(),
+      display_obstruction_lines: Array(),
+      display_obstruction_clear_points: Array(),
+      display_obstruction_blocked_points: Array(),
       display_reach: Array( C.GRID_SIZE ).fill( false ),
       display_sight: Array( C.GRID_SIZE ).fill( false ),
     };
@@ -762,6 +709,30 @@ export default class MapEditor extends React.PureComponent {
     this.setReachSightDisplayed( this.state.show_movement, false, !this.state.show_sight )
   };
 
+  handleDisplayDestinationChanged = () => {
+    this.setState( {
+      'show_destination': !this.state.show_destination,
+    } );
+  };
+
+  handleDisplayFocusChanged = () => {
+    this.setState( {
+      'show_focus': !this.state.show_focus,
+    } );
+  };
+
+  handleDisplayobstructionLinesChanged = () => {
+    this.setState( {
+      'show_obstruction': !this.state.show_obstruction,
+    } );
+  };
+
+  handleDisplaysightlineLinesChanged = () => {
+    this.setState( {
+      'show_sightline': !this.state.show_sightline,
+    } );
+  };
+
   handleActiveFactionChanged = () => {
     var figures = this.state.figures;
     if ( this.state.active_figure_index !== NULL_INDEX ) {
@@ -937,6 +908,12 @@ export default class MapEditor extends React.PureComponent {
     var moves = Array( C.GRID_SIZE ).fill( false );
     var attacks = Array( C.GRID_SIZE ).fill( false );
     var aoe = Array( C.GRID_SIZE ).fill( false );
+    var focuses = Array( C.GRID_SIZE ).fill( false );
+    var destinations = Array( C.GRID_SIZE ).fill( false );
+    var sightline_lines = new Set();
+    var obstruction_lines = new Set();
+    var obstruction_clear_points = new Set();
+    var obstruction_blocked_points = new Set();
     var reach = Array( C.GRID_SIZE ).fill( false );
     var sight = Array( C.GRID_SIZE ).fill( false );
 
@@ -950,6 +927,24 @@ export default class MapEditor extends React.PureComponent {
             } );
             solution_actions[index].aoe.forEach( ( location ) => {
               aoe[location] = true;
+            } );
+            solution_actions[index].focuses.forEach( ( location ) => {
+              focuses[location] = true;
+            } );
+            solution_actions[index].destinations.forEach( ( location ) => {
+              destinations[location] = true;
+            } );
+            solution_actions[index].sightlines.forEach( ( line ) => {
+              sightline_lines.add( line );
+            } );
+            solution_actions[index].obstruction_lines.forEach( ( line ) => {
+              obstruction_lines.add( line );
+            } );
+            solution_actions[index].obstruction_clear_points.forEach( ( point ) => {
+              obstruction_clear_points.add( point );
+            } );
+            solution_actions[index].obstruction_blocked_points.forEach( ( point ) => {
+              obstruction_blocked_points.add( point );
             } );
             if ( show_reach && solution_actions_reach ) {
               solution_actions_reach[index].forEach( ( range ) => {
@@ -974,6 +969,24 @@ export default class MapEditor extends React.PureComponent {
           } );
           solution_actions[action_displayed].aoe.forEach( ( location ) => {
             aoe[location] = true;
+          } );
+          solution_actions[action_displayed].focuses.forEach( ( location ) => {
+            focuses[location] = true;
+          } );
+          solution_actions[action_displayed].destinations.forEach( ( location ) => {
+            destinations[location] = true;
+          } );
+          solution_actions[action_displayed].sightlines.forEach( ( line ) => {
+            sightline_lines.add( line );
+          } );
+          solution_actions[action_displayed].obstruction_lines.forEach( ( line ) => {
+            obstruction_lines.add( line );
+          } );
+          solution_actions[action_displayed].obstruction_clear_points.forEach( ( point ) => {
+            obstruction_clear_points.add( point );
+          } );
+          solution_actions[action_displayed].obstruction_blocked_points.forEach( ( point ) => {
+            obstruction_blocked_points.add( point );
           } );
           if ( show_reach && solution_actions_reach ) {
             solution_actions_reach[action_displayed].forEach( ( range ) => {
@@ -1009,6 +1022,13 @@ export default class MapEditor extends React.PureComponent {
       }
     }
 
+    var sightline_points = new Set();
+    sightline_lines.forEach( ( line ) => {
+      const points = HexUtils.getLinePoints( line );
+      sightline_points.add( points[0] );
+      sightline_points.add( points[1] );
+    } );
+
     var display_state = {
       action_displayed: action_displayed,
       show_movement: show_movement,
@@ -1017,6 +1037,13 @@ export default class MapEditor extends React.PureComponent {
       display_moves: moves,
       display_attacks: attacks,
       display_aoe: aoe,
+      display_focuses: focuses,
+      display_destinations: destinations,
+      display_sightline_lines: Array.from( sightline_lines ),
+      display_sightline_points: Array.from( sightline_points ),
+      display_obstruction_lines: Array.from( obstruction_lines ),
+      display_obstruction_clear_points: Array.from( obstruction_clear_points ),
+      display_obstruction_blocked_points: Array.from( obstruction_blocked_points ),
       display_reach: reach,
       display_sight: sight,
     };
@@ -1072,7 +1099,7 @@ export default class MapEditor extends React.PureComponent {
     add_elements( this.state.figures, 'characters', BRUSH.CHARACTER );
     add_elements( this.state.figures, 'monsters', BRUSH.MONSTER  );
     add_elements( this.state.grid, 'walls', BRUSH.WALL );
-    add_elements( this.state.grid, 'obsticles', BRUSH.OBSTICLE );
+    add_elements( this.state.grid, 'obstacles', BRUSH.OBSTACLE );
     add_elements( this.state.grid, 'traps', BRUSH.TRAP );
     add_elements( this.state.grid, 'hazardous', BRUSH.HAZARDOUS_TERRAIN );
     add_elements( this.state.grid, 'difficult', BRUSH.DIFFICULT_TERRAIN );
@@ -1156,7 +1183,7 @@ export default class MapEditor extends React.PureComponent {
   //   add_elements( figures, 'characters', BRUSH.CHARACTER );
   //   add_elements( figures, 'monsters', BRUSH.MONSTER  );
   //   add_elements( grid, 'walls', BRUSH.WALL );
-  //   add_elements( grid, 'obsticles', BRUSH.OBSTICLE );
+  //   add_elements( grid, 'obstacles', BRUSH.OBSTACLE );
   //   add_elements( grid, 'traps', BRUSH.TRAP );
   //   add_elements( grid, 'hazardous', BRUSH.HAZARDOUS_TERRAIN );
   //   add_elements( grid, 'difficult', BRUSH.DIFFICULT_TERRAIN );
@@ -1264,7 +1291,6 @@ export default class MapEditor extends React.PureComponent {
       } );
   };
 
-  // TODO: clean
   handleRequestViewsForStart = () => {
     var viewpoints = [ this.state.active_figure_index ];
 
@@ -1283,7 +1309,6 @@ export default class MapEditor extends React.PureComponent {
     } );
     axios.put( URL_FOR.views, views_request )
       .then( ( response ) => {
-        // TODO: this is an extra setState()
         this.setState( {
           views_pending: false,
         } );
@@ -1428,6 +1453,9 @@ export default class MapEditor extends React.PureComponent {
       case ACTION_REQUEST_START_VIEWS:
       case ACTION_REQUEST_SOLUTION_VIEWS:
         status_label = <span><div className='mr-2 throbber'></div> Calculating...</span>
+        if ( this.state.show_movement && this.state.solution_actions ) {
+          display_move_solution = true;
+        }
         break;
 
       case ACTION_NO_ACTIVE_FIGURE:
@@ -1441,25 +1469,23 @@ export default class MapEditor extends React.PureComponent {
 
       case ACTION_NONE_REQUIRED:
         var status_message;
-        if ( this.state.show_movement ) {
+        if ( this.state.show_movement && this.state.solution_actions ) {
           display_move_solution = true;
-          if ( this.state.solution_actions ) {
-            if ( this.state.solution_actions.length === 1 ) {
-              if ( this.state.solution_actions[0].attacks.length === 0 && this.state.solution_actions[0].move === this.state.active_figure_index ) {
-                status_message = 'The ' + active_faction_string + ' takes no action.';
-              }
-              else {
-                status_message = 'Showing the only movement option.';
-              }
-            }
-            else if ( this.state.action_displayed === DISPLAY_ALL_ACTIONS ) {
-              status_message = 'Showing ' + getNumberWord( solution_count ) + ' movement options.';
+          if ( this.state.solution_actions.length === 1 ) {
+            if ( this.state.solution_actions[0].attacks.length === 0 && this.state.solution_actions[0].move === this.state.active_figure_index ) {
+              status_message = 'The ' + active_faction_string + ' takes no action.';
             }
             else {
-              status_message = 'Showing the ' + getOrdinalWord( this.state.action_displayed + 1 ) + ' of ' + getNumberWord( solution_count ) + ' movement options.';
-              if ( this.state.solution_actions[this.state.action_displayed].move === this.state.active_figure_index && this.state.solution_actions[this.state.action_displayed].attacks.length === 0 ) {
-                status_message += ' No action taken.';
-              }
+              status_message = 'Showing the only movement option.';
+            }
+          }
+          else if ( this.state.action_displayed === DISPLAY_ALL_ACTIONS ) {
+            status_message = 'Showing ' + getNumberWord( solution_count ) + ' movement options.';
+          }
+          else {
+            status_message = 'Showing the ' + getOrdinalWord( this.state.action_displayed + 1 ) + ' of ' + getNumberWord( solution_count ) + ' movement options.';
+            if ( this.state.solution_actions[this.state.action_displayed].move === this.state.active_figure_index && this.state.solution_actions[this.state.action_displayed].attacks.length === 0 ) {
+              status_message += ' No action taken.';
             }
           }
         }
@@ -1476,23 +1502,10 @@ export default class MapEditor extends React.PureComponent {
         break;
     }    
 
-    const x_margin = C.GRID_MARGIN + ( this.state.rotate_grid ? 0 : C.GRID_DELTA );
-    const y_margin = C.GRID_MARGIN + ( this.state.rotate_grid ? C.GRID_DELTA : 0 );
-    const view_box = ( -x_margin ) + ' ' + ( -y_margin ) + ' ' + ( C.GRID_EXTENT ) + ' ' + ( C.GRID_EXTENT );
-
-    const x_fade_margin = C.GRID_MARGIN + C.GRID_DELTA;
-    const y_fade_margin = C.GRID_MARGIN;
-
-    var class_name = 'container-fluid';
-    if ( this.drag_ref.current && this.drag_ref.current.active ) {
-      class_name += ' grabbing';
-    }
-
     return (
-      <div className={class_name}>
+      <div className='container-fluid'>
         <div className='d-flex'>
           <div className='mt-5'>
-
               <BrushPicker
                 flying={this.state.flying}
                 initiative={this.state.next_initiative}
@@ -1500,81 +1513,21 @@ export default class MapEditor extends React.PureComponent {
                 activeFaction={this.state.active_faction}
                 onSelection={this.handleBrushSelection}
               />
-
-              <NumberSelector
-                label='Move'
-                options={MOVE_OPTIONS}
-                value={this.state.move}
-                onChange={this.handleMoveChange}
-                tooltip={
-                  <React.Fragment>
-                    Set the movement distance of the current turn.
-                    <p/>
-                    If the current turn does not include a move, select none.
-                  </React.Fragment>
-                }
-              />
-              <NumberSelector
-                label='Range'
-                options={RANGE_OPTIONS}
-                value={this.state.range}
-                onChange={this.handleRangeChange}
-                tooltip={
-                  <React.Fragment>
-                    Set the range of the current attack.
-                  </React.Fragment>
-                }
-              />
-              <NumberSelector
-                label='Target'
-                options={TARGET_OPTIONS}
-                value={this.state.target}
-                onChange={this.handleTargetChange}
-                tooltip={
-                  <React.Fragment>
-                    Set the number of targets of the current attack.
-                    <p/>
-                    If the current turn does not include an attack, select no attack.
-                    <p/>
-                    In the case of an area of effect attack, targets beyond the first do not use the area of effect.
-                    <p/>
-                    A target setting of four or greater on a ranged area of effect attack is too complex to solve in a timely manner.
-                  </React.Fragment>
-                }
-              />
-              <NumberSelector
-                label='Trait'
-                options={FLYING_OPTIONS}
-                value={this.state.flying}
-                onChange={this.handleFlyingChange}
-                tooltip={
-                  <React.Fragment>
-                    Set the movement trait of the current move.
-                  </React.Fragment>
-                }
-              />
-              <NumberSelector
-                label='Muddled'
-                options={MUDDLED_OPTIONS}
-                value={this.state.muddled}
-                onChange={this.handleMuddledChange}
-                tooltip={
-                  <React.Fragment>
-                    Set whether the active {active_faction_string} is muddled.
-                  </React.Fragment>
-                }
-              />
-              <NumberSelector
-                label='Initiative'
-                options={INITIATIVE_OPTIONS}
-                value={this.state.selection == -1 ? 1 : this.state.initiatives[this.state.selection]}
-                disabled={this.state.selection == -1}
-                onChange={this.handleInitiativeChange}
-                tooltip={
-                  <React.Fragment>
-                    Set the initiative rank of the selected {inactive_faction_string}.
-                  </React.Fragment>
-                }
+              <PropertyEditor
+                activeFactionString={active_faction_string}
+                inactiveFactionString={inactive_faction_string}
+                move={this.state.move}
+                range={this.state.range}
+                target={this.state.target}
+                flying={this.state.flying}
+                muddled={this.state.muddled}
+                initiative={this.state.selection === -1 ? -1 : this.state.initiatives[this.state.selection]}
+                onMoveChange={this.handleMoveChange}
+                onRangeChange={this.handleRangeChange}
+                onTargetChange={this.handleTargetChange}
+                onFlyingChange={this.handleFlyingChange}
+                onMuddledChange={this.handleMuddledChange}
+                onInitiativeChange={this.handleInitiativeChange}
               />
           </div>
 
@@ -1635,82 +1588,43 @@ export default class MapEditor extends React.PureComponent {
               </div>
             </div>
 
-            <svg
-              id='grid_svg'
-              width={C.GRID_EXTENT}
-              height={C.GRID_EXTENT}
-              viewBox={view_box}
+            <Grid
+              rotateGrid={this.state.rotate_grid}
+              brush={this.state.brush}
+              grid={this.state.grid}
+              walls={this.state.walls}
+              aoe={this.state.display_aoe}
+              reach={this.state.show_reach ? this.state.display_reach : null}
+              sight={this.state.show_sight ? this.state.display_sight : null}
+              figures={this.state.figures}
+              initiatives={this.state.initiatives}
+              displaySolution={display_solution}
+              displayMoveSolution={display_move_solution}
+              moves={this.state.display_moves}
+              destinations={this.state.show_destination ? this.state.display_destinations : null}
+              sightlineLines={this.state.show_sightline ? this.state.display_sightline_lines : null}
+              sightlinePoints={this.state.show_sightline ? this.state.display_sightline_points : null}
+              obstructionLines={this.state.show_obstruction ? this.state.display_obstruction_lines : null}
+              obstructionClearPoints={this.state.show_obstruction ? this.state.display_obstruction_clear_points : null}
+              obstructionBlockedPoints={this.state.show_obstruction ? this.state.display_obstruction_blocked_points : null}
+              attacks={this.state.display_attacks}
+              focuses={this.state.show_focus ? this.state.display_focuses : null}
+              flying={this.state.flying}
+              selection={this.state.selection}
+              rotate={this.state.rotate_grid}
+              dragSourceIndex={this.state.drag_source_index}
+              activeFaction={this.state.active_faction}
+              activeFigureIndex={this.state.active_figure_index}
+              dragRef={this.drag_ref}
               onMouseUp={this.handleGridMouseUp}
               onMouseLeave={this.handleGridMouseLeave}
-            >
-              <defs>
-                <linearGradient id='fadeGrad' y2='1' x2='0'>
-                  <stop offset='0' stopColor='black'/>
-                  <stop offset='1' stopColor='white'/>
-                </linearGradient>
-                <linearGradient id='fadeGradR' y2='1' x2='0'>
-                  <stop offset='0' stopColor='white'/>
-                  <stop offset='1' stopColor='black'/>
-                </linearGradient>
-                <linearGradient id='fadeGradH' y2='0' x2='1'>
-                  <stop offset='0' stopColor='black'/>
-                  <stop offset='1' stopColor='white'/>
-                </linearGradient>
-                <linearGradient id='fadeGradHR' y2='0' x2='1'>
-                  <stop offset='0' stopColor='white'/>
-                  <stop offset='1' stopColor='black'/>
-                </linearGradient>
-                <mask id='edge_fade' maskContentUnits='userSpaceOnUse'>
-                  <rect x={-x_fade_margin} y={-y_fade_margin} width={x_fade_margin} height={C.GRID_SCALED_HEIGHT + 2 * y_fade_margin} fill='url(#fadeGradH)'/>
-                  <rect x={C.GRID_SCALED_WIDTH} y={-y_fade_margin} width={x_fade_margin} height={C.GRID_SCALED_HEIGHT + 2 * y_fade_margin} fill='url(#fadeGradHR)'/>
-                  <rect x={0} y={-y_fade_margin} width={C.GRID_SCALED_WIDTH} height={y_fade_margin} fill='url(#fadeGrad)'/>
-                  <rect x={0} y={C.GRID_SCALED_HEIGHT} width={C.GRID_SCALED_WIDTH} height={y_fade_margin} fill='url(#fadeGradR)'/>
-                  <rect x={0} y={0} width={C.GRID_SCALED_WIDTH} height={C.GRID_SCALED_HEIGHT} fill='white'/>
-                </mask>
-              </defs>
+              onHexClick={this.handleHexClick}
+              onHexMouseDown={this.handleHexMouseDown}
+              onHexMouseUp={this.handleHexMouseUp}
+              onWallClick={this.handleWallClick}
+              onDragStart={this.handleDragStart}
+            />
 
-              <g transform={this.state.rotate_grid ? C.GRID_TRANSFORM : ''}>
-                <HexGrid
-                  grid={this.state.grid}
-                  activeHexes={this.state.brush != BRUSH.THIN_WALL}
-                  onHexClick={this.handleHexClick}
-                  onHexMouseDown={this.handleHexMouseDown}
-                  onHexMouseUp={this.handleHexMouseUp}
-                />
-                <BorderGrid/>
-                <WallGrid
-                  walls={this.state.walls}
-                  activeWalls={this.state.brush == BRUSH.THIN_WALL}
-                  onWallClick={this.handleWallClick}
-                />
-                <OverlayHexGrid
-                  displaySolution={display_solution}
-                  showReach={this.state.show_reach}
-                  showSight={this.state.show_sight}
-                  aoe={this.state.display_aoe}
-                  reach={this.state.display_reach}
-                  sight={this.state.display_sight}
-                />
-                <FigureGrid
-                  figures={this.state.figures}
-                  initiatives={this.state.initiatives}
-                  displaySolution={display_move_solution}
-                  moves={this.state.display_moves}
-                  attacks={this.state.display_attacks}
-                  flying={this.state.flying}
-                  selection={this.state.selection}
-                  rotate={this.state.rotate_grid}
-                  dragSourceIndex={this.state.drag_source_index}
-                  activeFaction={this.state.active_faction}
-                  activeFigureIndex={this.state.active_figure_index}
-                />
-                <DragFigure
-                  ref={this.drag_ref}
-                  activeFaction={this.state.active_faction}
-                  onDragStart={this.handleDragStart}
-                />
-              </g>        
-            </svg>
             <div className='mt-2 d-flex'>
               <button
                 type='button'
@@ -1721,7 +1635,7 @@ export default class MapEditor extends React.PureComponent {
                 Switch Active Faction
               </button>
               <UncontrolledTooltip placement='top' delay={C.TOOLTIP_DELAY} target='switch-aggressors-button'>
-                When set, the characters become the active faction. Use to determine the attack of an allied summon.
+                When set, the characters are the active faction. Use to determine the attack of an allied summon.
               </UncontrolledTooltip>
               <button
                 type='button'
@@ -1745,7 +1659,7 @@ export default class MapEditor extends React.PureComponent {
               <g transform={C.AOE_TRANSFORM}>
                 <AOEHexGrid
                   grid={this.state.aoe_grid}
-                  melee={this.state.range == 0}
+                  melee={this.state.range === 0}
                   onHexClick={this.handleAOEHexClick}
                 />
               </g>
@@ -1759,20 +1673,18 @@ export default class MapEditor extends React.PureComponent {
                 Clear Area of Effect
               </button>
             </div>
-           <div className='w-75 mt-auto mb-5 btn-group-vertical'>
+            <div className='w-75 mt-auto mb-5 btn-group-vertical'>
               <button
                 type='button'
-                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_movement ? ' active' : '' )}
-                id='show-movement-button'
-                onClick={this.handleDisplayMovementChanged}
+                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_sight ? ' active' : '' )}
+                id='show-sight-button'
+                onClick={this.handleDisplaySightChanged}
               >
-                Show Movement
+                Show Line of Sight
               </button>
-              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-movement-button'>
+              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-sight-button'>
                 <div className='text-left'>
-                  Show the movement options for the active {active_faction_string}.
-                  <p/>
-                  Unset to test range or line of sight from the active {active_faction_string}'s initial location.
+                  Show hexes within the active {active_faction_string}'s line of sight.
                 </div>
               </UncontrolledTooltip>
               <button
@@ -1785,22 +1697,82 @@ export default class MapEditor extends React.PureComponent {
               </button>
               <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-reach-button'>
                 <div className='text-left'>
-                  Show the range of the active {active_faction_string}'s attack.
+                  Show hexes within the range of the active {active_faction_string}'s attack.
                   <p/>
                   For a ranged area of effect attack, only a single hex of the area needs to be within the attack's range, though all targets must be within line of sight.
                 </div>
               </UncontrolledTooltip>
               <button
                 type='button'
-                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_sight ? ' active' : '' )}
-                id='show-sight-button'
-                onClick={this.handleDisplaySightChanged}
+                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_movement ? ' active' : '' )}
+                id='show-movement-button'
+                onClick={this.handleDisplayMovementChanged}
               >
-                Show Line of Sight
+                Show Movement
               </button>
-              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-sight-button'>
+              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-movement-button'>
                 <div className='text-left'>
-                  Show the active {active_faction_string}'s line of sight.
+                  Show movement options for the active {active_faction_string}.
+                  <p/>
+                  Unset to test range or line of sight from the active {active_faction_string}'s initial location.
+                </div>
+              </UncontrolledTooltip>
+              <button
+                type='button'
+                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_focus ? ' active' : '' )}
+                id='show-focus-button'
+                onClick={this.handleDisplayFocusChanged}
+                disabled={!this.state.show_movement}
+              >
+                Show Focus
+              </button>
+              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-focus-button'>
+                <div className='text-left'>
+                  Show the active {active_faction_string}'s focus.
+                </div>
+              </UncontrolledTooltip>
+              <button
+                type='button'
+                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_destination ? ' active' : '' )}
+                id='show-destination-button'
+                onClick={this.handleDisplayDestinationChanged}
+                disabled={!this.state.show_movement}
+              >
+                Show Destination
+              </button>
+              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-destination-button'>
+                <div className='text-left'>
+                  Show the active {active_faction_string}'s destination when the {active_faction_string} cannot reach it.
+                </div>
+              </UncontrolledTooltip>
+              <button
+                type='button'
+                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_sightline ? ' active' : '' )}
+                id='show-unblocked-lines-button'
+                onClick={this.handleDisplaysightlineLinesChanged}
+                disabled={!this.state.show_movement}
+              >
+                Show Sightline
+              </button>
+              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-unblocked-lines-button'>
+                <div className='text-left'>
+                  Show a sightline for the active {active_faction_string}'s attack.
+                </div>
+              </UncontrolledTooltip>
+              <button
+                type='button'
+                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_obstruction ? ' active' : '' )}
+                id='show-blocked-lines-button'
+                onClick={this.handleDisplayobstructionLinesChanged}
+                disabled={!this.state.show_movement}
+              >
+                Show Obstruction
+              </button>
+              <UncontrolledTooltip placement='left-end' delay={C.TOOLTIP_DELAY} target='show-blocked-lines-button'>
+                <div className='text-left'>
+                  Show obstructed sightlines when the active {active_faction_string}'s focus could be attacked excepting that it is not in line of sight.
+                  <p/>
+                  Line of sight is obstructed between two hexes when all lines between their verticies start on, end on, or touch a wall.
                 </div>
               </UncontrolledTooltip>
             </div>

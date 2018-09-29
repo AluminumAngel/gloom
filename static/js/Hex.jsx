@@ -3,7 +3,7 @@ import HexUtils from './HexUtils';
 
 const CLASS_NAMES = [
   'empty',
-  'obsticle',
+  'obstacle',
   'wall',
   'trap',
   'hazardous-terrain',

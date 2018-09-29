@@ -1,18 +1,48 @@
 // next:
-// -- check in to git!
-// -- check in to p4!
-// -- move los overlays under thin walls, but keep aoe overlays over thin walls (???)
-// - drag and drop cursor often broken!?
+// - try selection with standard figure stroke now (since we have triangles)
+// - unblocked los line visualitzation
 
-// variable name cleanup: solution is overloaded
-// - any solution
-// - action (vs views) solution
+// - check obstruction perf again, in aoe situations
 
-// button to show destinations
-// button to show focuses
+// - switch between blocked and unblocked lines correctly
+// - fix when i show blocked lines (use distance and not always focus)
+// - measure overhead of sight line calculation
+// - optimize sight lines to not always calculate
+// - i like unblocked sight lines; decide after completion if i like blocked ones
+// - for blocked, color idea:
+// --- red dots for blocked vertix
+// --- green dot for open vertex w/ red line for blocked line
+// --- use closest enemy in range, not focus (cause focus doesn't work)
+// - for blocked los, i'm drawing way more circles than i need to; do i care?
+// - two buttons:
+// --- Show unblocked Sight Lines
+// --- Show Blocked Sight Lines
+// - unblocked_lines => unblocked_lines
+
+// - tooltip is too big and is off screen
+// - also, reconsider tooltip text
+
+// CLEAN
+// - all server line code
+// - SightLine.jsx and SightLines.jsx
+
+// - share on subreddit
+// - share all the other places that BGG post says to share
+// - move los overlays under thin walls, but keep aoe overlays over thin walls (???)
+
 // button to show the clean line for line of sight targets
 // -- show line that is most parallel with line between hex centers)\
 // -- and that is shortest
+
+// think about:
+// -- putting # of traps/hazzards hit by move in status text
+// -- advanced options menu
+// -- adv option:  base-2-base LOS house rule (fin mentinons on BGG first)
+// -- adv scenario setting:  # of traps/hazzards to kill active character
+// ---- then allow character to move to death (as per that rule i'm ignoring)
+// ---- then show in status whether character dies
+// ---- defaults to infinity
+// ---- do hazzards and all traps do equal damage (i suspect not)
 
 // when sending scenario to client app, add walls around smaller board?
 // - so all solutions are still valid
@@ -25,15 +55,15 @@
 // - http://json-schema.org/implementations.html#validators
 
 // feature - "Show LOS lines" button (draw actual vertex to vertex lines for attacks)
-// feature - "show focus and destination" buttons
 
 // top todos:
-// -- squares monster can attack given its current attack
 // -- server down/fail behaviors
 // -- scenario loader
 // -- cancel and resend request (see email for idea)
-// -- harden communiction ends
+// -- harden communiction ends (validate json; see above link)
 // -- footer with credits, email, etc.
+
+// handleRequestViewsForStart and friends call setState twice; fix
 
 // impacted by this reactstrap issue
 // -- https://github.com/react-community/react-native-safe-area-view/issues/28
@@ -56,6 +86,13 @@
 // -- is this doable?
 
 // check email for many notes; move here
+
+// brushes for multi-hex map tiles
+// --- see the tile move around as you move the mouse (flashing?)
+// --- click to stamp
+// --- kind of want undo then, given how hard it is to erase
+
+// add undo button
 
 // test scenario loader
 // -- search
@@ -102,6 +139,11 @@
 
 // # test idea - monster prioritizes disadvantage over extra aoe_targets
 // # test idea - monster prioritizes better focus-rank extra target over disadvantage on extra aoe_targets
+
+// share scenario button
+// -- button that copy a link to clipboard (and shows it)
+// -- hitting that URL recreates the scenario
+// -- basically, allow scenario to be encoded in URL
 
 import React from 'react';
 import ReactDOM from 'react-dom';
