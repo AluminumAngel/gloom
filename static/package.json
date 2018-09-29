@@ -1,6 +1,6 @@
 {
   "name": "gloom",
-  "version": "2.1.1",
+  "version": "2.2.4",
   "description": "A Gloomhaven monster mover web app and server.",
   "main": "index.js",
   "scripts": {
