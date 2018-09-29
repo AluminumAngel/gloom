@@ -1,5 +1,5 @@
-import sys, collections, textwrap, itertools
-import senarios
+import sys, collections, textwrap, itertools, pprint
+import scenarios
 from utils import *
 from settings import *
 from print_map import *
@@ -12,7 +12,7 @@ class Scenario:
     self.show_each_action_separately = False
 
     self.visibility_cache = {}
-    self.path_cache = [ {}, {}, {} ]
+    self.path_cache = [ {}, {}, {}, {} ]
 
   def prepare_map( self ):
     self.setup_vertices_list()
@@ -79,7 +79,7 @@ class Scenario:
     packed_scenario = {
       'map': {
         'walls': get_locations( self.contents, 'X' ),
-        'obsticles': get_locations( self.contents, 'O' ),
+        'obstacles': get_locations( self.contents, 'O' ),
         'traps': get_locations( self.contents, 'T' ),
         'hazardous': get_locations( self.contents, 'H' ),
         'difficult': get_locations( self.contents, 'D' ),
@@ -116,7 +116,7 @@ class Scenario:
         # grid[get_index( _[0], _[1] )] = content
 
     add_elements( self.contents, 'walls', 'X' )
-    add_elements( self.contents, 'obsticles', 'O' )
+    add_elements( self.contents, 'obstacles', 'O' )
     add_elements( self.contents, 'traps', 'T' )
     add_elements( self.contents, 'hazardous', 'H' )
     add_elements( self.contents, 'difficult', 'D' )
@@ -150,9 +150,13 @@ class Scenario:
       s = remap[_[1]]
       self.walls[_[0]][s] = True
 
-    for i, j in zip( packed_scenario['map']['initiatives'], packed_scenario['map']['characters'] ):
+    if switch_factions:
+      victims = packed_scenario['map']['monsters']
+    else:
+      victims = packed_scenario['map']['characters']
+
+    for i, j in zip( packed_scenario['map']['initiatives'], victims ):
       self.initiatives[j] = int( i )
-      # self.initiatives[get_index(j[0],j[1])] = int( i )
 
     self.prepare_map()
 
@@ -314,6 +318,25 @@ class Scenario:
       for row in range( bounds[0], bounds[2] ):
         yield column_location + row
 
+  def test_line( self, bounds, vertex_position_a, vertex_position_b ):
+    if vertex_position_a == vertex_position_b:
+      return True
+    for location in self.bounding_locations( bounds ):
+      if self.blocks_los( location ):
+        if self.line_hex_intersection( ( vertex_position_a, vertex_position_b ), location ):
+          return False
+      else:
+        for edge in range( 0, 6 ):
+          if self.walls[location][edge]:
+            wall_vertex_a = self.get_vertex( location, edge )
+            wall_vertex_b = self.get_vertex( location, ( edge + 1 ) % 6 )
+            if line_line_intersection( ( vertex_position_a, vertex_position_b ), ( wall_vertex_a, wall_vertex_b ) ):
+              return False
+    return True
+
+  def vertex_blocked( self, location, vertex ):
+    return self.effective_walls[location][vertex] or self.effective_walls[location][( vertex + 5 ) % 6]
+
   def test_los_between_locations( self, location_a, location_b ):
     cache_key = visibility_cache_key( location_a, location_b )
     if cache_key in self.visibility_cache:
@@ -322,43 +345,104 @@ class Scenario:
     bounds = self.calculate_bounds( location_a, location_b )
 
     for vertex_a in range( 0, 6 ):
-      if self.effective_walls[location_a][vertex_a] or self.effective_walls[location_a][( vertex_a + 5 ) % 6]:
+      if self.vertex_blocked( location_a, vertex_a ):
         continue 
-
       vertex_position_a = self.get_vertex( location_a, vertex_a )
 
       for vertex_b in range( 0, 6 ):
-        if self.effective_walls[location_b][vertex_b] or self.effective_walls[location_b][( vertex_b + 5 ) % 6 ]:
+        if self.vertex_blocked( location_b, vertex_b ):
           continue 
-
         vertex_position_b = self.get_vertex( location_b, vertex_b )
 
-        blocked = False
-        
-        if vertex_position_a != vertex_position_b:
-
-          for location in self.bounding_locations( bounds ):
-            if self.blocks_los( location ):
-              if self.line_hex_intersection( ( vertex_position_a, vertex_position_b ), location ):
-                blocked = True
-                break
-            else:
-              for edge in range( 0, 6 ):
-                if self.walls[location][edge]:
-                  wall_vertex_a = self.get_vertex( location, edge )
-                  wall_vertex_b = self.get_vertex( location, ( edge + 1 ) % 6 )
-                  if line_line_intersection( ( vertex_position_a, vertex_position_b ), ( wall_vertex_a, wall_vertex_b ) ):
-                    blocked = True
-                    break
-              if blocked:
-                break
-
-        if not blocked:
+        if self.test_line( bounds, vertex_position_a, vertex_position_b ):
           self.visibility_cache[cache_key] = True
           return True
 
     self.visibility_cache[cache_key] = False
     return False
+
+  def find_shortest_sightline( self, location_a, location_b ):
+    bounds = self.calculate_bounds( location_a, location_b )
+
+    shortest_length = float( 'inf' )
+    shortest_line = None
+
+    for vertex_a in range( 0, 6 ):
+      if self.vertex_blocked( location_a, vertex_a ):
+        continue
+      vertex_position_a = self.get_vertex( location_a, vertex_a )
+
+      for vertex_b in range( 0, 6 ):
+        if self.vertex_blocked( location_b, vertex_b ):
+          continue
+        vertex_position_b = self.get_vertex( location_b, vertex_b )
+
+        length = calculate_distance( vertex_position_a, vertex_position_b )
+        if length < shortest_length:
+
+          if self.test_line( bounds, vertex_position_a, vertex_position_b ):
+            shortest_length = length
+            shortest_line = self.pack_line( location_a, vertex_a, location_b, vertex_b )
+
+    return shortest_line
+
+  def determine_obstruction( self, location_a, location_b ):
+    lines = []
+    blocked_points = []
+    clear_points = []
+
+    for vertex_b in range( 0, 6 ):
+      if self.vertex_blocked( location_b, vertex_b ):
+        blocked_points.append( self.pack_point( location_b, vertex_b ) )
+      else:
+        clear_points.append( self.pack_point( location_b, vertex_b ) )
+
+    bounds = self.calculate_bounds( location_a, location_b )
+
+    for vertex_a in range( 0, 6 ):
+      if self.vertex_blocked( location_a, vertex_a ):
+        continue
+      vertex_position_a = self.get_vertex( location_a, vertex_a )
+
+      for vertex_b in range( 0, 6 ):
+        if self.vertex_blocked( location_b, vertex_b ):
+          continue
+        vertex_position_b = self.get_vertex( location_b, vertex_b )
+
+        if not self.test_line( bounds, vertex_position_a, vertex_position_b ):
+          lines.append( self.pack_line( location_a, vertex_a, location_b, vertex_b ) )
+
+    return lines, blocked_points, clear_points
+
+  def pack_point( self, location, vertex ):
+    if vertex == 2:
+      if self.neighbors[location][2] != -1:
+        location = self.neighbors[location][2]
+        vertex = 0
+    elif vertex == 3:
+      if self.neighbors[location][3] != -1:
+        location = self.neighbors[location][3]
+        vertex = 1
+      elif self.neighbors[location][2] != -1:
+        location = self.neighbors[location][2]
+        vertex = 5
+    elif vertex == 4:
+      if self.neighbors[location][3] != -1:
+        location = self.neighbors[location][3]
+        vertex = 0
+      elif self.neighbors[location][4] != -1:
+        location = self.neighbors[location][4]
+        vertex = 2
+    elif vertex == 5:
+      if self.neighbors[location][4] != -1:
+        location = self.neighbors[location][4]
+        vertex = 1
+    return location * 6 + vertex
+
+  def pack_line( self, location_a, vertex_a, location_b, vertex_b ):
+    point_a = self.pack_point( location_a, vertex_a )
+    point_b = self.pack_point( location_b, vertex_b )
+    return point_a * self.MAP_VERTEX_COUNT + point_b
 
   def find_path_distances( self, start, traversal_test ):
     cache_key = ( start, traversal_test )
@@ -453,7 +537,34 @@ class Scenario:
     self.path_cache[2][cache_key] = distances
     return distances
 
-  def calculate_monster_move( self ):
+  def find_distances( self, start ):
+    cache_key = ( start )
+    if cache_key in self.path_cache[3]:
+      return self.path_cache[3][cache_key]
+
+    distances = [ MAX_VALUE ] * self.MAP_SIZE
+
+    frontier = collections.deque()
+    frontier.append( start )
+    distances[start] = 0
+
+    while not len( frontier ) == 0:
+      current = frontier.popleft()
+      distance = distances[current]
+      neighbors = self.neighbors[current]
+      for edge in range( 0, 6 ):
+        neighbor = neighbors[edge]
+        if neighbor == -1:
+          continue
+        neighbor_distance = distance + 1
+        if neighbor_distance < distances[neighbor]:
+          frontier.append( neighbor )
+          distances[neighbor] = neighbor_distance
+
+    self.path_cache[3][cache_key] = distances
+    return distances
+
+  def calculate_monster_move( self, test ):
     if self.ACTION_RANGE == 0 or self.ACTION_TARGET == 0:
       ATTACK_RANGE = 1
       SUSCEPTIBLE_TO_DISADVANTAGE = False
@@ -516,6 +627,8 @@ class Scenario:
 
     actions = set()
     aoes = {}
+    destinations = {}
+    focus_map = {}
 
     # find active monster
     active_monster = self.figures.index( 'A' )
@@ -650,7 +763,7 @@ class Scenario:
     # players choose among focus ties
     for focus in focuses:
 
-      # find the best group of target based on the following priorities
+      # find the best group of targets based on the following priorities
 
       class t:
         groups = set()
@@ -737,7 +850,7 @@ class Scenario:
                     aoe_targets_disadvantage += int( SUSCEPTIBLE_TO_DISADVANTAGE and self.is_adjacent( location, target ) )
 
               # add non-AoE targets and consider result
-              if len( aoe_targets ) > 0:
+              if aoe_targets:
                 consider_group( PLUS_TARGET, aoe_targets, aoe_targets_of_rank, aoe_targets_disadvantage, aoe_hexes )
 
           else:
@@ -766,7 +879,7 @@ class Scenario:
 
                 # add non-AoE targets and consider result
                 if in_range:
-                  if len( aoe_targets ) > 0:
+                  if aoe_targets:
                     consider_group( PLUS_TARGET, aoe_targets, aoe_targets_of_rank, aoe_targets_disadvantage, aoe_hexes )
 
       # given the target group, find the best destinations to attack from
@@ -862,7 +975,7 @@ class Scenario:
                     aoe_targets_disadvantage += int( SUSCEPTIBLE_TO_DISADVANTAGE and self.is_adjacent( location, target ) )
 
               # add non-AoE targets and consider result
-              if len( aoe_targets ) > 0:
+              if aoe_targets:
                 consider_destination( PLUS_TARGET, aoe_targets, aoe_targets_of_rank, aoe_targets_disadvantage, aoe_hexes )
 
           else:
@@ -891,7 +1004,7 @@ class Scenario:
 
                 # add non-AoE targets and consider result
                 if in_range:
-                  if len( aoe_targets ) > 0:
+                  if aoe_targets:
                     consider_destination( PLUS_TARGET, aoe_targets, aoe_targets_of_rank, aoe_targets_disadvantage, aoe_hexes )
 
       # determine the best move based on the chosen destinations
@@ -904,9 +1017,10 @@ class Scenario:
         else:
           actions_for_this_focus = [ ( _[0], ) for _ in u.destinations ]
           aoes_for_this_focus = { _: [] for _ in actions_for_this_focus }
-
+        destinations_for_this_focus = { _: { _[0] } for _ in actions_for_this_focus }
       else:
         actions_for_this_focus = []
+        destinations_for_this_focus = {}
         for destination in u.destinations:
           actions_for_this_destination = []
           best_move = (
@@ -929,16 +1043,91 @@ class Scenario:
                   best_move = this_move
                   actions_for_this_destination = [ ( location, ) ]
           actions_for_this_focus += actions_for_this_destination
+
+          for action in actions_for_this_destination:
+            if action in destinations_for_this_focus:
+              destinations_for_this_focus[action].add( destination[0] )
+            else:
+              destinations_for_this_focus[action] = { destination[0] }
+
         aoes_for_this_focus = { _: [] for _ in actions_for_this_focus }
 
-      actions |= set( actions_for_this_focus )
+      actions_for_this_focus = set( actions_for_this_focus )
+      actions |= actions_for_this_focus
       aoes.update( aoes_for_this_focus )
+      for action in actions_for_this_focus:
+        if action in destinations:
+          destinations[action] |= destinations_for_this_focus[action]
+        else:
+          destinations[action] = destinations_for_this_focus[action]
+        if action in focus_map:
+          focus_map[action].add( focus )
+        else:
+          focus_map[action] = { focus }
 
     # if we find no actions, stand still
-    if len( actions ) == 0:
+    if not actions:
       action = ( active_monster, )
       actions.add( action )
       aoes[action] = []
+      destinations[action] = {}
+      focus_map[action] = {}
+
+    # calculate sightlines or obstructions
+    sightlines = {}
+    obstruction_lines = {}
+    obstruction_blocked_points = {}
+    obstruction_clear_points = {}
+    for action in actions:
+      sightlines[action] = set()
+      obstruction_lines[action] = set()
+      obstruction_blocked_points[action] = set()
+      obstruction_clear_points[action] = set()
+
+      if action[1:]:
+        for attack in action[1:]:
+          sightlines[action].add( self.find_shortest_sightline( action[0], attack ) )
+      else:
+        if focus_map[action]:
+          def add_obstruction( focus ):
+            lines, blocked_points, clear_points = self.determine_obstruction( action[0], focus )
+            obstruction_lines[action].update( lines )
+            obstruction_blocked_points[action].update( blocked_points )
+            obstruction_clear_points[action].update( clear_points )
+
+          for vertex in range( 0, 6 ):
+            if self.vertex_blocked( action[0], vertex ):
+              obstruction_blocked_points[action].add( self.pack_point( action[0], vertex ) )
+            else:
+              obstruction_clear_points[action].add( self.pack_point( action[0], vertex ) )
+
+          for focus in focus_map[action]:
+            if not AOE_ACTION:
+              distances = self.find_distances( action[0] )
+              if distances[focus] <= ATTACK_RANGE:
+                add_obstruction( focus )
+            elif AOE_MELEE:
+              for aoe_rotation in range( 0, 12 ):
+                for aoe_offset in aoe:
+                  target = self.apply_rotated_aoe_offset( action[0], aoe_offset, aoe_rotation )
+                  if target == focus:
+                    add_obstruction( focus )
+                    break
+                else:
+                  continue
+                break
+            else:
+              proximity_distances = self.find_proximity_distances( action[0] )
+              for aoe_pattern in aoe_pattern_list:
+                for aoe_offset in aoe_pattern:
+                  target = self.apply_aoe_offset( focus, aoe_offset )
+                  if target:
+                    if proximity_distances[target] <= ATTACK_RANGE:
+                      add_obstruction( focus )
+                      break
+                else:
+                  continue
+                break
 
     # move monster
     if self.logging:
@@ -947,6 +1136,8 @@ class Scenario:
       if not self.show_each_action_separately:
         for action in actions:
           self.figures[action[0]] = 'A'
+          for destination in destinations[action]:
+            map_debug_tags[destination] = 'd'
           for target in action[1:]:
             map_debug_tags[target] = 'a'
         print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ], map_debug_tags )
@@ -955,11 +1146,13 @@ class Scenario:
           figures = list( self.figures )
           action_debug_tags = list( map_debug_tags )
           figures[action[0]] = 'A'
+          for destination in destinations[action]:
+            action_debug_tags[destination] = 'd'
           for target in action[1:]:
             action_debug_tags[target] = 'a'
           print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ], action_debug_tags )
 
-    return actions, aoes
+    return actions, aoes, destinations, focus_map, sightlines, obstruction_lines, obstruction_blocked_points, obstruction_clear_points
 
   def solve_reach( self, monster ):
     if self.ACTION_TARGET == 0:
@@ -1009,27 +1202,35 @@ class Scenario:
       sight.append( ( run_begin, self.MAP_SIZE ) )
     return sight
 
-  def solve_move( self ):
+  def solve_move( self, test ):
     start_location = self.figures.index( 'A' )
 
-    raw_actions, aoes = self.calculate_monster_move()
+    raw_actions, aoes, destinations, focuses, sightlines, obstruction_lines, obstruction_blocked_points, obstruction_clear_points = self.calculate_monster_move( test )
+
     actions = [
       {
         'move': _[0],
         'attacks': _[1:],
         'aoe': aoes[_],
+        'destinations': list( destinations[_] ),
+        'focuses': list( focuses[_] ),
+        # 'sightlines': list( sightlines[_] ),
+        # 'obstruction_lines': list( obstruction_lines[_] ),
+        # 'obstruction_clear_points': list( obstruction_clear_points[_] ),
+        # 'obstruction_blocked_points': list( obstruction_blocked_points[_] ),
       }
       for _ in raw_actions
     ]
 
     if self.logging:
       print '%i option(s):' % len( actions )
+      print actions
       for action in actions:
         if action['move'] == start_location:
           out = '- no movement'
         else:
           out = '- move to %i' % action['move']
-        if len( action['attacks'] ) > 0:
+        if action['attacks']:
           for attack in action['attacks']:
             out += ', attack %i' % attack
         print out
@@ -1043,8 +1244,7 @@ class Scenario:
     return [ self.solve_sight( _ ) for _ in viewpoints ]
 
   def solve( self, solve_reach, solve_sight ):
-    start = self.figures.index( 'A' )
-    actions = self.solve_move()
+    actions = self.solve_move( False )
     reach = solve_reach and self.solve_reaches( _['move'] for _ in actions ) or None
     sight = solve_sight and self.solve_sights( _['move'] for _ in actions ) or None
     return actions, reach, sight
@@ -1057,7 +1257,7 @@ def perform_unit_tests( starting_scenario ):
   while True:
     scenario_index += 1
     scenario = Scenario()
-    senarios.init_from_test_scenario( scenario, scenario_index )
+    scenarios.init_from_test_scenario( scenario, scenario_index )
     if not scenario.valid:
       break
 
@@ -1065,7 +1265,7 @@ def perform_unit_tests( starting_scenario ):
       print 'test %3i: no answer listed' % scenario_index
       continue
 
-    answers, _ = scenario.calculate_monster_move()
+    answers, _, _, _, _, _, _, _ = scenario.calculate_monster_move( False )
     if answers == scenario.correct_answer:
       print 'test %3i: pass' % scenario_index
     else:

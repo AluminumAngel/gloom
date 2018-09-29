@@ -123,3 +123,9 @@ def visibility_cache_key( location_a, location_b ):
     return ( location_a, location_b )
   else:
     return ( location_b, location_a )
+
+def calculate_distance( vertex_position_a, vertex_position_b ):
+  delta_0 = vertex_position_b[0] - vertex_position_a[0]
+  delta_1 = vertex_position_b[1] - vertex_position_a[1]
+  distance = math.sqrt( delta_0 * delta_0 + delta_1 * delta_1 )
+  return distance

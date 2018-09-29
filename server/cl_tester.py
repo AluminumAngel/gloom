@@ -2,7 +2,7 @@ import sys
 import time
 import math
 
-import senarios
+import scenarios
 import solver
 from print_map import *
 
@@ -29,7 +29,7 @@ if unit_tests:
 
 elif print_los:
   scenario = solver.Scenario()
-  senarios.init_from_test_scenario( scenario, chosen_scenario_index )
+  scenarios.init_from_test_scenario( scenario, chosen_scenario_index )
   scenario.prepare_map()
 
   character = scenario.figures.index( 'C' )
@@ -44,7 +44,7 @@ elif print_los:
   print_map( scenario, scenario.MAP_WIDTH, scenario.MAP_HEIGHT, scenario.effective_walls, [ format_content( *_ ) for _ in zip( scenario.figures, scenario.contents ) ], [ format_los( _ ) for _ in visible_locations ] )
 
 elif profile:
-  SAMPLE_COUNT = 3
+  SAMPLE_COUNT = 50
 
   results = {}
   for test in ( False, True ):
@@ -52,11 +52,11 @@ elif profile:
     print 'test parameters: %d' % test
     for sample in range( 0, SAMPLE_COUNT ):
       scenario = solver.Scenario()
-      senarios.init_from_test_scenario( scenario, chosen_scenario_index )
+      scenarios.init_from_test_scenario( scenario, chosen_scenario_index )
       scenario.test_switch = test
 
       start = time.time()
-      actions = scenario.solve_move()
+      actions = scenario.solve_move( test )
       # for action in actions:
         # scenario.solve_sight( action['move'] )
       # scenario.solve_sight( 27 )
@@ -91,7 +91,7 @@ elif profile:
 
 else:
   scenario = solver.Scenario()
-  senarios.init_from_test_scenario( scenario, chosen_scenario_index )
+  scenarios.init_from_test_scenario( scenario, chosen_scenario_index )
   scenario.logging = True
   scenario.show_each_action_separately = show_each_action_separately
-  scenario.solve_move()
+  scenario.solve_move( False )

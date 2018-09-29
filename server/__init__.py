@@ -1,4 +1,4 @@
-import senarios
+import scenarios
 import solver
 
 from flask import Flask, url_for, jsonify, redirect, request, render_template, abort
@@ -12,7 +12,7 @@ from production import production
 debug = not production
 
 title = 'Gloomhaven Monster Mover'
-version = '2.1.2'
+version = '2.2.4'
 client_local_storage_version = '1.0.0'
 
 # Routes
@@ -55,7 +55,7 @@ def solve():
   s = solver.Scenario()
   if not production:
     s.logging = True
-  senarios.init( s, map_width, map_height, 7, 7 )
+  scenarios.init( s, map_width, map_height, 7, 7 )
   s.unpack_scenario( packed_scenario )
   actions, reach, sight = s.solve( solve_view > 0, solve_view > 1 )
 
@@ -88,7 +88,7 @@ def views():
   s = solver.Scenario()
   if not production:
     s.logging = True
-  senarios.init( s, map_width, map_height, 7, 7 )
+  scenarios.init( s, map_width, map_height, 7, 7 )
   s.unpack_scenario_forviews( packed_scenario )
 
   solution = {
@@ -109,7 +109,7 @@ def scenario( scenario_index ):
   scenario_index = int( scenario_index )
 
   s = solver.Scenario()
-  senarios.init_from_test_scenario( s, scenario_index )
+  scenarios.init_from_test_scenario( s, scenario_index )
   packed_scenario = s.pack_scenario()
   if not production:
     print packed_scenario
