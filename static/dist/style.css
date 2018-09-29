@@ -2,11 +2,19 @@ button > svg {
   vertical-align: top;
 }
 
+/*
+ * thin walls
+ */
+
 polyline.wall {
   stroke: darkgray;
   stroke-width: 7;
   stroke-linecap: round;
 }
+
+/*
+ * hex contents
+ */
 
 polyline.no-wall {
   visibility: hidden;
@@ -20,7 +28,7 @@ polygon.empty {
   fill: #222222;
 }
 
-polygon.obsticle {
+polygon.obstacle {
   fill: rgb( 34, 112, 55 );
 }
 
@@ -39,6 +47,10 @@ polygon.hazardous-terrain {
 polygon.difficult-terrain {
   fill: rgb( 87, 47, 143 );
 }
+
+/*
+ * hex overlays
+ */
 
 polygon.aoe-coverage {
   fill: red;
@@ -62,6 +74,10 @@ polygon.sight {
   opacity: 0.3;
   stroke-opacity: 0;
 }
+
+/*
+ * figures
+ */
 
 circle.character {
   fill: darkcyan;
@@ -87,8 +103,51 @@ circle.active-character {
   stroke-width: 2;
 }
 
+circle.destination {
+  fill: blue;
+  stroke: black;
+  stroke-width: 2;
+}
+
+circle.ghost {
+  opacity: 0.5;
+}
+
+/*
+ * figure highlights
+ */
+
+polygon.attacked {
+  fill: #e60000;
+  stroke: #e60000;
+}
+
 circle.attacked {
-  stroke: red;
+  fill-opacity: 0.0;
+  stroke: #e60000;
+  stroke-width: 2;
+}
+
+polygon.monster-focus {
+  fill: darkgoldenrod;
+  stroke: darkgoldenrod;
+}
+
+circle.monster-focus {
+  fill-opacity: 0.0;
+  stroke: darkgoldenrod;
+  stroke-width: 2;
+}
+
+polygon.character-focus {
+  fill: mediumorchid;
+  stroke: mediumorchid;
+}
+
+circle.character-focus {
+  fill-opacity: 0.0;
+  stroke: mediumorchid;
+  stroke-width: 2;
 }
 
 circle.selection-highlight {
@@ -98,9 +157,9 @@ circle.selection-highlight {
   stroke-width: 1;
 }
 
-.previous-position {
-  opacity: 0.5;
-}
+/*
+ * miscellaneous
+ */
 
 path.play-scenario-fill {
   fill: #606060;
@@ -110,10 +169,27 @@ path.play-scenario-stroke {
   fill: #000000;
 }
 
-div.grabbing {
-  cursor: -webkit-grabbing;
-  cursor: grabbing;
+line.unblocked {
+  stroke: lightgreen;
+  stroke-width: 2;
 }
+
+line.blocked {
+  stroke: red;
+  stroke-width: 1;
+}
+
+circle.unblocked {
+  fill: lightgreen;
+}
+
+circle.blocked {
+  fill: orange;
+}
+
+/*
+ * no text selection
+ */
 
 label {
   -webkit-touch-callout: none;
@@ -145,6 +221,10 @@ text {
   -ms-user-select: none;
   user-select: none;
 }
+
+/*
+ * throbber
+ */
 
 @-moz-keyframes throbber {
   0% {
@@ -180,7 +260,7 @@ text {
     transform: rotate( 360deg );
   }
 }
-.throbber:not(:required) {
+.throbber {
   -moz-animation: throbber 1500ms infinite linear;
   -webkit-animation: throbber 1500ms infinite linear;
   animation: throbber 1500ms infinite linear;
@@ -194,7 +274,4 @@ text {
   margin: 0.3em;
   overflow: hidden;
   text-indent: 100%;
-}
-.throbber-inactive {
-  display: none;
 }
