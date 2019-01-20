@@ -1,38 +1,7 @@
 // next:
 // - try selection with standard figure stroke now (since we have triangles)
-// - unblocked los line visualitzation
 
-// - check obstruction perf again, in aoe situations
-
-// - switch between blocked and unblocked lines correctly
-// - fix when i show blocked lines (use distance and not always focus)
-// - measure overhead of sight line calculation
-// - optimize sight lines to not always calculate
-// - i like unblocked sight lines; decide after completion if i like blocked ones
-// - for blocked, color idea:
-// --- red dots for blocked vertix
-// --- green dot for open vertex w/ red line for blocked line
-// --- use closest enemy in range, not focus (cause focus doesn't work)
-// - for blocked los, i'm drawing way more circles than i need to; do i care?
-// - two buttons:
-// --- Show unblocked Sight Lines
-// --- Show Blocked Sight Lines
-// - unblocked_lines => unblocked_lines
-
-// - tooltip is too big and is off screen
-// - also, reconsider tooltip text
-
-// CLEAN
-// - all server line code
-// - SightLine.jsx and SightLines.jsx
-
-// - share on subreddit
-// - share all the other places that BGG post says to share
 // - move los overlays under thin walls, but keep aoe overlays over thin walls (???)
-
-// button to show the clean line for line of sight targets
-// -- show line that is most parallel with line between hex centers)\
-// -- and that is shortest
 
 // think about:
 // -- putting # of traps/hazzards hit by move in status text
@@ -54,11 +23,8 @@
 // validate json to schema in both directions
 // - http://json-schema.org/implementations.html#validators
 
-// feature - "Show LOS lines" button (draw actual vertex to vertex lines for attacks)
-
 // top todos:
 // -- server down/fail behaviors
-// -- scenario loader
 // -- cancel and resend request (see email for idea)
 // -- harden communiction ends (validate json; see above link)
 // -- footer with credits, email, etc.
@@ -111,9 +77,6 @@
 
 // stop pinging for solutions if we get a server error
 // add a buton to restore solution pings ('server error; try again?')
-
-// some test scenarios are broken because the monster can leave the original map area
-//   and go around walls
 
 // two way data valication
 // undo, redo on grid state

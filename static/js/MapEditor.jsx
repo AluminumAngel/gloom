@@ -5,9 +5,44 @@ import * as C from './defines';
 import * as BRUSH from './brushes';
 import HexUtils from './HexUtils';
 import AOEHexGrid from './AOEHexGrid';
+import BitReader from './BitReader';
+import BitWriter from './BitWriter';
 import BrushPicker from './BrushPicker';
 import Grid from './Grid';
+import Message from './Message';
 import PropertyEditor from './PropertyEditor';
+
+// TODO: post URLs for all scenarios in the BGG rules quiz
+// 1  - http://127.0.0.1:5000/AQQETAMIhIYCYAAMgAE
+// 2  - http://127.0.0.1:5000/AQQETAMIfIaCYAAMgAE
+// 3  - http://127.0.0.1:5000/AQgEsAIIVIUEAsAwBwo
+// 4  - http://127.0.0.1:5000/AQgEXAIsDCRY-EAQDBI-EBAABgwQPhAAAwIJHwhAgcIHAgQIECAA
+// 5  - http://127.0.0.1:5000/AQwE-AIiHBRgGCFQMEIAGBCEEAAGBCMEgAFBCAFQQHBCAA
+// 6  - http://127.0.0.1:5000/AQgEWAIgdBMgGCFAEEKAADAAhhBQAAwKEHwQIEAwQgA
+// 7  - http://127.0.0.1:5000/AYgEXAIwDCRY-EBAABgkfCAgAAwYIHwgAAYEEj4QgAICCR8IECBAgAA
+// 8  - http://127.0.0.1:5000/AYgMTAMK7IXCCYNgKAGJEdAA
+// 9  - http://127.0.0.1:5000/AYiMTAMK7IXCCYNgKAGJEdAA
+// 10 - http://127.0.0.1:5000/AYhMTAMK7IXCCYNgKAGJEdAA
+// 11 - http://127.0.0.1:5000/AYQE9AIMTIXECTAgKCHAUAIK
+// 12 - http://127.0.0.1:5000/AYgI_AIK7IWIYCgBBaABJAA
+// 13 - http://127.0.0.1:5000/AQwETAMUTIWGhhKCEpBAABhKCABDCTDUgQI
+// 14 - http://127.0.0.1:5000/AYQIRAMOVIVECUEJaACGEwbAkAIK
+// 15 - http://127.0.0.1:5000/AcgMoAIQtBQAhRBgwKAgCiRGQARoAA
+// 16 - http://127.0.0.1:5000/ARAMOgMKdAYD0SgBiRQQKQEF
+// 17 - http://127.0.0.1:5000/ARAMOgMKdAYDkSgBkRTQKAEF
+// 18 - http://127.0.0.1:5000/ARAEOhOSqEBnMBCREpBIAYUS0AA
+// 19 - http://127.0.0.1:5000/ARgMOgMKdAYD0SgBiRQQKQEF
+// 20 - http://127.0.0.1:5000/AQgEqAIupCRAgAAhBEEwAMwHYBAABgwQQhCABAKA-QAMUKAQggABAgQ
+// 21 - http://127.0.0.1:5000/AQgkOgMGdAaDCqEA
+// 22 - http://127.0.0.1:5000/AQgkOgMGdAaDCqAA
+// 23 - http://127.0.0.1:5000/AQgkhgMW3CVAgFCCEAIMKoRCCUIJAgQI
+// 24 - http://127.0.0.1:5000/AcwM8gIK5AVDCSgIiSXQECI
+// 25 - http://127.0.0.1:5000/ARAIigMM7IVGEjAYhRKCEgIgAQ
+// 26 - http://127.0.0.1:5000/ARQEJgQk5AXDCTAAhhFgAAyAYQQYAANgAAwdwAABAgQIEIBCCQI
+// 27 - http://127.0.0.1:5000/ARQkJgQk5AXDCTAAhhFgAAyAYQQYAANgAAwdwAABAgQIEIBCCQI
+// 28 - http://127.0.0.1:5000/AcQEPgMGfAYDwAgF
+// 29 - http://127.0.0.1:5000/AdgMggNaDCRAgAABAoQNBCEiNCREIECAAAEChAaEBoQLkIDwgCABAgQIECBAoADhAQEwPIAChAoECBAgQIAAgUIIAgQI
+// 30 - http://127.0.0.1:5000/AdQMggNaDCRAgAABAoQNBCEiNCREIECAAAEChAaEBoQLkIDwgCABAgQIECBAoADhAQEwPIAChAoECBAgQIAAgUIIAgQI
 
 const DISPLAY_ALL_ACTIONS = -1;
 const NULL_INDEX = -1;
@@ -23,6 +58,9 @@ const ACTION_REQUEST_SOLUTION = 5;
 const ACTION_REQUEST_START_VIEWS = 6;
 const ACTION_REQUEST_SOLUTION_VIEWS = 7;
 const ACTION_NONE_REQUIRED = 8;
+
+const COMPLEXITY_AOE = 0;
+const COMPLEXITY_ENEMIES = 1;
 
 const ORDINAL_SUFFIXES = [
   'th',
@@ -83,6 +121,54 @@ const STATE_KEYS = [
   'active_faction',
 ];
 
+const SIMPLE_STATE_KEYS = [
+  'move',
+  'range',
+  'target',
+  'flying',
+  'muddled',
+  'active_faction',
+  'rotate_grid',
+];
+
+const SIMPLE_STATE_PROPERTIES = {
+  move: {
+    bits: 4,
+    min: 0,
+    max: 9,
+  },
+  range: {
+    bits: 4,
+    min: 0,
+    max: 9,
+  },
+  target: {
+    bits: 3,
+    min: 0,
+    max: 5,
+  },
+  flying: {
+    bits: 2,
+    min: 0,
+    max: 2,
+  },
+  muddled: {
+    bits: 1,
+    min: 0,
+    max: 1,
+  },
+  active_faction: {
+    bits: 1,
+    min: 0,
+    max: 1,
+  },
+  rotate_grid: {
+    bits: 1,
+    min: 0,
+    max: 1,
+  },
+};
+
 function isFigureAllowed( content ) {
   return content !== BRUSH.WALL;
 }
@@ -112,7 +198,9 @@ export default class MapEditor extends React.PureComponent {
     super( props );
 
     this.drag_ref = React.createRef();
-    this.localStorageAvailable = this.isLocalStorageAvailable();
+    this.copy_ref = React.createRef();
+    this.message_ref = React.createRef();
+    this.local_storage_available = this.isLocalStorageAvailable();
 
     this.state = {
       // app state
@@ -127,8 +215,8 @@ export default class MapEditor extends React.PureComponent {
       rotate_grid: false,
       show_focus: false,
       show_destination: false,
-      show_sightline: true,
-      show_obstruction: true,
+      show_sightline: false,
+      show_obstruction: false,
       show_movement: !START_IN_LOS_MODE,
       show_reach: false,
       show_sight: START_IN_LOS_MODE,
@@ -173,7 +261,13 @@ export default class MapEditor extends React.PureComponent {
       display_reach: Array( C.GRID_SIZE ).fill( false ),
       display_sight: Array( C.GRID_SIZE ).fill( false ),
     };
-    this.restoreState( this.state );
+
+    if ( STARTING_SCENARIO !== '' ) {
+      this.loadStateFromURL( STARTING_SCENARIO, this.state );
+    }
+    else {
+      this.restoreState( this.state );
+    }
     this.storeState( this.state );
 
     this.componentDidUpdate();
@@ -188,7 +282,7 @@ export default class MapEditor extends React.PureComponent {
   }
 
   storeState( state ) {
-    if ( !this.localStorageAvailable ) return;
+    if ( !this.local_storage_available ) return;
 
     STATE_KEYS.forEach( ( key ) => {
       if ( key in state ) {
@@ -198,7 +292,7 @@ export default class MapEditor extends React.PureComponent {
   }
 
   restoreState( state ) {
-    if ( !this.localStorageAvailable ) return;
+    if ( !this.local_storage_available ) return;
 
     var previous_version = localStorage.getItem( 'version' )
     if ( previous_version !== DATA_VERSION ) {
@@ -671,6 +765,257 @@ export default class MapEditor extends React.PureComponent {
     } );
   };
 
+  generateGridMapping() {
+
+  }
+
+  handleShareScenario = () => {
+
+    // build grid mapping
+    var grid_mapping = {};
+    function addEntry( location ) {
+      if ( !( location in grid_mapping ) )  {
+        grid_mapping[location] = {
+          content: BRUSH.EMPTY,
+          figure: BRUSH.EMPTY,
+          walls: [ false, false, false ],
+          initiative: 1,
+        };
+      }
+    }
+    this.state.grid.forEach( ( element, location ) => {
+      if ( element != BRUSH.EMPTY ) {
+        addEntry( location );
+        grid_mapping[location].content = element;
+      }
+    } );
+    this.state.figures.forEach( ( element, location ) => {
+      if ( element != BRUSH.EMPTY ) {
+        addEntry( location );
+        grid_mapping[location].figure = element;
+        grid_mapping[location].initiative = this.state.initiatives[location];
+      }
+    } );
+    this.state.walls.forEach( ( element, index ) => {
+      if ( element ) {
+        var location = Math.floor( index / 3 );
+        var wall_index = index - 3 * location;
+        addEntry( location );
+        grid_mapping[location].walls[wall_index] = true;
+      }
+    } );
+
+    var bit_writer = new BitWriter();
+
+    // write data version
+    bit_writer.writeBits( 4, DATA_VERSION_MAJOR );
+    bit_writer.writeBits( 3, DATA_VERSION_MINOR );
+    bit_writer.writeBits( 3, DATA_VERSION_BUILD );
+
+    // write simple keys
+    SIMPLE_STATE_KEYS.forEach( ( key ) => {
+      bit_writer.writeBits( SIMPLE_STATE_PROPERTIES[key].bits, this.state[key] );
+    } );
+
+    // write active_figure_index
+    var value = this.state.active_figure_index;
+    if ( value === -1 ) {
+      value = C.GRID_SIZE;
+    }
+    bit_writer.writeBits( C.GRID_SIZE_BITS, value );
+
+    // write aoe_grid
+    var aoe_grid_count = 0;
+    this.state.aoe_grid.forEach( ( element ) => {
+      if ( element ) {
+        aoe_grid_count++;
+      }
+    } );
+    bit_writer.writeBits( C.AOE_SIZE_BITS, aoe_grid_count );
+    this.state.aoe_grid.forEach( ( element, index ) => {
+      if ( element ) {
+        bit_writer.writeBits( C.AOE_SIZE_BITS, index );
+      }
+    } );
+
+    // BUGS:
+    // - rotated grid is not left/right centered (compare with message box)
+
+    // write grid mapping
+    const ordered_grid_mapping_keys = Object.keys( grid_mapping ).sort(
+      function( a, b ) { return a - b; }
+    );
+    bit_writer.writeBits( C.GRID_SIZE_BITS, ordered_grid_mapping_keys.length );
+    var last_location_written = -1;
+    ordered_grid_mapping_keys.forEach( ( location ) => {
+      // assume active locations are often near; save bits when they are
+      const location_delta = location - last_location_written - 1;
+      if ( location_delta < 4 ) {
+        bit_writer.writeBits( 1, 0 );
+        bit_writer.writeBits( 2, location_delta );
+      }
+      else {
+        bit_writer.writeBits( 1, 1 );
+        bit_writer.writeBits( C.GRID_SIZE_BITS, location_delta );
+      }
+      last_location_written = location;
+
+      bit_writer.writeBits( 3, grid_mapping[location].content );
+      if ( grid_mapping[location].figure != BRUSH.EMPTY ) {
+        bit_writer.writeBits( 2, grid_mapping[location].figure - BRUSH.FIRST_FIGURE_BRUSH + 1 );
+        bit_writer.writeBits( 4, grid_mapping[location].initiative );
+      }
+      else
+      {
+        bit_writer.writeBits( 2, 0 );
+      }
+      const any_walls = grid_mapping[location].walls[0]
+        || grid_mapping[location].walls[1]
+        || grid_mapping[location].walls[2];
+      bit_writer.writeBits( 1, any_walls );
+      if ( any_walls ) {
+        bit_writer.writeBits( 1, grid_mapping[location].walls[0] );
+        bit_writer.writeBits( 1, grid_mapping[location].walls[1] );
+        bit_writer.writeBits( 1, grid_mapping[location].walls[2] );
+      }
+    } );
+
+    bit_writer.flush();
+    var url = location.origin + URL_FOR.root + bit_writer.result();
+
+    this.copy_ref.current.value = url;
+    this.copy_ref.current.select();
+    document.execCommand( 'copy' );
+
+    this.message_ref.current.display(
+      'alert-success',
+      'A URL for the scenario has been copied to your clipboard.'
+    );
+  }
+
+  loadStateFromURL( url_scenario, state ) {
+    function validate( value, min, max ) {
+      if ( value < min || value > max ) {
+        throw 'bad scenario URL';
+      }
+    }
+
+    var scenario_state = {};
+
+    try {
+      var bit_reader = new BitReader( url_scenario );
+
+      // read data version
+      if ( bit_reader.readBits( 4 ) !== DATA_VERSION_MAJOR
+        || bit_reader.readBits( 3 ) !== DATA_VERSION_MINOR
+        || bit_reader.readBits( 3 ) !== DATA_VERSION_BUILD
+      ) {
+        throw 'bad scenario URL';
+      }
+
+      // read simple keys
+      SIMPLE_STATE_KEYS.forEach( ( key ) => {
+        const value = bit_reader.readBits( SIMPLE_STATE_PROPERTIES[key].bits );
+        validate(
+          value,
+          SIMPLE_STATE_PROPERTIES[key].min,
+          SIMPLE_STATE_PROPERTIES[key].max
+        );
+        scenario_state[key] = value;
+      } );
+
+      // read active_figure_index
+      var value = bit_reader.readBits( C.GRID_SIZE_BITS );
+      validate( value, 0, C.GRID_SIZE );
+      if ( value === C.GRID_SIZE ) {
+        value = NULL_INDEX;
+      }
+      scenario_state.active_figure_index = value;
+
+      // read aoe_grid
+      scenario_state.aoe_grid = Array( C.AOE_SIZE ).fill( false );
+      var aoe_grid_count = bit_reader.readBits( C.AOE_SIZE_BITS );
+      for ( var i = 0; i < aoe_grid_count; i++ ) {
+        var index = bit_reader.readBits( C.AOE_SIZE_BITS );
+        validate( index, 0, C.AOE_SIZE - 1 );
+        if ( C.AOE_GRID_SKIP_LIST.indexOf( index ) !== -1 ) {
+          throw 'bad scenario URL';
+        }
+        scenario_state.aoe_grid[index] = true;
+      }
+
+      // read grid mapping
+
+      scenario_state.grid = Array( C.GRID_SIZE ).fill( BRUSH.EMPTY );
+      scenario_state.figures = Array( C.GRID_SIZE ).fill( BRUSH.EMPTY );
+      scenario_state.initiatives = Array( C.GRID_SIZE ).fill( 1 );
+      scenario_state.walls = Array( 3 * C.GRID_SIZE ).fill( false );
+      var last_location_read = -1;
+      const grid_mapping_size = bit_reader.readBits( C.GRID_SIZE_BITS );
+      for ( var i = 0; i < grid_mapping_size; i++ ) {
+        var location_delta;
+        if ( bit_reader.readBits( 1 ) === 0 ) {
+          location_delta = bit_reader.readBits( 2 );
+        }
+        else {
+          location_delta = bit_reader.readBits( C.GRID_SIZE_BITS );
+        }
+        const location = last_location_read + location_delta + 1;
+        validate( location, 0, C.GRID_SIZE - 1 );
+        last_location_read = location;
+
+        scenario_state.grid[location] = bit_reader.readBits( 3 );
+        validate( scenario_state.grid[location], BRUSH.EMPTY, BRUSH.LAST_TERRAIN_BRUSH );
+
+        scenario_state.figures[location] = bit_reader.readBits( 2 );
+        if ( scenario_state.figures[location] !== BRUSH.EMPTY ) {
+          scenario_state.figures[location] += BRUSH.FIRST_FIGURE_BRUSH - 1;
+          validate(
+            scenario_state.figures[location],
+            BRUSH.FIRST_FIGURE_BRUSH,
+            BRUSH.LAST_FIGURE_BRUSH
+          );
+          scenario_state.initiatives[location] = bit_reader.readBits( 4 );
+          validate(
+            scenario_state.initiatives[location],
+            1,
+            MAX_INITIATIVE
+          );
+        }
+        if ( bit_reader.readBits( 1 ) ) {
+          scenario_state.walls[3 * location + 0] = bit_reader.readBits( 1 ) === 1;
+          scenario_state.walls[3 * location + 1] = bit_reader.readBits( 1 ) === 1;
+          scenario_state.walls[3 * location + 2] = bit_reader.readBits( 1 ) === 1;
+        }
+      }
+
+      // validate active_figure_index
+      var active_faction_brush = scenario_state.active_faction ? BRUSH.CHARACTER : BRUSH.MONSTER;
+      if ( scenario_state.active_figure_index !== NULL_INDEX ) {
+        if ( scenario_state.figures[scenario_state.active_figure_index] !== active_faction_brush ) {
+          throw 'bad scenario URL';
+        }
+      }
+
+      Object.assign( state, scenario_state );
+      this.addDependentData( state );
+    }
+    catch ( e ) {
+      if ( e === 'bad scenario URL' ) {
+        // use timeout as error detected before message_ref set
+        setTimeout( () => {
+          this.message_ref.current.display(
+            'alert-danger',
+            'The URL contains a corrupt scenario description.'
+          );
+        }, 0 );
+      }
+      else {
+        throw( e );
+      }
+    }
+  }
+
   handleMapClear = () => {
     this.setScenario( {
       selection: NULL_INDEX,
@@ -685,14 +1030,14 @@ export default class MapEditor extends React.PureComponent {
     } );
   };
 
-  handleAOEClear = () => {
+    handleAOEClear = () => {
     this.setScenario( {
       aoe_grid: Array( C.AOE_SIZE ).fill( false ),
     } );
   };
 
   handleRotateMapChanged = () => {
-    this.setToolsState( {
+    this.setSharedToolsState( {
       rotate_grid: !this.state.rotate_grid,
     } );
   };
@@ -1155,80 +1500,7 @@ export default class MapEditor extends React.PureComponent {
     } );
 
     return scenario;
-  }  
-
-  // unpackscenario( scenario ) {
-  //   var grid = Array( C.GRID_SIZE ).fill( 0 );
-  //   var figures = Array( C.GRID_SIZE ).fill( 0 );
-  //   var initiatives = Array( C.GRID_SIZE ).fill( 1 );
-  //   var walls = Array( 3 * C.GRID_SIZE ).fill( false );
-  //   var aoe_grid = Array( C.AOE_SIZE ).fill( false );
-
-  //   function get_index( c, r ) {
-  //     return r + c * C.GRID_HEIGHT;
-  //   }
-
-  //   // TODO: clean data
-  //   // TODO: don't allow more than one active monster
-  //   // TODO: validate characters on walls and obstables
-  //   // TODO: validate thins vs standard walls
-
-  //   var map = scenario.map;
-  //   function add_elements( map_layer, key, brush ) {
-  //     map[key].forEach( ( item ) => {
-  //       map_layer[get_index( item[0], item[1] )] = brush;
-  //     } );
-  //   }
-
-  //   add_elements( figures, 'characters', BRUSH.CHARACTER );
-  //   add_elements( figures, 'monsters', BRUSH.MONSTER  );
-  //   add_elements( grid, 'walls', BRUSH.WALL );
-  //   add_elements( grid, 'obstacles', BRUSH.OBSTACLE );
-  //   add_elements( grid, 'traps', BRUSH.TRAP );
-  //   add_elements( grid, 'hazardous', BRUSH.HAZARDOUS_TERRAIN );
-  //   add_elements( grid, 'difficult', BRUSH.DIFFICULT_TERRAIN );
-
-  //   for ( var i = 0; i < map['initiatives'].length; i++ )
-  //   {
-  //     initiatives[get_index(map['characters'][i][0],map['characters'][i][1])] = map['initiatives'][i];
-  //   }
-
-  //   for ( var i = 0; i < map['thin_walls'][0].length; i++ )
-  //   {
-  //     walls[0+3*get_index(map['thin_walls'][0][i][0], map['thin_walls'][0][i][1])] = true;
-  //   }
-  //   for ( var i = 0; i < map['thin_walls'][1].length; i++ )
-  //   {
-  //     walls[1+3*get_index(map['thin_walls'][1][i][0], map['thin_walls'][1][i][1])] = true;
-  //   }
-  //   for ( var i = 0; i < map['thin_walls'][2].length; i++ )
-  //   {
-  //     walls[2+3*get_index(map['thin_walls'][2][i][0], map['thin_walls'][2][i][1])] = true;
-  //   }
-
-  //   for ( var i = 0; i < scenario.aoe.length; i++ )
-  //   {
-  //     aoe_grid[scenario.aoe[i]] = true;
-  //   }
-
-  //   const active_figure_index = get_index( scenario.active_figure[0], scenario.active_figure[1] );
-
-  //   this.setScenario( {
-  //     grid: grid,
-  //     figures: figures,
-  //     initiatives: initiatives,
-  //     walls: walls,
-  //     selection: NULL_INDEX,
-  //     active_figure_index: active_figure_index,
-
-  //     move: scenario.move,
-  //     range: scenario.range,
-  //     target: scenario.target,
-  //     flying: scenario.flying,
-  //     muddled: scenario.muddled,
-  //     aoe_grid: aoe_grid,
-  //   } );
-  // }
+  }
 
   handleRequestSolution = () => {
     if ( !DEVELOPMENT ) {
@@ -1257,7 +1529,6 @@ export default class MapEditor extends React.PureComponent {
       } );
   };
 
-  // TODO: clean
   handleRequestViewsForActions = () => {
     var viewpoints = [];
     for ( var i = 0; i < this.state.solution_actions.length; i++ ) {
@@ -1380,13 +1651,16 @@ export default class MapEditor extends React.PureComponent {
       }
     } );
 
+
     // TEMP (need to retime with new optimizations)
     // Determine if the scenario is too complex to request a solution.
     // If there are more than 20 characters.
     // If its a ranged aoe and the target count is above 3.
+    var complex_type;
     scenario.scenario_too_complex = false;
-    if ( scenario.target_count > 20 ) {
+    if ( scenario.target_count > 30 ) {
       scenario.scenario_too_complex = true;
+      complex_type = COMPLEXITY_ENEMIES;
     }
     else {
       var target = scenario.target !== undefined ? scenario.target : this.state.target;
@@ -1403,10 +1677,33 @@ export default class MapEditor extends React.PureComponent {
           }
           if ( active_aoe ) {
             scenario.scenario_too_complex = true;
+            complex_type = COMPLEXITY_AOE;
           }
         }
       }
     }
+
+    if ( scenario.scenario_too_complex ) {
+      var message;
+      if ( complex_type === COMPLEXITY_ENEMIES ) {
+        const inactive_faction_string = this.state.active_faction ? 'monster' : 'character';
+        message = 'The scenario cannot be solved in reasonable time. '
+          + 'Reduce the number of ' + inactive_faction_string + 's.'
+      }
+      else {
+        message = 'The scenario cannot be solved in reasonable time. '
+          + 'Reduce the target number of the attack, or remove the area '
+          + 'of effect, or change the range to melee.';
+      }
+
+      setTimeout( () => {
+        this.message_ref.current.display( 'alert-danger', message );
+      }, 0 );
+    }
+  }
+
+  clearScenarioFromURL() {
+    history.replaceState( null, '', URL_FOR.root );
   }
 
   setScenario( scenario ) {
@@ -1416,11 +1713,18 @@ export default class MapEditor extends React.PureComponent {
 
     scenario.scenario_id = ( this.state.scenario_id + 1 ) % ( 256 * 256 * 256 );
     this.setState( scenario );
+
+    this.clearScenarioFromURL();
   }
 
   setToolsState( tools_state ) {
     this.storeState( tools_state );
     this.setState( tools_state );
+  }
+
+  setSharedToolsState( tools_state ) {
+    this.setToolsState( tools_state );
+    this.clearScenarioFromURL();
   }
 
   isDisplayingSolution() {
@@ -1438,347 +1742,369 @@ export default class MapEditor extends React.PureComponent {
     const active_faction_string = this.state.active_faction ? 'character' : 'monster';
     const inactive_faction_string = this.state.active_faction ? 'monster' : 'character';
 
-    const action = this.determineActionRequired();
-
     var display_move_solution = false;
+    var status_label = null;
+    if ( this.state.drag_source_index === NULL_INDEX ) {
+      const action = this.determineActionRequired();
+      switch ( action ) {
+        case ACTION_WAITING_ON_SOLUTION:
+        case ACTION_REQUEST_SOLUTION:
+          status_label = <span><div className='mr-2 throbber'></div> Solving...</span>
+          break;
 
-    var status_label;
-    switch ( action ) {
-      case ACTION_WAITING_ON_SOLUTION:
-      case ACTION_REQUEST_SOLUTION:
-        status_label = <span><div className='mr-2 throbber'></div> Solving...</span>
-        break;
+        case ACTION_WAITING_ON_VIEW:
+        case ACTION_REQUEST_START_VIEWS:
+        case ACTION_REQUEST_SOLUTION_VIEWS:
+          status_label = <span><div className='mr-2 throbber'></div> Calculating...</span>
+          if ( this.state.show_movement && this.state.solution_actions ) {
+            display_move_solution = true;
+          }
+          break;
 
-      case ACTION_WAITING_ON_VIEW:
-      case ACTION_REQUEST_START_VIEWS:
-      case ACTION_REQUEST_SOLUTION_VIEWS:
-        status_label = <span><div className='mr-2 throbber'></div> Calculating...</span>
-        if ( this.state.show_movement && this.state.solution_actions ) {
-          display_move_solution = true;
-        }
-        break;
+        case ACTION_NO_ACTIVE_FIGURE:
+        case ACTION_NO_REQUEST:
+          break;
 
-      case ACTION_NO_ACTIVE_FIGURE:
-      case ACTION_NO_REQUEST:
-        status_label = null
-        break;
+        case ACTION_SCENARIO_TOO_COMPLEX:
+          status_label = <span>The scenario is too complex.</span>
+          break;
 
-      case ACTION_SCENARIO_TOO_COMPLEX:
-        status_label = <span>Too complex. Reduce the target count, area of effect, or {faction_string}.</span>
-        break;
-
-      case ACTION_NONE_REQUIRED:
-        var status_message;
-        if ( this.state.show_movement && this.state.solution_actions ) {
-          display_move_solution = true;
-          if ( this.state.solution_actions.length === 1 ) {
-            if ( this.state.solution_actions[0].attacks.length === 0 && this.state.solution_actions[0].move === this.state.active_figure_index ) {
-              status_message = 'The ' + active_faction_string + ' takes no action.';
+        case ACTION_NONE_REQUIRED:
+          var status_message;
+          if ( this.state.show_movement && this.state.solution_actions ) {
+            display_move_solution = true;
+            if ( this.state.solution_actions.length === 1 ) {
+              if ( this.state.solution_actions[0].attacks.length === 0 && this.state.solution_actions[0].move === this.state.active_figure_index ) {
+                status_message = 'The ' + active_faction_string + ' takes no action.';
+              }
+              else {
+                status_message = 'Showing the only movement option.';
+              }
+            }
+            else if ( this.state.action_displayed === DISPLAY_ALL_ACTIONS ) {
+              status_message = 'Showing ' + getNumberWord( solution_count ) + ' movement options.';
             }
             else {
-              status_message = 'Showing the only movement option.';
+              status_message = 'Showing the ' + getOrdinalWord( this.state.action_displayed + 1 ) + ' of ' + getNumberWord( solution_count ) + ' movement options.';
+              if ( this.state.solution_actions[this.state.action_displayed].move === this.state.active_figure_index && this.state.solution_actions[this.state.action_displayed].attacks.length === 0 ) {
+                status_message += ' No action taken.';
+              }
             }
           }
-          else if ( this.state.action_displayed === DISPLAY_ALL_ACTIONS ) {
-            status_message = 'Showing ' + getNumberWord( solution_count ) + ' movement options.';
+          else if ( this.state.show_reach ) {
+            status_message = 'Showing range.';
+          }
+          else if ( this.state.show_sight ) {
+            status_message = 'Showing line of sight.';
           }
           else {
-            status_message = 'Showing the ' + getOrdinalWord( this.state.action_displayed + 1 ) + ' of ' + getNumberWord( solution_count ) + ' movement options.';
-            if ( this.state.solution_actions[this.state.action_displayed].move === this.state.active_figure_index && this.state.solution_actions[this.state.action_displayed].attacks.length === 0 ) {
-              status_message += ' No action taken.';
-            }
+            status_message = '';
           }
-        }
-        else if ( this.state.show_reach ) {
-          status_message = 'Showing range.';
-        }
-        else if ( this.state.show_sight ) {
-          status_message = 'Showing line of sight.';
-        }
-        else {
-          status_message = '';
-        }
-        status_label = <span>{status_message}</span>
-        break;
-    }    
+          status_label = <span>{status_message}</span>
+          break;
+      }
+    }
 
     return (
-      <div className='container-fluid'>
-        <div className='d-flex'>
-          <div className='mt-5'>
-              <BrushPicker
-                flying={this.state.flying}
-                initiative={this.state.next_initiative}
-                selection={this.state.brush}
-                activeFaction={this.state.active_faction}
-                onSelection={this.handleBrushSelection}
-              />
-              <PropertyEditor
-                activeFactionString={active_faction_string}
-                inactiveFactionString={inactive_faction_string}
-                move={this.state.move}
-                range={this.state.range}
-                target={this.state.target}
-                flying={this.state.flying}
-                muddled={this.state.muddled}
-                initiative={this.state.selection === -1 ? -1 : this.state.initiatives[this.state.selection]}
-                onMoveChange={this.handleMoveChange}
-                onRangeChange={this.handleRangeChange}
-                onTargetChange={this.handleTargetChange}
-                onFlyingChange={this.handleFlyingChange}
-                onMuddledChange={this.handleMuddledChange}
-                onInitiativeChange={this.handleInitiativeChange}
-              />
-          </div>
+      <React.Fragment>
+        <div className='container-fluid'>
+          <div className='d-flex'>
+            <div className='mt-5'>
+                <BrushPicker
+                  flying={this.state.flying}
+                  initiative={this.state.next_initiative}
+                  selection={this.state.brush}
+                  activeFaction={this.state.active_faction}
+                  onSelection={this.handleBrushSelection}
+                />
+                <PropertyEditor
+                  activeFactionString={active_faction_string}
+                  inactiveFactionString={inactive_faction_string}
+                  move={this.state.move}
+                  range={this.state.range}
+                  target={this.state.target}
+                  flying={this.state.flying}
+                  muddled={this.state.muddled}
+                  initiative={this.state.selection === -1 ? -1 : this.state.initiatives[this.state.selection]}
+                  onMoveChange={this.handleMoveChange}
+                  onRangeChange={this.handleRangeChange}
+                  onTargetChange={this.handleTargetChange}
+                  onFlyingChange={this.handleFlyingChange}
+                  onMuddledChange={this.handleMuddledChange}
+                  onInitiativeChange={this.handleInitiativeChange}
+                />
+            </div>
 
-          <div className='mx-3 mt-2 d-flex flex-column'>
-            <div className='mb-2 d-flex'>
-              <span className='mr-auto ml-4 col-form-label-sm text-muted'>
-                {status_label}
-              </span>
-              <div className='btn-group mr-4'>
+            <div className='mx-3 mt-2 d-flex flex-column'>
+              <div className='mb-2 d-flex'>
+                <span className='mr-auto ml-4 col-form-label-sm text-muted'>
+                  {status_label}
+                </span>
+                <div className='btn-group mr-4'>
+                  <button
+                    type='button'
+                    className='px-3 btn btn-sm btn-dark'
+                    id='previous-action-button'
+                    disabled={!multiple_actions || !display_move_solution}
+                    onClick={this.handlePreviousAction}
+                  >
+                    &lt;&lt;
+                  </button>
+                  <UncontrolledTooltip
+                    placement='bottom'
+                    delay={C.TOOLTIP_DELAY}
+                    target='previous-action-button'
+                  >
+                    Show the previous movement option.
+                  </UncontrolledTooltip>
+                  <button
+                    type='button'
+                    className='px-3 btn btn-sm btn-dark'
+                    id='all-actions-button'
+                    disabled={!multiple_actions || !display_move_solution}
+                    onClick={this.handleAllActions}
+                  >
+                    Show All Options
+                  </button>
+                  <UncontrolledTooltip
+                    placement='bottom'
+                    delay={C.TOOLTIP_DELAY}
+                    target='all-actions-button'
+                  >
+                    Show all movement options.
+                  </UncontrolledTooltip>
+                  <button
+                    type='button'
+                    className='px-3 btn btn-sm btn-dark'
+                    id='next-action-button'
+                    disabled={!multiple_actions || !display_move_solution}
+                    onClick={this.handleNextAction}
+                  >
+                    &gt;&gt;
+                  </button>
+                  <UncontrolledTooltip
+                    placement='bottom'
+                    delay={C.TOOLTIP_DELAY}
+                    target='next-action-button'
+                  >
+                    Show the next movement option.
+                  </UncontrolledTooltip>
+                </div>
+              </div>
+
+              <div>
+                <Message ref={this.message_ref}/>
+                <Grid
+                  rotateGrid={this.state.rotate_grid}
+                  brush={this.state.brush}
+                  grid={this.state.grid}
+                  walls={this.state.walls}
+                  aoe={this.state.display_aoe}
+                  reach={this.state.show_reach ? this.state.display_reach : null}
+                  sight={this.state.show_sight ? this.state.display_sight : null}
+                  figures={this.state.figures}
+                  initiatives={this.state.initiatives}
+                  displaySolution={display_solution}
+                  displayMoveSolution={display_move_solution}
+                  moves={this.state.display_moves}
+                  destinations={this.state.show_destination ? this.state.display_destinations : null}
+                  sightlineLines={this.state.show_sightline ? this.state.display_sightline_lines : null}
+                  sightlinePoints={this.state.show_sightline ? this.state.display_sightline_points : null}
+                  obstructionLines={this.state.show_obstruction ? this.state.display_obstruction_lines : null}
+                  obstructionClearPoints={this.state.show_obstruction ? this.state.display_obstruction_clear_points : null}
+                  obstructionBlockedPoints={this.state.show_obstruction ? this.state.display_obstruction_blocked_points : null}
+                  attacks={this.state.display_attacks}
+                  focuses={this.state.show_focus ? this.state.display_focuses : null}
+                  flying={this.state.flying}
+                  selection={this.state.selection}
+                  rotate={this.state.rotate_grid}
+                  dragSourceIndex={this.state.drag_source_index}
+                  activeFaction={this.state.active_faction}
+                  activeFigureIndex={this.state.active_figure_index}
+                  dragRef={this.drag_ref}
+                  onMouseUp={this.handleGridMouseUp}
+                  onMouseLeave={this.handleGridMouseLeave}
+                  onHexClick={this.handleHexClick}
+                  onHexMouseDown={this.handleHexMouseDown}
+                  onHexMouseUp={this.handleHexMouseUp}
+                  onWallClick={this.handleWallClick}
+                  onDragStart={this.handleDragStart}
+                />
+              </div>
+
+              <div className='mt-2 d-flex'>
                 <button
                   type='button'
-                  className='px-3 btn btn-sm btn-dark'
-                  id='previous-action-button'
-                  disabled={!multiple_actions || !display_move_solution}
-                  onClick={this.handlePreviousAction}
+                  className={'px-4 ml-4 btn btn-sm btn-dark' + ( this.state.active_faction ? ' active' : '' )}
+                  id='switch-aggressors-button'
+                  onClick={this.handleActiveFactionChanged}
                 >
-                  &lt;&lt;
+                  Switch Active Faction
                 </button>
-                <UncontrolledTooltip
-                  placement='bottom'
-                  delay={C.TOOLTIP_DELAY}
-                  target='previous-action-button'
-                >
-                  Show the previous movement option.
+                <UncontrolledTooltip placement='top' delay={C.TOOLTIP_DELAY} target='switch-aggressors-button'>
+                  When set, the characters are the active faction. Use to determine the attack of an allied summon.
                 </UncontrolledTooltip>
                 <button
                   type='button'
-                  className='px-3 btn btn-sm btn-dark'
-                  id='all-actions-button'
-                  disabled={!multiple_actions || !display_move_solution}
-                  onClick={this.handleAllActions}
+                  className={'px-4 ml-3 btn btn-sm btn-dark' + ( this.state.rotate_grid ? ' active' : '' )}
+                  onClick={this.handleRotateMapChanged}
                 >
-                  Show All Options
+                  Rotate Board
                 </button>
-                <UncontrolledTooltip
-                  placement='bottom'
-                  delay={C.TOOLTIP_DELAY}
-                  target='all-actions-button'
-                >
-                  Show all movement options.
-                </UncontrolledTooltip>
                 <button
                   type='button'
-                  className='px-3 btn btn-sm btn-dark'
-                  id='next-action-button'
-                  disabled={!multiple_actions || !display_move_solution}
-                  onClick={this.handleNextAction}
+                  className='mx-3 btn btn-sm btn-dark btn-block'
+                  onClick={this.handleMapClear}
                 >
-                  &gt;&gt;
+                  Clear Board
                 </button>
-                <UncontrolledTooltip
-                  placement='bottom'
-                  delay={C.TOOLTIP_DELAY}
-                  target='next-action-button'
+                <button
+                  type='button'
+                  className='px-4 mr-4 btn btn-sm btn-dark'
+                  id='share-scenario-button'
+                  onClick={this.handleShareScenario}
                 >
-                  Show the next movement option.
+                  Share Scenario
+                </button>
+                <UncontrolledTooltip placement='top' delay={C.TOOLTIP_DELAY} target='share-scenario-button'>
+                  Copy a URL for the scenario to your clipboard.
                 </UncontrolledTooltip>
               </div>
             </div>
 
-            <Grid
-              rotateGrid={this.state.rotate_grid}
-              brush={this.state.brush}
-              grid={this.state.grid}
-              walls={this.state.walls}
-              aoe={this.state.display_aoe}
-              reach={this.state.show_reach ? this.state.display_reach : null}
-              sight={this.state.show_sight ? this.state.display_sight : null}
-              figures={this.state.figures}
-              initiatives={this.state.initiatives}
-              displaySolution={display_solution}
-              displayMoveSolution={display_move_solution}
-              moves={this.state.display_moves}
-              destinations={this.state.show_destination ? this.state.display_destinations : null}
-              sightlineLines={this.state.show_sightline ? this.state.display_sightline_lines : null}
-              sightlinePoints={this.state.show_sightline ? this.state.display_sightline_points : null}
-              obstructionLines={this.state.show_obstruction ? this.state.display_obstruction_lines : null}
-              obstructionClearPoints={this.state.show_obstruction ? this.state.display_obstruction_clear_points : null}
-              obstructionBlockedPoints={this.state.show_obstruction ? this.state.display_obstruction_blocked_points : null}
-              attacks={this.state.display_attacks}
-              focuses={this.state.show_focus ? this.state.display_focuses : null}
-              flying={this.state.flying}
-              selection={this.state.selection}
-              rotate={this.state.rotate_grid}
-              dragSourceIndex={this.state.drag_source_index}
-              activeFaction={this.state.active_faction}
-              activeFigureIndex={this.state.active_figure_index}
-              dragRef={this.drag_ref}
-              onMouseUp={this.handleGridMouseUp}
-              onMouseLeave={this.handleGridMouseLeave}
-              onHexClick={this.handleHexClick}
-              onHexMouseDown={this.handleHexMouseDown}
-              onHexMouseUp={this.handleHexMouseUp}
-              onWallClick={this.handleWallClick}
-              onDragStart={this.handleDragStart}
-            />
-
-            <div className='mt-2 d-flex'>
-              <button
-                type='button'
-                className={'px-4 ml-4 btn btn-sm btn-dark' + ( this.state.active_faction ? ' active' : '' )}
-                id='switch-aggressors-button'
-                onClick={this.handleActiveFactionChanged}
-              >
-                Switch Active Faction
-              </button>
-              <UncontrolledTooltip placement='top' delay={C.TOOLTIP_DELAY} target='switch-aggressors-button'>
-                When set, the characters are the active faction. Use to determine the attack of an allied summon.
-              </UncontrolledTooltip>
-              <button
-                type='button'
-                className={'px-4 mx-3 btn btn-sm btn-dark' + ( this.state.rotate_grid ? ' active' : '' )}
-                onClick={this.handleRotateMapChanged}
-              >
-                Rotate Board
-              </button>
-              <button
-                type='button'
-                className='mr-4 btn btn-sm btn-dark btn-block'
-                onClick={this.handleMapClear}
-              >
-                Clear Board
-              </button>
-            </div>
-          </div>
-
-          <div className='mt-5 d-flex flex-column'>
-            <svg width={C.AOE_EXTENT} height={C.AOE_EXTENT} viewBox={C.AOE_VIEWBOX}>
-              <g transform={C.AOE_TRANSFORM}>
-                <AOEHexGrid
-                  grid={this.state.aoe_grid}
-                  melee={this.state.range === 0}
-                  onHexClick={this.handleAOEHexClick}
-                />
-              </g>
-            </svg>
-            <div className='mt-2 mx-4'>
-              <button
-                type='button'
-                className='btn btn-sm btn-dark btn-block'
-                onClick={this.handleAOEClear}
-              >
-                Clear Area of Effect
-              </button>
-            </div>
-            <div className='w-75 mt-auto mb-5 btn-group-vertical'>
-              <button
-                type='button'
-                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_sight ? ' active' : '' )}
-                id='show-sight-button'
-                onClick={this.handleDisplaySightChanged}
-              >
-                Show Line of Sight
-              </button>
-              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-sight-button'>
-                <div className='text-left'>
-                  Show hexes within the active {active_faction_string}'s line of sight.
-                </div>
-              </UncontrolledTooltip>
-              <button
-                type='button'
-                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_reach ? ' active' : '' )}
-                id='show-reach-button'
-                onClick={this.handleDisplayReachChanged}
-              >
-                Show Range
-              </button>
-              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-reach-button'>
-                <div className='text-left'>
-                  Show hexes within the range of the active {active_faction_string}'s attack.
-                  <p/>
-                  For a ranged area of effect attack, only a single hex of the area needs to be within the attack's range, though all targets must be within line of sight.
-                </div>
-              </UncontrolledTooltip>
-              <button
-                type='button'
-                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_movement ? ' active' : '' )}
-                id='show-movement-button'
-                onClick={this.handleDisplayMovementChanged}
-              >
-                Show Movement
-              </button>
-              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-movement-button'>
-                <div className='text-left'>
-                  Show movement options for the active {active_faction_string}.
-                  <p/>
-                  Unset to test range or line of sight from the active {active_faction_string}'s initial location.
-                </div>
-              </UncontrolledTooltip>
-              <button
-                type='button'
-                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_focus ? ' active' : '' )}
-                id='show-focus-button'
-                onClick={this.handleDisplayFocusChanged}
-                disabled={!this.state.show_movement}
-              >
-                Show Focus
-              </button>
-              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-focus-button'>
-                <div className='text-left'>
-                  Show the active {active_faction_string}'s focus.
-                </div>
-              </UncontrolledTooltip>
-              <button
-                type='button'
-                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_destination ? ' active' : '' )}
-                id='show-destination-button'
-                onClick={this.handleDisplayDestinationChanged}
-                disabled={!this.state.show_movement}
-              >
-                Show Destination
-              </button>
-              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-destination-button'>
-                <div className='text-left'>
-                  Show the active {active_faction_string}'s destination when the {active_faction_string} cannot reach it.
-                </div>
-              </UncontrolledTooltip>
-              <button
-                type='button'
-                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_sightline ? ' active' : '' )}
-                id='show-unblocked-lines-button'
-                onClick={this.handleDisplaysightlineLinesChanged}
-                disabled={!this.state.show_movement}
-              >
-                Show Sightline
-              </button>
-              <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-unblocked-lines-button'>
-                <div className='text-left'>
-                  Show a sightline for the active {active_faction_string}'s attack.
-                </div>
-              </UncontrolledTooltip>
-              <button
-                type='button'
-                className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_obstruction ? ' active' : '' )}
-                id='show-blocked-lines-button'
-                onClick={this.handleDisplayobstructionLinesChanged}
-                disabled={!this.state.show_movement}
-              >
-                Show Obstruction
-              </button>
-              <UncontrolledTooltip placement='left-end' delay={C.TOOLTIP_DELAY} target='show-blocked-lines-button'>
-                <div className='text-left'>
-                  Show obstructed sightlines when the active {active_faction_string}'s focus could be attacked excepting that it is not in line of sight.
-                  <p/>
-                  Line of sight is obstructed between two hexes when all lines between their verticies start on, end on, or touch a wall.
-                </div>
-              </UncontrolledTooltip>
+            <div className='mt-5 d-flex flex-column'>
+              <svg width={C.AOE_EXTENT} height={C.AOE_EXTENT} viewBox={C.AOE_VIEWBOX}>
+                <g transform={C.AOE_TRANSFORM}>
+                  <AOEHexGrid
+                    grid={this.state.aoe_grid}
+                    melee={this.state.range === 0}
+                    onHexClick={this.handleAOEHexClick}
+                  />
+                </g>
+              </svg>
+              <div className='mt-2 mx-4'>
+                <button
+                  type='button'
+                  className='btn btn-sm btn-dark btn-block'
+                  onClick={this.handleAOEClear}
+                >
+                  Clear Area of Effect
+                </button>
+              </div>
+              <div className='w-75 mt-auto mb-5 btn-group-vertical'>
+                <button
+                  type='button'
+                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_sight ? ' active' : '' )}
+                  id='show-sight-button'
+                  onClick={this.handleDisplaySightChanged}
+                >
+                  Show Line of Sight
+                </button>
+                <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-sight-button'>
+                  <div className='text-left'>
+                    Show hexes within the active {active_faction_string}'s line of sight.
+                  </div>
+                </UncontrolledTooltip>
+                <button
+                  type='button'
+                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_reach ? ' active' : '' )}
+                  id='show-reach-button'
+                  onClick={this.handleDisplayReachChanged}
+                >
+                  Show Range
+                </button>
+                <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-reach-button'>
+                  <div className='text-left'>
+                    Show hexes within the range of the active {active_faction_string}'s attack.
+                    <p/>
+                    For a ranged area of effect attack, only a single hex of the area needs to be within the attack's range, though all targets must be within line of sight.
+                  </div>
+                </UncontrolledTooltip>
+                <button
+                  type='button'
+                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_movement ? ' active' : '' )}
+                  id='show-movement-button'
+                  onClick={this.handleDisplayMovementChanged}
+                >
+                  Show Movement
+                </button>
+                <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-movement-button'>
+                  <div className='text-left'>
+                    Show movement options for the active {active_faction_string}.
+                    <p/>
+                    Unset to test range or line of sight from the active {active_faction_string}'s initial location.
+                  </div>
+                </UncontrolledTooltip>
+                <button
+                  type='button'
+                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_focus ? ' active' : '' )}
+                  id='show-focus-button'
+                  onClick={this.handleDisplayFocusChanged}
+                  disabled={!this.state.show_movement}
+                >
+                  Show Focus
+                </button>
+                <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-focus-button'>
+                  <div className='text-left'>
+                    Show the active {active_faction_string}'s focus.
+                  </div>
+                </UncontrolledTooltip>
+                <button
+                  type='button'
+                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_destination ? ' active' : '' )}
+                  id='show-destination-button'
+                  onClick={this.handleDisplayDestinationChanged}
+                  disabled={!this.state.show_movement}
+                >
+                  Show Destination
+                </button>
+                <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-destination-button'>
+                  <div className='text-left'>
+                    Show the active {active_faction_string}'s destination when the {active_faction_string} cannot reach it.
+                  </div>
+                </UncontrolledTooltip>
+                <button
+                  type='button'
+                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_sightline ? ' active' : '' )}
+                  id='show-unblocked-lines-button'
+                  onClick={this.handleDisplaysightlineLinesChanged}
+                  disabled={!this.state.show_movement}
+                >
+                  Show Sightline
+                </button>
+                <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-unblocked-lines-button'>
+                  <div className='text-left'>
+                    Show a sightline for the active {active_faction_string}'s attack.
+                  </div>
+                </UncontrolledTooltip>
+                <button
+                  type='button'
+                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_obstruction ? ' active' : '' )}
+                  id='show-blocked-lines-button'
+                  onClick={this.handleDisplayobstructionLinesChanged}
+                  disabled={!this.state.show_movement}
+                >
+                  Show Obstruction
+                </button>
+                <UncontrolledTooltip placement='left-end' delay={C.TOOLTIP_DELAY} target='show-blocked-lines-button'>
+                  <div className='text-left'>
+                    Show obstructed sightlines when the active {active_faction_string}'s focus could be attacked, but it is not in line of sight.
+                    <p/>
+                    Line of sight is obstructed between two hexes when all lines between their vertices start on, end on, or touch a wall.
+                    <p/>
+                    Blocked vertices (those touching walls) are colored orange. Open vertices are colored green. Lines are drawn between all open vertices to demonstrate blocked line of sight.
+                  </div>
+                </UncontrolledTooltip>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+        <textarea
+          ref={this.copy_ref}
+          className='copy'
+          readOnly
+        />
+      </React.Fragment>
     );
   }
 }
