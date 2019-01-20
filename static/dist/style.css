@@ -175,8 +175,8 @@ line.unblocked {
 }
 
 line.blocked {
-  stroke: red;
-  stroke-width: 1;
+  stroke: #ff3333;
+  stroke-width: 1.5;
 }
 
 circle.unblocked {
@@ -185,6 +185,23 @@ circle.unblocked {
 
 circle.blocked {
   fill: orange;
+}
+
+div.message-container {
+  position: relative;
+  pointer-events: none;
+}
+
+div.message {
+  position: absolute;
+  top: 550px;
+  left: 100px;
+  right: 100px;
+}
+
+textarea.copy {
+  position: absolute;
+  left: -9999px;
 }
 
 /*
@@ -220,6 +237,40 @@ text {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+/*
+ * fade
+ */
+
+@-moz-keyframes fade {
+  0% {
+    opacity: 1.0;
+  }
+  100% {
+    opacity: 0.0;
+  }
+}
+@-moz-keyframes fade {
+  0% {
+    opacity: 1.0;
+  }
+  100% {
+    opacity: 0.0;
+  }
+}
+@-webkit-keyframes fade {
+  0% {
+    opacity: 1.0;
+  }
+  100% {
+    opacity: 0.0;
+  }
+}
+div.fade {
+  -moz-animation: fade 1000ms linear;
+  -webkit-animation: fade 1000ms linear;
+  animation: fade 1000ms linear;
 }
 
 /*
