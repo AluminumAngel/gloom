@@ -35,70 +35,6 @@ class Scenario:
           if self.effective_walls[location][edge]:
             self.effective_walls[neighbors[edge]][neighbor_edge] = True
 
-  # TODO: clean this shit up!!!!!!!
-  # TODO: move web interface to a different file
-  def pack_scenario( self ):
-    def get_coords( location ):
-      row = location % self.MAP_HEIGHT + 13
-      column = location / self.MAP_HEIGHT
-      return ( column, row )
-    def get_locations( grid, content ):
-      return [ get_coords( _ ) for _ in range( 0, self.MAP_SIZE ) if grid[_] == content ]
-    def get_initiatives():
-      return [ self.initiatives[_] for _ in range( 0, self.MAP_SIZE ) if self.figures[_] == 'C' ]
-
-    asdf = zip( get_initiatives(), get_locations( self.figures, 'C' ) )
-    asdf.sort()
-    order = 0
-    curr = -1
-    results = []
-    for _ in asdf:
-      if _[0] > curr:
-        order += 1
-        curr = _[0]
-      results.append( ( order, _[1] ) )
-    r, sorted_characters = zip( *results )
-
-    remap = {
-      0: 1,
-      1: 0,
-      5: 2,
-    }
-    w = [ [], [], [] ]
-    for _ in range( 0, self.MAP_SIZE ):
-      for j in [ 0, 1, 5 ]:
-        if self.walls[_][j]:
-          coords = get_coords( _ )
-          w[remap[j]].append( coords )
-
-    a = []
-    for _ in range( 0, self.AOE_SIZE ):
-      if self.aoe[_]:
-        a.append( _ )
-
-    packed_scenario = {
-      'map': {
-        'walls': get_locations( self.contents, 'X' ),
-        'obstacles': get_locations( self.contents, 'O' ),
-        'traps': get_locations( self.contents, 'T' ),
-        'hazardous': get_locations( self.contents, 'H' ),
-        'difficult': get_locations( self.contents, 'D' ),
-        'characters': sorted_characters,
-        'monsters': get_locations( self.figures, 'M' ),
-        'active_monster': get_locations( self.figures, 'A' ),
-        'initiatives': r,
-        'thin_walls': w,
-      },
-      'move': self.ACTION_MOVE,
-      'range': self.ACTION_RANGE,
-      'target': self.ACTION_TARGET,
-      'flying': self.JUMPING and 1 or ( self.FLYING and 2 or 0 ),
-      'muddled': self.MUDDLED and 1 or 0,
-      'aoe': a,
-    }
-
-    return packed_scenario
-
   def unpack_scenario( self, packed_scenario ):
     self.ACTION_MOVE = int( packed_scenario['move'] )
     self.ACTION_RANGE = int( packed_scenario['range'] )
@@ -113,7 +49,6 @@ class Scenario:
     def add_elements( grid, key, content ):
       for _ in packed_scenario['map'][key]:
         grid[_] = content
-        # grid[get_index( _[0], _[1] )] = content
 
     add_elements( self.contents, 'walls', 'X' )
     add_elements( self.contents, 'obstacles', 'O' )
@@ -122,7 +57,6 @@ class Scenario:
     add_elements( self.contents, 'difficult', 'D' )
     add_elements( self.figures, 'characters', 'C' )
     add_elements( self.figures, 'monsters', 'M' )
-    # add_elements( self.figures, 'active_monster', 'A' )
 
     active_figure_location = packed_scenario['active_figure']
     switch_factions = self.figures[active_figure_location] == 'C'
@@ -145,8 +79,6 @@ class Scenario:
       2: 5,
     }
     for _ in packed_scenario['map']['thin_walls']:
-      # index = get_index( _[0], _[1] )
-      # s = remap[_[2]]
       s = remap[_[1]]
       self.walls[_[0]][s] = True
 
@@ -171,7 +103,6 @@ class Scenario:
     def add_elements( grid, key, content ):
       for _ in packed_scenario['map'][key]:
         grid[_] = content
-        # grid[get_index( _[0], _[1] )] = content
 
     add_elements( self.contents, 'walls', 'X' )
 
@@ -181,8 +112,6 @@ class Scenario:
       2: 5,
     }
     for _ in packed_scenario['map']['thin_walls']:
-      # index = get_index( _[0], _[1] )
-      # s = remap[_[2]]
       s = remap[_[1]]
       self.walls[_[0]][s] = True
 
@@ -274,7 +203,10 @@ class Scenario:
     }
 
   def is_adjacent( self, location_a, location_b ):
-    return location_b in self.neighbors[location_a]
+    if location_b not in self.neighbors[location_a]:
+      return False
+    distances = self.find_proximity_distances( location_a )
+    return distances[location_b] == 1
 
   def apply_rotated_aoe_offset( self, center, offset, rotation ):
     offset = rotate_offset( offset, rotation )
@@ -564,7 +496,7 @@ class Scenario:
     self.path_cache[3][cache_key] = distances
     return distances
 
-  def calculate_monster_move( self, test ):
+  def calculate_monster_move( self ):
     if self.ACTION_RANGE == 0 or self.ACTION_TARGET == 0:
       ATTACK_RANGE = 1
       SUSCEPTIBLE_TO_DISADVANTAGE = False
@@ -1073,7 +1005,7 @@ class Scenario:
       destinations[action] = {}
       focus_map[action] = {}
 
-    # calculate sightlines or obstructions
+    # calculate sightlines or obstructions for visualization
     sightlines = {}
     obstruction_lines = {}
     obstruction_blocked_points = {}
@@ -1095,23 +1027,20 @@ class Scenario:
             obstruction_blocked_points[action].update( blocked_points )
             obstruction_clear_points[action].update( clear_points )
 
-          for vertex in range( 0, 6 ):
-            if self.vertex_blocked( action[0], vertex ):
-              obstruction_blocked_points[action].add( self.pack_point( action[0], vertex ) )
-            else:
-              obstruction_clear_points[action].add( self.pack_point( action[0], vertex ) )
-
+          any_focus_in_range = False
           for focus in focus_map[action]:
             if not AOE_ACTION:
               distances = self.find_distances( action[0] )
               if distances[focus] <= ATTACK_RANGE:
                 add_obstruction( focus )
+                any_focus_in_range = True
             elif AOE_MELEE:
               for aoe_rotation in range( 0, 12 ):
                 for aoe_offset in aoe:
                   target = self.apply_rotated_aoe_offset( action[0], aoe_offset, aoe_rotation )
                   if target == focus:
                     add_obstruction( focus )
+                    any_focus_in_range = True
                     break
                 else:
                   continue
@@ -1124,10 +1053,18 @@ class Scenario:
                   if target:
                     if proximity_distances[target] <= ATTACK_RANGE:
                       add_obstruction( focus )
+                      any_focus_in_range = True
                       break
                 else:
                   continue
                 break
+
+          if any_focus_in_range:
+            for vertex in range( 0, 6 ):
+              if self.vertex_blocked( action[0], vertex ):
+                obstruction_blocked_points[action].add( self.pack_point( action[0], vertex ) )
+              else:
+                obstruction_clear_points[action].add( self.pack_point( action[0], vertex ) )
 
     # move monster
     if self.logging:
@@ -1205,7 +1142,7 @@ class Scenario:
   def solve_move( self, test ):
     start_location = self.figures.index( 'A' )
 
-    raw_actions, aoes, destinations, focuses, sightlines, obstruction_lines, obstruction_blocked_points, obstruction_clear_points = self.calculate_monster_move( test )
+    raw_actions, aoes, destinations, focuses, sightlines, obstruction_lines, obstruction_blocked_points, obstruction_clear_points = self.calculate_monster_move()
 
     actions = [
       {
@@ -1214,10 +1151,10 @@ class Scenario:
         'aoe': aoes[_],
         'destinations': list( destinations[_] ),
         'focuses': list( focuses[_] ),
-        # 'sightlines': list( sightlines[_] ),
-        # 'obstruction_lines': list( obstruction_lines[_] ),
-        # 'obstruction_clear_points': list( obstruction_clear_points[_] ),
-        # 'obstruction_blocked_points': list( obstruction_blocked_points[_] ),
+        'sightlines': list( sightlines[_] ),
+        'obstruction_lines': list( obstruction_lines[_] ),
+        'obstruction_clear_points': list( obstruction_clear_points[_] ),
+        'obstruction_blocked_points': list( obstruction_blocked_points[_] ),
       }
       for _ in raw_actions
     ]
@@ -1265,7 +1202,7 @@ def perform_unit_tests( starting_scenario ):
       print 'test %3i: no answer listed' % scenario_index
       continue
 
-    answers, _, _, _, _, _, _, _ = scenario.calculate_monster_move( False )
+    answers, _, _, _, _, _, _, _ = scenario.calculate_monster_move()
     if answers == scenario.correct_answer:
       print 'test %3i: pass' % scenario_index
     else:

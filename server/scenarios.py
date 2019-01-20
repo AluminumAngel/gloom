@@ -3046,7 +3046,7 @@ def init_from_test_scenario( s, scenario_index ):
   #
 
   elif scenario_index == 138:
-    s.message = 'monsters are willing to move farther to avoid disadvantage against secondary targets'
+    s.message = 'Monsters are willing to move farther to avoid disadvantage against secondary targets.'
 
     s.figures[53] = 'C'
     s.initiatives[53] = 10
@@ -3067,7 +3067,7 @@ def init_from_test_scenario( s, scenario_index ):
   #
 
   elif scenario_index == 139:
-    s.message = 'monsters are willing to move farther to avoid disadvantage against secondary targets; but this one is muddled'
+    s.message = 'Monsters are willing to move farther to avoid disadvantage against secondary targets; but this one is muddled.'
 
     s.figures[53] = 'C'
     s.initiatives[53] = 10
@@ -3089,7 +3089,7 @@ def init_from_test_scenario( s, scenario_index ):
   #
 
   elif scenario_index == 140:
-    s.message = 'monsters are willing to move farther to avoid disadvantage against secondary targets; but this one is muddled'
+    s.message = 'Monsters are willing to move farther to avoid disadvantage against secondary targets; but this one is muddled.'
 
     s.figures[53] = 'C'
     s.initiatives[53] = 10
@@ -3110,7 +3110,7 @@ def init_from_test_scenario( s, scenario_index ):
   #
 
   elif scenario_index == 141:
-    s.message = 'monster picks his secondary targets baed on how far it must move to attack them, then proximity, then initiative. Here both groups can be attacked in five steps. It picks the left targets due to proximty. It ends up moving six steps to avoid disadvantage, even though it could have attacked the right targets without disadvantage in five moves. That is because targets are picked based on distance to attack. Only after picking targets does the monster adjust its destination based on avoiding disadvantage.'
+    s.message = 'Monster picks his secondary targets based on how far it must move to attack them, then proximity, then initiative. Here both groups can be attacked in five steps. It picks the left targets due to proximty. It ends up moving six steps to avoid disadvantage, even though it could have attacked the right targets without disadvantage in five moves. That is because targets are picked based on distance to attack. Only after picking targets does the monster adjust its destination based on avoiding disadvantage.'
 
     s.figures[53] = 'C'
     s.initiatives[53] = 10
@@ -3130,6 +3130,31 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_TARGET = 3
 
     s.correct_answer = { ( 40, 26, 32, 53 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 142:
+    s.message = 'Monster does not suffer disadvantage against an adjacent target if the range to that target is two.'
+
+    s.figures[32] = 'C'
+
+    s.contents[23] = 'X'
+    s.contents[24] = 'X'
+    s.contents[25] = 'X'
+    s.contents[51] = 'X'
+    s.contents[52] = 'X'
+    s.contents[53] = 'X'
+
+    s.walls[31][1] = True
+    s.walls[45][1] = True
+
+    s.figures[31] = 'A'
+
+    s.ACTION_MOVE = 2
+    s.ACTION_RANGE = 2
+
+    s.correct_answer = { ( 31, 32 ) }
 
   #######################################
 

@@ -12,18 +12,33 @@ from production import production
 debug = not production
 
 title = 'Gloomhaven Monster Mover'
-version = '2.2.4'
-client_local_storage_version = '1.0.0'
+version_major = 2
+version_minor = 4
+version_build = 0
+version = str( version_major ) + '.' + str( version_minor ) + '.' + str( version_build )
+client_local_storage_version_major = 1
+client_local_storage_version_minor = 0
+client_local_storage_version_build = 0
+client_local_storage_version = str( client_local_storage_version_major ) + '.' + str( client_local_storage_version_minor ) + '.' + str( client_local_storage_version_build )
 
 # Routes
 
 @app.route( '/' )
-def root():
-  return templates( 'index.html' )
+@app.route( '/<scenario>' )
+def root( scenario='' ):
+  print 'scenario = [' + scenario + ']';
+  return templates( 'index.html', params={
+    'scenario': scenario,
+  } )
 
 @app.route( '/los' )
-def los():
-  return templates( 'index.html', params={ 'los_mode': True } )
+@app.route( '/los/<scenario>' )
+def los( scenario='' ):
+  print 'scenario = [' + scenario + ']';
+  return templates( 'index.html', params={
+    'los_mode': True,
+    'scenario': scenario,
+  } )
 
 @app.route( '/templates/<filename>' )
 def templates( filename, params={} ):
@@ -37,6 +52,9 @@ def templates( filename, params={} ):
     title=title,
     version=template_version,
     client_local_storage_version=client_local_storage_version,
+    client_local_storage_version_major=client_local_storage_version_major,
+    client_local_storage_version_minor=client_local_storage_version_minor,
+    client_local_storage_version_build=client_local_storage_version_build,
     **params
   )
 
@@ -102,19 +120,6 @@ def views():
   if not production:
     print solution
   return jsonify( solution )
-
-@app.route( '/scenario/<scenario_index>' )
-def scenario( scenario_index ):
-  # todo: validate scenario_index is legal
-  scenario_index = int( scenario_index )
-
-  s = solver.Scenario()
-  scenarios.init_from_test_scenario( s, scenario_index )
-  packed_scenario = s.pack_scenario()
-  if not production:
-    print packed_scenario
-
-  return jsonify( packed_scenario )
 
 # Debug Server
 if __name__ == '__main__':

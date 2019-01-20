@@ -44,7 +44,7 @@ elif print_los:
   print_map( scenario, scenario.MAP_WIDTH, scenario.MAP_HEIGHT, scenario.effective_walls, [ format_content( *_ ) for _ in zip( scenario.figures, scenario.contents ) ], [ format_los( _ ) for _ in visible_locations ] )
 
 elif profile:
-  SAMPLE_COUNT = 50
+  SAMPLE_COUNT = 5
 
   results = {}
   for test in ( False, True ):
