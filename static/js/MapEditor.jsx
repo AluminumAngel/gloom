@@ -12,6 +12,9 @@ import Grid from './Grid';
 import Message from './Message';
 import PropertyEditor from './PropertyEditor';
 
+// BUGS:
+// - rotated grid is not left/right centered (compare with message box)
+
 // TODO: post URLs for all scenarios in the BGG rules quiz
 // 1  - http://127.0.0.1:5000/AQQETAMIhIYCYAAMgAE
 // 2  - http://127.0.0.1:5000/AQQETAMIfIaCYAAMgAE
@@ -838,9 +841,6 @@ export default class MapEditor extends React.PureComponent {
       }
     } );
 
-    // BUGS:
-    // - rotated grid is not left/right centered (compare with message box)
-
     // write grid mapping
     const ordered_grid_mapping_keys = Object.keys( grid_mapping ).sort(
       function( a, b ) { return a - b; }
@@ -881,7 +881,8 @@ export default class MapEditor extends React.PureComponent {
     } );
 
     bit_writer.flush();
-    var url = location.origin + URL_FOR.root + bit_writer.result();
+    const result = bit_writer.result();
+    const url = location.origin + URL_FOR.root + result;
 
     this.copy_ref.current.value = url;
     this.copy_ref.current.select();
@@ -891,6 +892,14 @@ export default class MapEditor extends React.PureComponent {
       'alert-success',
       'A URL for the scenario has been copied to your clipboard.'
     );
+
+    if ( !DEVELOPMENT ) {
+      gtag( 'event', 'share', {
+        event_category: 'ShareScenario',
+        event_label: 'scenario',
+        value: result.length,
+      } );
+    }
   }
 
   loadStateFromURL( url_scenario, state ) {
@@ -999,6 +1008,14 @@ export default class MapEditor extends React.PureComponent {
 
       Object.assign( state, scenario_state );
       this.addDependentData( state );
+
+      if ( !DEVELOPMENT ) {
+        gtag( 'event', 'load_scenario', {
+          event_category: 'LoadScenarioFromURL',
+          event_label: 'success',
+          value: url_scenario.length,
+        } );
+      }
     }
     catch ( e ) {
       if ( e === 'bad scenario URL' ) {
@@ -1009,6 +1026,14 @@ export default class MapEditor extends React.PureComponent {
             'The URL contains a corrupt scenario description.'
           );
         }, 0 );
+
+        if ( !DEVELOPMENT ) {
+          gtag( 'event', 'load_scenario', {
+            event_category: 'LoadScenarioFromURL',
+            event_label: 'failure',
+            value: url_scenario.length,
+          } );
+        }
       }
       else {
         throw( e );
