@@ -10,15 +10,19 @@
 
     <script>
       URL_FOR = {
+        root: '{{ url_for( "root" ) }}',
         solve: '{{ url_for( "solve" ) }}',
         views: '{{ url_for( "views" ) }}',
-        scenario: '{{ url_for( "scenario", scenario_index="" ) }}',
       };
       DEVELOPMENT = ( {{ debug_server and "true" or "false" }} );
       APP_NAME = '{{ title }}';
       APP_VERSION = '{{ version }}';
       DATA_VERSION = '{{ client_local_storage_version }}';
+      DATA_VERSION_MAJOR = ( {{ client_local_storage_version_major }} );
+      DATA_VERSION_MINOR = ( {{ client_local_storage_version_minor }} );
+      DATA_VERSION_BUILD = ( {{ client_local_storage_version_build }} );
       START_IN_LOS_MODE = '{{ los_mode }}';
+      STARTING_SCENARIO = '{{ scenario }}';
     </script>
 
     <script async src='https://www.googletagmanager.com/gtag/js?id=UA-119941535-1'></script>
@@ -36,7 +40,7 @@
   </head>
 
   <body>
-    <div id='root'/>
+    <div id='root'></div>
     <script src='{{ url_for( 'static', filename='bundle.js', version=version ) }}' type='text/javascript'></script>
   </body>
 
