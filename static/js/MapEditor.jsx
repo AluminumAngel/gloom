@@ -13,39 +13,7 @@ import Message from './Message';
 import PropertyEditor from './PropertyEditor';
 
 // BUGS:
-// - rotated grid is not left/right centered (compare with message box)
-
-// TODO: post URLs for all scenarios in the BGG rules quiz
-// 1  - http://127.0.0.1:5000/AQQETAMIhIYCYAAMgAE
-// 2  - http://127.0.0.1:5000/AQQETAMIfIaCYAAMgAE
-// 3  - http://127.0.0.1:5000/AQgEsAIIVIUEAsAwBwo
-// 4  - http://127.0.0.1:5000/AQgEXAIsDCRY-EAQDBI-EBAABgwQPhAAAwIJHwhAgcIHAgQIECAA
-// 5  - http://127.0.0.1:5000/AQwE-AIiHBRgGCFQMEIAGBCEEAAGBCMEgAFBCAFQQHBCAA
-// 6  - http://127.0.0.1:5000/AQgEWAIgdBMgGCFAEEKAADAAhhBQAAwKEHwQIEAwQgA
-// 7  - http://127.0.0.1:5000/AYgEXAIwDCRY-EBAABgkfCAgAAwYIHwgAAYEEj4QgAICCR8IECBAgAA
-// 8  - http://127.0.0.1:5000/AYgMTAMK7IXCCYNgKAGJEdAA
-// 9  - http://127.0.0.1:5000/AYiMTAMK7IXCCYNgKAGJEdAA
-// 10 - http://127.0.0.1:5000/AYhMTAMK7IXCCYNgKAGJEdAA
-// 11 - http://127.0.0.1:5000/AYQE9AIMTIXECTAgKCHAUAIK
-// 12 - http://127.0.0.1:5000/AYgI_AIK7IWIYCgBBaABJAA
-// 13 - http://127.0.0.1:5000/AQwETAMUTIWGhhKCEpBAABhKCABDCTDUgQI
-// 14 - http://127.0.0.1:5000/AYQIRAMOVIVECUEJaACGEwbAkAIK
-// 15 - http://127.0.0.1:5000/AcgMoAIQtBQAhRBgwKAgCiRGQARoAA
-// 16 - http://127.0.0.1:5000/ARAMOgMKdAYD0SgBiRQQKQEF
-// 17 - http://127.0.0.1:5000/ARAMOgMKdAYDkSgBkRTQKAEF
-// 18 - http://127.0.0.1:5000/ARAEOhOSqEBnMBCREpBIAYUS0AA
-// 19 - http://127.0.0.1:5000/ARgMOgMKdAYD0SgBiRQQKQEF
-// 20 - http://127.0.0.1:5000/AQgEqAIupCRAgAAhBEEwAMwHYBAABgwQQhCABAKA-QAMUKAQggABAgQ
-// 21 - http://127.0.0.1:5000/AQgkOgMGdAaDCqEA
-// 22 - http://127.0.0.1:5000/AQgkOgMGdAaDCqAA
-// 23 - http://127.0.0.1:5000/AQgkhgMW3CVAgFCCEAIMKoRCCUIJAgQI
-// 24 - http://127.0.0.1:5000/AcwM8gIK5AVDCSgIiSXQECI
-// 25 - http://127.0.0.1:5000/ARAIigMM7IVGEjAYhRKCEgIgAQ
-// 26 - http://127.0.0.1:5000/ARQEJgQk5AXDCTAAhhFgAAyAYQQYAANgAAwdwAABAgQIEIBCCQI
-// 27 - http://127.0.0.1:5000/ARQkJgQk5AXDCTAAhhFgAAyAYQQYAANgAAwdwAABAgQIEIBCCQI
-// 28 - http://127.0.0.1:5000/AcQEPgMGfAYDwAgF
-// 29 - http://127.0.0.1:5000/AdgMggNaDCRAgAABAoQNBCEiNCREIECAAAEChAaEBoQLkIDwgCABAgQIECBAoADhAQEwPIAChAoECBAgQIAAgUIIAgQI
-// 30 - http://127.0.0.1:5000/AdQMggNaDCRAgAABAoQNBCEiNCREIECAAAEChAaEBoQLkIDwgCABAgQIECBAoADhAQEwPIAChAoECBAgQIAAgUIIAgQI
+// - setToolsState may be unneccessary
 
 const DISPLAY_ALL_ACTIONS = -1;
 const NULL_INDEX = -1;
@@ -265,12 +233,33 @@ export default class MapEditor extends React.PureComponent {
       display_sight: Array( C.GRID_SIZE ).fill( false ),
     };
 
-    if ( STARTING_SCENARIO !== '' ) {
-      this.loadStateFromURL( STARTING_SCENARIO, this.state );
+    var starting_scenario;
+    if ( START_IN_LOS_MODE ) {
+      starting_scenario = location.pathname.slice( 1 + URL_FOR.los.length );
+    }
+    else {
+      starting_scenario = location.pathname.slice( 1 );
+    }
+    if ( starting_scenario !== '' ) {
+      this.loadStateFromURL( starting_scenario, this.state );
     }
     else {
       this.restoreState( this.state );
     }
+    // function rand( n ) {
+    //   return Math.floor( Math.random() * n );
+    // }
+    // for ( var i = 0; i < C.GRID_SIZE; i++ ) {
+    //   this.state.grid[i] = BRUSH.FIRST_TERRAIN_BRUSH + rand( BRUSH.LAST_TERRAIN_BRUSH - BRUSH.FIRST_TERRAIN_BRUSH + 1 );
+    //   this.state.figures[i] = BRUSH.FIRST_FIGURE_BRUSH + rand( BRUSH.LAST_FIGURE_BRUSH - BRUSH.FIRST_FIGURE_BRUSH + 1 );
+    //   this.state.initiatives[i] = 1 + rand( MAX_INITIATIVE );
+    //   this.state.walls[3 * i + 0] = true;
+    //   this.state.walls[3 * i + 1] = true;
+    //   this.state.walls[3 * i + 2] = true;
+    // }
+    // for ( var i = 0; i < C.AOE_SIZE; i++ ) {
+    //   this.state.aoe_grid[i] = true;
+    // }
     this.storeState( this.state );
 
     this.componentDidUpdate();
@@ -1683,26 +1672,28 @@ export default class MapEditor extends React.PureComponent {
     // If its a ranged aoe and the target count is above 3.
     var complex_type;
     scenario.scenario_too_complex = false;
-    if ( scenario.target_count > 30 ) {
-      scenario.scenario_too_complex = true;
-      complex_type = COMPLEXITY_ENEMIES;
-    }
-    else {
-      var target = scenario.target !== undefined ? scenario.target : this.state.target;
-      if ( target > 3 ) {
-        var range = scenario.range !== undefined ? scenario.range : this.state.range;
-        if ( range > 1 ) {
-          var active_aoe = false;
-          var aoe_grid = scenario.aoe_grid !== undefined ? scenario.aoe_grid : this.state.aoe_grid;
-          for ( var index = 0; index < aoe_grid.length; index++ ) {
-            if ( aoe_grid[index] ) {
-              active_aoe = true;
-              break;
+    if ( this.state.active_figure_index !== NULL_INDEX ) {
+      if ( scenario.target_count > 30 ) {
+        scenario.scenario_too_complex = true;
+        complex_type = COMPLEXITY_ENEMIES;
+      }
+      else {
+        var target = scenario.target !== undefined ? scenario.target : this.state.target;
+        if ( target > 3 ) {
+          var range = scenario.range !== undefined ? scenario.range : this.state.range;
+          if ( range > 1 ) {
+            var active_aoe = false;
+            var aoe_grid = scenario.aoe_grid !== undefined ? scenario.aoe_grid : this.state.aoe_grid;
+            for ( var index = 0; index < aoe_grid.length; index++ ) {
+              if ( aoe_grid[index] ) {
+                active_aoe = true;
+                break;
+              }
             }
-          }
-          if ( active_aoe ) {
-            scenario.scenario_too_complex = true;
-            complex_type = COMPLEXITY_AOE;
+            if ( active_aoe ) {
+              scenario.scenario_too_complex = true;
+              complex_type = COMPLEXITY_AOE;
+            }
           }
         }
       }
@@ -1774,13 +1765,13 @@ export default class MapEditor extends React.PureComponent {
       switch ( action ) {
         case ACTION_WAITING_ON_SOLUTION:
         case ACTION_REQUEST_SOLUTION:
-          status_label = <span><div className='mr-2 throbber'></div> Solving...</span>
+          status_label = <React.Fragment><div className='mr-2 throbber'></div> Solving...</React.Fragment>
           break;
 
         case ACTION_WAITING_ON_VIEW:
         case ACTION_REQUEST_START_VIEWS:
         case ACTION_REQUEST_SOLUTION_VIEWS:
-          status_label = <span><div className='mr-2 throbber'></div> Calculating...</span>
+          status_label = <React.Fragment><div className='mr-2 throbber'></div> Calculating...</React.Fragment>
           if ( this.state.show_movement && this.state.solution_actions ) {
             display_move_solution = true;
           }
@@ -1791,41 +1782,36 @@ export default class MapEditor extends React.PureComponent {
           break;
 
         case ACTION_SCENARIO_TOO_COMPLEX:
-          status_label = <span>The scenario is too complex.</span>
+          status_label = 'The scenario is too complex.';
           break;
 
         case ACTION_NONE_REQUIRED:
-          var status_message;
           if ( this.state.show_movement && this.state.solution_actions ) {
             display_move_solution = true;
             if ( this.state.solution_actions.length === 1 ) {
               if ( this.state.solution_actions[0].attacks.length === 0 && this.state.solution_actions[0].move === this.state.active_figure_index ) {
-                status_message = 'The ' + active_faction_string + ' takes no action.';
+                status_label = 'The ' + active_faction_string + ' takes no action.';
               }
               else {
-                status_message = 'Showing the only movement option.';
+                status_label = 'Showing the only movement option.';
               }
             }
             else if ( this.state.action_displayed === DISPLAY_ALL_ACTIONS ) {
-              status_message = 'Showing ' + getNumberWord( solution_count ) + ' movement options.';
+              status_label = 'Showing ' + getNumberWord( solution_count ) + ' movement options.';
             }
             else {
-              status_message = 'Showing the ' + getOrdinalWord( this.state.action_displayed + 1 ) + ' of ' + getNumberWord( solution_count ) + ' movement options.';
+              status_label = 'Showing the ' + getOrdinalWord( this.state.action_displayed + 1 ) + ' of ' + getNumberWord( solution_count ) + ' movement options.';
               if ( this.state.solution_actions[this.state.action_displayed].move === this.state.active_figure_index && this.state.solution_actions[this.state.action_displayed].attacks.length === 0 ) {
-                status_message += ' No action taken.';
+                status_label += ' No action taken.';
               }
             }
           }
           else if ( this.state.show_reach ) {
-            status_message = 'Showing range.';
+            status_label = 'Showing range.';
           }
           else if ( this.state.show_sight ) {
-            status_message = 'Showing line of sight.';
+            status_label = 'Showing line of sight.';
           }
-          else {
-            status_message = '';
-          }
-          status_label = <span>{status_message}</span>
           break;
       }
     }
@@ -1835,29 +1821,29 @@ export default class MapEditor extends React.PureComponent {
         <div className='container-fluid'>
           <div className='d-flex'>
             <div className='mt-5'>
-                <BrushPicker
-                  flying={this.state.flying}
-                  initiative={this.state.next_initiative}
-                  selection={this.state.brush}
-                  activeFaction={this.state.active_faction}
-                  onSelection={this.handleBrushSelection}
-                />
-                <PropertyEditor
-                  activeFactionString={active_faction_string}
-                  inactiveFactionString={inactive_faction_string}
-                  move={this.state.move}
-                  range={this.state.range}
-                  target={this.state.target}
-                  flying={this.state.flying}
-                  muddled={this.state.muddled}
-                  initiative={this.state.selection === -1 ? -1 : this.state.initiatives[this.state.selection]}
-                  onMoveChange={this.handleMoveChange}
-                  onRangeChange={this.handleRangeChange}
-                  onTargetChange={this.handleTargetChange}
-                  onFlyingChange={this.handleFlyingChange}
-                  onMuddledChange={this.handleMuddledChange}
-                  onInitiativeChange={this.handleInitiativeChange}
-                />
+              <BrushPicker
+                flying={this.state.flying}
+                initiative={this.state.next_initiative}
+                selection={this.state.brush}
+                activeFaction={this.state.active_faction}
+                onSelection={this.handleBrushSelection}
+              />
+              <PropertyEditor
+                activeFactionString={active_faction_string}
+                inactiveFactionString={inactive_faction_string}
+                move={this.state.move}
+                range={this.state.range}
+                target={this.state.target}
+                flying={this.state.flying}
+                muddled={this.state.muddled}
+                initiative={this.state.selection === -1 ? -1 : this.state.initiatives[this.state.selection]}
+                onMoveChange={this.handleMoveChange}
+                onRangeChange={this.handleRangeChange}
+                onTargetChange={this.handleTargetChange}
+                onFlyingChange={this.handleFlyingChange}
+                onMuddledChange={this.handleMuddledChange}
+                onInitiativeChange={this.handleInitiativeChange}
+              />
             </div>
 
             <div className='mx-3 mt-2 d-flex flex-column'>
@@ -1921,7 +1907,7 @@ export default class MapEditor extends React.PureComponent {
                 <Message ref={this.message_ref}/>
                 <Grid
                   rotateGrid={this.state.rotate_grid}
-                  brush={this.state.brush}
+                  activeHexes={this.state.brush !== BRUSH.THIN_WALL}
                   grid={this.state.grid}
                   walls={this.state.walls}
                   aoe={this.state.display_aoe}
@@ -2016,7 +2002,8 @@ export default class MapEditor extends React.PureComponent {
                   Clear Area of Effect
                 </button>
               </div>
-              <div className='w-75 mt-auto mb-5 btn-group-vertical'>
+
+              <div className='w-75 mt-auto btn-group-vertical'>
                 <button
                   type='button'
                   className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_sight ? ' active' : '' )}
@@ -2120,6 +2107,18 @@ export default class MapEditor extends React.PureComponent {
                     Blocked vertices (those touching walls) are colored orange. Open vertices are colored green. Lines are drawn between all open vertices to demonstrate blocked line of sight.
                   </div>
                 </UncontrolledTooltip>
+              </div>
+
+              <div className='text-secondary small'>
+                <p/>
+                <p class='footer'/>
+                &copy; 2020 <a href='mailto:daniel.richard.nelson@gmail.com'>daniel.richard.nelson@gmail.com</a>
+                <p class='footer'/>
+                <a href='https://github.com/AluminumAngel/gloom'>github.com/AluminumAngel/gloom</a>
+                <p class='footer'/>
+                <a href='https://boardgamegeek.com/user/AluminumAngel'>boardgamegeek.com/user/AluminumAngel</a>
+                <p class='footer'/>
+                <a href='https://www.reddit.com/user/AluminumAngel'>u/AluminumAngel</a>
               </div>
             </div>
           </div>

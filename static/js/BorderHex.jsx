@@ -1,7 +1,7 @@
 import React from 'react';
 import HexUtils from './HexUtils';
 
-export default function BorderHex( props ) {
+const BorderHex = React.memo( function( props ) {
   return (
     <polygon
       className='empty'
@@ -9,4 +9,5 @@ export default function BorderHex( props ) {
       pointerEvents='none'
     />
   );
-}
+} );
+export default BorderHex;

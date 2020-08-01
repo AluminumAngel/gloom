@@ -1,12 +1,114 @@
+def unreduce_actions( s, actions ):
+  def fix_location( location ):
+    column = location / s.MAP_HEIGHT
+    row = location % s.MAP_HEIGHT
+    column += s.REDUCE_COLUMN
+    row += s.REDUCE_ROW
+    return row + column * s.OLD_MAP_HEIGHT
+  def fix_location_list( location_list ):
+    new_location_list = []
+    for item in location_list:
+      new_location_list.append( fix_location( item ) )
+    return new_location_list
+
+  new_actions = []
+  for action in actions:
+    new_action = {}
+    new_action['move'] = fix_location( action['move'] )
+    new_action['attacks'] = fix_location_list( action['attacks'] )
+    new_action['focuses'] = fix_location_list( action['focuses'] )
+    new_action['destinations'] = fix_location_list( action['destinations'] )
+    new_actions.append( new_action )
+
+  return new_actions
+
+# def reduce_scenario( s, scenario ):
+#   # TODO: reduce the scenario in-place
+
+#   min_row = 9999
+#   min_column = 9999
+#   max_row = 0
+#   max_column = 0
+
+#   # TODO: don't need to prepare first map
+
+#   figures = [ _ for _, figure in enumerate( s.figures ) if figure != ' ' ]
+#   contents = [ _ for _, content in enumerate( s.contents ) if content != ' ' ]
+#   for location in figures:
+#     column = location / s.MAP_HEIGHT
+#     min_column = min( min_column, column )
+#     max_column = max( max_column, column )
+#     row = location % s.MAP_HEIGHT
+#     min_row = min( min_row, row )
+#     max_row = max( max_row, row )
+#     print s.figures[location], column, row
+#   for location in contents:
+#     column = location / s.MAP_HEIGHT
+#     min_column = min( min_column, column )
+#     max_column = max( max_column, column )
+#     row = location % s.MAP_HEIGHT
+#     min_row = min( min_row, row )
+#     max_row = max( max_row, row )
+#     print s.figures[location], column, row
+#   print min_column, max_column
+#   print min_row, max_row
+
+#   reduce_column = min_column / 2 * 2
+#   reduce_row = min_row
+
+#   scenario.REDUCE_COLUMN = reduce_column
+#   scenario.REDUCE_ROW = reduce_row
+#   scenario.OLD_MAP_HEIGHT = s.MAP_HEIGHT
+
+#   width = max_column - reduce_column + 1
+#   height = max_row - reduce_row + 1
+
+#   init( scenario, width, height, s.AOE_WIDTH, s.AOE_HEIGHT )
+
+#   for location in figures:
+#     column = location / s.MAP_HEIGHT
+#     row = location % s.MAP_HEIGHT
+#     column -= reduce_column
+#     row -= reduce_row
+#     new_location = row + column * scenario.MAP_HEIGHT
+#     print new_location, location
+#     scenario.figures[new_location] = s.figures[location]
+#     scenario.initiatives[new_location] = s.initiatives[location]
+#   for location in contents:
+#     column = location / s.MAP_HEIGHT
+#     row = location % s.MAP_HEIGHT
+#     column -= reduce_column
+#     row -= reduce_row
+#     new_location = row + column * scenario.MAP_HEIGHT
+#     print new_location, location
+#     scenario.contents[new_location] = s.contents[location]
+
+#   # copy aoe
+#   # copy initiative
+#   # copy thin walls
+
+#   scenario.message = s.message
+#   scenario.ACTION_MOVE = s.ACTION_MOVE
+#   scenario.ACTION_RANGE = s.ACTION_RANGE
+#   scenario.ACTION_TARGET = s.ACTION_TARGET
+#   scenario.FLYING = s.FLYING
+#   scenario.JUMPING = s.JUMPING
+#   scenario.TELEPORTING = s.TELEPORTING
+#   scenario.MUDDLED = s.MUDDLED
+#   scenario.aoe = s.aoe
+
+#   scenario.prepare_map()
+
 # TODO should be a member function
 def init( s, width, height, aoe_width, aoe_height ):
   s.test_switch = True#False
+  s.reduced = False
 
   s.MAP_WIDTH = width
   s.MAP_HEIGHT = height
   s.MAP_SIZE = s.MAP_WIDTH * s.MAP_HEIGHT
   s.MAP_VERTEX_COUNT = 6 * s.MAP_SIZE
-  s.MAP_CENTER = ( s.MAP_SIZE - 1 ) / 2;
+  # s.MAP_CENTER = ( s.MAP_SIZE - 1 ) / 2;
 
   s.AOE_WIDTH = aoe_width
   s.AOE_HEIGHT = aoe_height
@@ -29,6 +131,7 @@ def init( s, width, height, aoe_width, aoe_height ):
   s.ACTION_TARGET = 1
   s.FLYING = False
   s.JUMPING = False
+  s.TELEPORTING = False
   s.MUDDLED = False
 
 # TODO should be a member function?
@@ -1121,7 +1224,7 @@ def init_from_test_scenario( s, scenario_index ):
   # ranged
 
   elif scenario_index == 58:
-    s.message = 'Even if the cannot get to within range of its focus, it will get as close to an attack position as possible.'
+    s.message = 'Even if the monster cannot get to within range of its focus, it will get as close to an attack position as possible.'
 
     s.figures[29] = 'C'
     s.figures[12] = 'A'
@@ -1137,7 +1240,7 @@ def init_from_test_scenario( s, scenario_index ):
   # ranged
 
   elif scenario_index == 59:
-    s.message = 'Even if the cannot get to within range of its focus, it will get as close to the nearest attack position as possible.'
+    s.message = 'Even if the monster cannot get to within range of its focus, it will get as close to the nearest attack position as possible.'
 
     s.figures[30] = 'C'
 
@@ -2057,6 +2160,8 @@ def init_from_test_scenario( s, scenario_index ):
 
     s.figures[52] = 'C'
 
+    s.contents[10] = 'D'
+    s.contents[24] = 'D'
     s.contents[24] = 'D'
     s.contents[23] = 'D'
     s.contents[31] = 'D'
@@ -3135,6 +3240,27 @@ def init_from_test_scenario( s, scenario_index ):
   #
 
   elif scenario_index == 142:
+    s.message = 'Tests a bug in the line-line collision detection causing all colinear line segments to report as colliding.'
+
+    s.figures[32] = 'C'
+
+    s.contents[23] = 'X'
+    s.contents[24] = 'X'
+    s.contents[25] = 'X'
+    s.contents[33] = 'X'
+    s.contents[39] = 'X'
+    s.contents[47] = 'X'
+    s.contents[51] = 'X'
+    s.contents[53] = 'X'
+
+    s.figures[52] = 'A'
+
+    s.ACTION_MOVE = 0
+    s.ACTION_RANGE = 3
+
+    s.correct_answer = { ( 52, 32 ) }
+
+  elif scenario_index == 143:
     s.message = 'Monster does not suffer disadvantage against an adjacent target if the range to that target is two.'
 
     s.figures[32] = 'C'
@@ -3156,7 +3282,215 @@ def init_from_test_scenario( s, scenario_index ):
 
     s.correct_answer = { ( 31, 32 ) }
 
+  elif scenario_index == 144:
+    s.message = 'trap tests'
+
+    s.figures[37] = 'C'
+
+    s.contents[2] = 'X'
+    s.contents[3] = 'X'
+    s.contents[8] = 'X'
+    s.contents[10] = 'X'
+    s.contents[15] = 'X'
+    s.contents[18] = 'X'
+    s.contents[28] = 'X'
+    s.contents[33] = 'X'
+    s.contents[35] = 'X'
+    s.contents[36] = 'X'
+    s.contents[38] = 'X'
+    s.contents[39] = 'X'
+    s.contents[44] = 'X'
+    s.contents[45] = 'X'
+
+    s.contents[16] = 'T'
+    s.contents[17] = 'T'
+    s.contents[21] = 'T'
+    s.contents[22] = 'T'
+    s.contents[23] = 'T'
+    s.contents[24] = 'T'
+    s.contents[25] = 'T'
+    s.contents[29] = 'T'
+    s.contents[30] = 'T'
+    s.contents[31] = 'T'
+    s.contents[32] = 'T'
+
+    s.walls[25][1] = True
+    s.walls[25][2] = True
+    s.walls[21][3] = True
+    s.walls[21][4] = True
+
+    s.figures[9] = 'A'
+
+    s.ACTION_MOVE = 2
+
+    s.correct_answer = { ( 22, ), ( 23, ), ( 24, ) }
+
+  # elif scenario_index == 145:
+  #   s.message = 'trap tests'
+
+  #   s.figures[37] = 'C'
+
+  #   s.contents[2] = 'X'
+  #   s.contents[3] = 'X'
+  #   s.contents[8] = 'X'
+  #   s.contents[10] = 'X'
+  #   s.contents[15] = 'X'
+  #   s.contents[18] = 'X'
+  #   s.contents[28] = 'X'
+  #   s.contents[33] = 'X'
+  #   s.contents[35] = 'X'
+  #   s.contents[36] = 'X'
+  #   s.contents[38] = 'X'
+  #   s.contents[39] = 'X'
+  #   s.contents[44] = 'X'
+  #   s.contents[45] = 'X'
+
+  #   s.contents[16] = 'T'
+  #   s.contents[17] = 'T'
+  #   s.contents[21] = 'T'
+  #   s.contents[22] = 'T'
+  #   s.contents[23] = 'T'
+  #   s.contents[24] = 'T'
+  #   s.contents[25] = 'T'
+  #   s.contents[29] = 'T'
+  #   s.contents[30] = 'T'
+  #   s.contents[31] = 'T'
+  #   s.contents[32] = 'T'
+
+  #   s.walls[25][1] = True
+  #   s.walls[25][2] = True
+  #   s.walls[21][3] = True
+  #   s.walls[21][4] = True
+
+  #   s.figures[9] = 'A'
+
+  #   s.ACTION_MOVE = 2
+  #   s.JUMPING = True
+
+  #   s.correct_answer = { ( 22, ), ( 23, ), ( 24, ) }
+
+  # elif scenario_index == 146:
+  #   s.message = 'trap tests'
+
+  #   s.figures[37] = 'C'
+
+  #   s.contents[2] = 'X'
+  #   s.contents[3] = 'X'
+  #   s.contents[8] = 'X'
+  #   s.contents[10] = 'X'
+  #   s.contents[15] = 'X'
+  #   s.contents[18] = 'X'
+  #   s.contents[28] = 'X'
+  #   s.contents[33] = 'X'
+  #   s.contents[35] = 'X'
+  #   s.contents[36] = 'X'
+  #   s.contents[38] = 'X'
+  #   s.contents[39] = 'X'
+  #   s.contents[44] = 'X'
+  #   s.contents[45] = 'X'
+
+  #   s.contents[16] = 'T'
+  #   s.contents[17] = 'T'
+  #   s.contents[21] = 'T'
+  #   s.contents[22] = 'T'
+  #   s.contents[23] = 'T'
+  #   s.contents[24] = 'T'
+  #   s.contents[25] = 'T'
+  #   s.contents[29] = 'T'
+  #   s.contents[31] = 'T'
+  #   s.contents[32] = 'T'
+
+  #   s.walls[25][1] = True
+  #   s.walls[25][2] = True
+  #   s.walls[21][3] = True
+  #   s.walls[21][4] = True
+
+  #   s.figures[9] = 'A'
+
+  #   s.ACTION_MOVE = 2
+  #   s.JUMPING = True
+
+  #   s.correct_answer = { ( 22, ), ( 23, ) }
+
+  # elif scenario_index == 147:
+  #   s.message = 'trap tests'
+
+  #   s.figures[37] = 'C'
+
+  #   s.contents[2] = 'X'
+  #   s.contents[3] = 'X'
+  #   s.contents[8] = 'X'
+  #   s.contents[10] = 'X'
+  #   s.contents[15] = 'X'
+  #   s.contents[18] = 'X'
+  #   s.contents[28] = 'X'
+  #   s.contents[33] = 'X'
+  #   s.contents[35] = 'X'
+  #   s.contents[36] = 'X'
+  #   s.contents[38] = 'X'
+  #   s.contents[39] = 'X'
+  #   s.contents[44] = 'X'
+  #   s.contents[45] = 'X'
+
+  #   s.contents[16] = 'T'
+  #   s.contents[17] = 'T'
+  #   s.contents[21] = 'T'
+  #   s.contents[22] = 'T'
+  #   s.contents[23] = 'T'
+  #   s.contents[25] = 'T'
+  #   s.contents[29] = 'T'
+  #   s.contents[30] = 'T'
+  #   s.contents[31] = 'T'
+  #   s.contents[32] = 'T'
+
+  #   s.walls[25][1] = True
+  #   s.walls[25][2] = True
+  #   s.walls[21][3] = True
+  #   s.walls[21][4] = True
+
+  #   s.figures[9] = 'A'
+
+  #   s.ACTION_MOVE = 2
+  #   s.JUMPING = True
+
+  #   s.correct_answer = { ( 24, ) }
+
   #######################################
+
+  elif scenario_index == 148:
+    s.message = 'The monster will choose to close the distance to its destination along a path that minimizes the number of traps it will trigger.'
+
+    s.figures[34] = 'C'
+
+    s.contents[28] = 'X'
+    s.contents[21] = 'X'
+    s.contents[15] = 'X'
+    s.contents[16] = 'X'
+    s.contents[17] = 'X'
+    s.contents[18] = 'X'
+    s.contents[19] = 'X'
+    s.contents[20] = 'X'
+    s.contents[27] = 'X'
+    s.contents[35] = 'X'
+    s.contents[43] = 'X'
+    s.contents[44] = 'X'
+    s.contents[45] = 'X'
+    s.contents[46] = 'X'
+    s.contents[47] = 'X'
+    s.contents[48] = 'X'
+    s.contents[31] = 'X'
+    s.contents[32] = 'X'
+    s.contents[41] = 'X'
+
+    s.contents[23] = 'T'
+    s.contents[25] = 'T'
+    s.contents[39] = 'T'
+
+    s.figures[29] = 'A'
+
+    s.ACTION_MOVE = 3
+
+    s.correct_answer = { ( 38, ), }
 
   else:
     s.valid = False

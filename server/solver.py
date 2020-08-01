@@ -14,6 +14,140 @@ class Scenario:
     self.visibility_cache = {}
     self.path_cache = [ {}, {}, {}, {} ]
 
+  def reduce_map( self ):
+    self.reduced = True
+    # print self.effective_walls
+    # if hasattr( self, 'effective_walls' ):
+    #   exit(-1)
+
+    # TODO: make sure we don't prepare twice
+
+    old_height = self.MAP_HEIGHT
+    old_width = self.MAP_WIDTH
+    old_walls = self.walls
+    old_contents = self.contents
+    old_figures = self.figures
+    old_initiatives = self.initiatives
+
+    min_row = 9999
+    min_column = 9999
+    max_row = 0
+    max_column = 0
+    targets_min_row = 9999
+    targets_min_column = 9999
+    targets_max_row = 0
+    targets_max_column = 0
+
+    # TODO: don't need to prepare_map first map
+
+    figures = [ _ for _, figure in enumerate( self.figures ) if figure != ' ' ]
+    contents = [ _ for _, content in enumerate( self.contents ) if content != ' ' ]
+    walls = [
+      [ _ for _, wall in enumerate( self.walls ) if wall[a] ]
+      for a in range( 0, 6 )
+    ]
+
+    # TODO
+    # only need ACTION_RANGE to potential targets
+    # handle AOE based range extensions (need test cases)
+    # time
+
+    for location in figures:
+      column = location / old_height
+      min_column = min( min_column, column )
+      max_column = max( max_column, column )
+      row = location % old_height
+      min_row = min( min_row, row )
+      max_row = max( max_row, row )
+      if old_figures[location] == 'C':
+        targets_min_column = min( targets_min_column, column )
+        targets_max_column = max( targets_max_column, column )
+        targets_min_row = min( targets_min_row, row )
+        targets_max_row = max( targets_max_row, row )
+    for location in contents:
+      column = location / old_height
+      min_column = min( min_column, column )
+      max_column = max( max_column, column )
+      row = location % old_height
+      min_row = min( min_row, row )
+      max_row = max( max_row, row )
+    for i in range( 0, 6 ):
+      for location in walls[i]:
+        column = location / old_height
+        min_column = min( min_column, column )
+        max_column = max( max_column, column )
+        row = location % old_height
+        min_row = min( min_row, row )
+        max_row = max( max_row, row )
+
+    edge = 1
+    # edge = max( 1, self.ACTION_RANGE )
+    min_row = max( min_row - edge, 0 )
+    min_column = max( min_column - edge, 0 )
+    max_row = min( max_row + edge, old_height - 1 )
+    max_column = min( max_column + edge, old_width - 1 )
+
+    attack_range = self.ACTION_RANGE
+    # TODO - account for AOE here
+    edge = max( 1, attack_range )
+    targets_min_row = max( targets_min_row - edge, 0 )
+    targets_min_column = max( targets_min_column - edge, 0 )
+    targets_max_row = min( targets_max_row + edge, old_height - 1 )
+    targets_max_column = min( targets_max_column + edge, old_width - 1 )
+
+    min_row = min( min_row, targets_min_row )
+    min_column = min( min_column, targets_min_column )
+    max_row = max( max_row, targets_max_row )
+    max_column = max( max_column, targets_max_column )
+
+    reduce_column = min_column / 2 * 2
+    reduce_row = min_row
+
+    self.REDUCE_COLUMN = reduce_column
+    self.REDUCE_ROW = reduce_row
+    self.ORIGINAL_MAP_HEIGHT = old_height
+
+    width = max_column - reduce_column + 1
+    height = max_row - reduce_row + 1
+
+    # init( scenario, width, height, s.AOE_WIDTH, s.AOE_HEIGHT )
+    self.MAP_WIDTH = width
+    self.MAP_HEIGHT = height
+    self.MAP_SIZE = self.MAP_WIDTH * self.MAP_HEIGHT
+    self.MAP_VERTEX_COUNT = 6 * self.MAP_SIZE
+    # s.MAP_CENTER = ( s.MAP_SIZE - 1 ) / 2;
+
+    self.walls = [ [ False ] * 6 for _ in range( self.MAP_SIZE ) ]
+    self.contents = [ ' ' ] * self.MAP_SIZE
+    self.figures = [ ' ' ] * self.MAP_SIZE
+    self.initiatives = [ 0 ] * self.MAP_SIZE
+
+    for location in figures:
+      column = location / old_height
+      row = location % old_height
+      column -= reduce_column
+      row -= reduce_row
+      new_location = row + column * self.MAP_HEIGHT
+      self.figures[new_location] = old_figures[location]
+      self.initiatives[new_location] = old_initiatives[location]
+    for location in contents:
+      column = location / old_height
+      row = location % old_height
+      column -= reduce_column
+      row -= reduce_row
+      new_location = row + column * self.MAP_HEIGHT
+      self.contents[new_location] = old_contents[location]
+    for i in range( 0, 6 ):
+      for location in walls[i]:
+        column = location / old_height
+        row = location % old_height
+        column -= reduce_column
+        row -= reduce_row
+        new_location = row + column * self.MAP_HEIGHT
+        self.walls[new_location][i] = True
+
+    self.prepare_map()
+
   def prepare_map( self ):
     self.setup_vertices_list()
     self.setup_neighbors_mapping()
@@ -41,6 +175,7 @@ class Scenario:
     self.ACTION_TARGET = int( packed_scenario['target'] )
     self.JUMPING = int( packed_scenario['flying'] ) == 1
     self.FLYING = int( packed_scenario['flying'] ) == 2
+    self.TELEPORTING = int( packed_scenario['flying'] ) == 3
     self.MUDDLED = int( packed_scenario['muddled'] ) == 1
 
     def get_index( column, row ):
@@ -126,6 +261,8 @@ class Scenario:
     return self.contents[location] in [ ' ', 'T', 'H', 'D' ] and self.figures[location] != 'C'
   def can_travel_through_flying( self, location ):
     return self.contents[location] in [ ' ', 'T', 'H', 'D', 'O' ]
+  def can_travel_through_teleporting( self, location ):
+    return self.contents[location] in [ ' ', 'X', 'T', 'H', 'D', 'O' ]
 
   def is_trap_standard( self, location ):
     return self.contents[location] in [ 'T', 'H' ]
@@ -369,12 +506,21 @@ class Scenario:
       if self.neighbors[location][4] != -1:
         location = self.neighbors[location][4]
         vertex = 1
-    return location * 6 + vertex
+    return self.dereduce_location( location ) * 6 + vertex
 
   def pack_line( self, location_a, vertex_a, location_b, vertex_b ):
     point_a = self.pack_point( location_a, vertex_a )
     point_b = self.pack_point( location_b, vertex_b )
     return point_a * self.MAP_VERTEX_COUNT + point_b
+
+  def dereduce_location( self, location ):
+    if not self.reduced:
+      return location
+    column = location / self.MAP_HEIGHT
+    row = location % self.MAP_HEIGHT
+    column += self.REDUCE_COLUMN
+    row += self.REDUCE_ROW
+    return row + column * self.ORIGINAL_MAP_HEIGHT
 
   def find_path_distances( self, start, traversal_test ):
     cache_key = ( start, traversal_test )
@@ -402,8 +548,8 @@ class Scenario:
           continue
         if self.walls[current][edge]:
           continue
-        neighbor_distance = distance + 1 + int( not self.FLYING and not self.JUMPING and self.additional_path_cost( neighbor ) )
-        neighbor_trap = int( not self.JUMPING ) * trap + int( self.is_trap( self, neighbor ) )
+        neighbor_distance = distance + 1 + int( not self.FLYING and not self.JUMPING and not self.TELEPORTING and self.additional_path_cost( neighbor ) )
+        neighbor_trap = int( not self.JUMPING and not self.TELEPORTING ) * trap + int( self.is_trap( self, neighbor ) )
         if is_pair_less_than( neighbor_trap, traps[neighbor], neighbor_distance, distances[neighbor] ):
           frontier.append( neighbor )
           distances[neighbor] = neighbor_distance
@@ -412,28 +558,32 @@ class Scenario:
     if self.JUMPING:
       for location in range( 0, self.MAP_SIZE ):
         distances[location] += self.additional_path_cost( location )
+      distances[start] -= self.additional_path_cost( start )
 
     self.path_cache[0][cache_key] = ( distances, traps )
     return distances, traps
 
-  def find_path_distances_reverse( self, start, traversal_test ):
+  def find_path_distances_reverse( self, destination, traversal_test ):
     # reverse in that we find the path distance to the start from every location
     # path distance is symetric except for difficult terrain
     # we correct for the asymetry of starting vs ending on difficult terrain
-    # we do not correct in that way for traps
-    cache_key = ( start, traversal_test )
+    # we correct for the asymetry of starting vs ending on traps
+    cache_key = ( destination, traversal_test )
     if cache_key in self.path_cache[1]:
       return self.path_cache[1][cache_key]
 
-    distances, traps = self.find_path_distances( start, traversal_test )
-    if not self.FLYING:
-      start_additional_path_cost = self.additional_path_cost( start )
-      if start_additional_path_cost > 0:
-        distances = [ _ != MAX_VALUE and _ + start_additional_path_cost or _ for _ in distances ]
-        if self.JUMPING:
-          distances[start] -= start_additional_path_cost
+    distances, traps = self.find_path_distances( destination, traversal_test )
+    distances = list( distances )
+    traps = list( traps )
+    if not self.FLYING and not self.TELEPORTING:
+      destination_additional_path_cost = self.additional_path_cost( destination )
+      if destination_additional_path_cost > 0:
+        distances = [ _ != MAX_VALUE and _ + destination_additional_path_cost or _ for _ in distances ]
+      if self.is_trap( self, destination ):
+        traps = [ _ != MAX_VALUE and _ + 1 or _ for _ in traps ]
       for location in range( 0, self.MAP_SIZE ):
         distances[location] -= self.additional_path_cost( location )
+        traps[location] -= int( self.is_trap( self, location ) )
     
     self.path_cache[1][cache_key] = ( distances, traps )
     return distances, traps
@@ -517,6 +667,10 @@ class Scenario:
       self.can_end_move_on = Scenario.can_end_move_on_standard
       self.can_travel_through = Scenario.can_travel_through_flying
       self.is_trap = Scenario.is_trap_standard
+    elif self.TELEPORTING:
+      self.can_end_move_on = Scenario.can_end_move_on_standard
+      self.can_travel_through = Scenario.can_travel_through_teleporting
+      self.is_trap = Scenario.is_trap_standard
     else:
       self.can_end_move_on = Scenario.can_end_move_on_standard
       self.can_travel_through = Scenario.can_travel_through_standard
@@ -547,6 +701,8 @@ class Scenario:
         out += ', FLYING'
       elif self.JUMPING:
         out += ', JUMPING'
+      elif self.TELEPORTING:
+        out += ', TELEPORTING'
       if self.MUDDLED:
         out += ', MUDDLED'
       if out == '':
@@ -566,10 +722,12 @@ class Scenario:
     active_monster = self.figures.index( 'A' )
     travel_distances, trap_counts = self.find_path_distances( active_monster, self.can_travel_through )
     proximity_distances = self.find_proximity_distances( active_monster )
+    asdf, dd = self.find_path_distances_reverse( active_monster, self.can_travel_through )
     # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in trap_counts ] )
     # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in travel_distances ] )
     # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in proximity_distances ] )
-
+    # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in asdf ] )
+    # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in dd ] )
     # process aoe
     if AOE_ACTION:
       center_location = self.AOE_CENTER if AOE_MELEE else self.aoe.index( True )
@@ -730,6 +888,7 @@ class Scenario:
             travel_distances[location],
           ) + tuple( -_ for _ in targets_of_rank )
 
+          # print location, this_group, t.best_group
           if is_tuple_equal( this_group, t.best_group ):
             group = tuple( sorted( targets ) )
             t.groups.add( group )
@@ -737,6 +896,7 @@ class Scenario:
             group = tuple( sorted( targets ) )
             t.best_group = this_group
             t.groups = { group }
+          # print t.groups
 
       for location in range( 0, self.MAP_SIZE ):
         if self.can_end_move_on( self, location ):
@@ -859,6 +1019,8 @@ class Scenario:
             u.best_destination = this_destination
             u.destinations = { action }
             u.aoes = { action: aoe_hexes }
+          # print action, this_destination, u.best_destination
+          # print u.destinations
 
       for location in range( 0, self.MAP_SIZE ):
         if self.can_end_move_on( self, location ):
@@ -957,6 +1119,7 @@ class Scenario:
           actions_for_this_destination = []
           best_move = (
             MAX_VALUE - 1, # traps to destination
+            MAX_VALUE - 1, # ???
             MAX_VALUE - 1, # distance to destination
             MAX_VALUE - 1, # travel distance
           )
@@ -966,6 +1129,7 @@ class Scenario:
               if self.can_end_move_on( self, location ):
                 this_move = (
                   traps_to_destination[location],
+                  trap_counts[location],
                   distance_to_destination[location],
                   travel_distances[location],
                 )
@@ -974,6 +1138,9 @@ class Scenario:
                 elif is_tuple_less_than( this_move, best_move ):
                   best_move = this_move
                   actions_for_this_destination = [ ( location, ) ]
+                # print ( location, ), this_move, best_move
+                # print actions_for_this_destination
+
           actions_for_this_focus += actions_for_this_destination
 
           for action in actions_for_this_destination:
@@ -1144,13 +1311,16 @@ class Scenario:
 
     raw_actions, aoes, destinations, focuses, sightlines, obstruction_lines, obstruction_blocked_points, obstruction_clear_points = self.calculate_monster_move()
 
+    def dereduce_locations( locations ):
+      return [ self.dereduce_location( _ ) for _ in locations ]
+
     actions = [
       {
-        'move': _[0],
-        'attacks': _[1:],
-        'aoe': aoes[_],
-        'destinations': list( destinations[_] ),
-        'focuses': list( focuses[_] ),
+        'move': self.dereduce_location( _[0] ),
+        'attacks': dereduce_locations( _[1:] ),
+        'aoe': dereduce_locations( aoes[_] ),
+        'destinations': dereduce_locations( destinations[_] ),
+        'focuses': dereduce_locations( focuses[_] ),
         'sightlines': list( sightlines[_] ),
         'obstruction_lines': list( obstruction_lines[_] ),
         'obstruction_clear_points': list( obstruction_clear_points[_] ),
@@ -1158,12 +1328,25 @@ class Scenario:
       }
       for _ in raw_actions
     ]
+    # actions = [
+    #   {
+    #     'move': _[0],
+    #     'attacks': _[1:],
+    #     'aoe': aoes[_],
+    #     'destinations': list( destinations[_] ),
+    #     'focuses': list( focuses[_] ),
+    #     'sightlines': list( sightlines[_] ),
+    #     'obstruction_lines': list( obstruction_lines[_] ),
+    #     'obstruction_clear_points': list( obstruction_clear_points[_] ),
+    #     'obstruction_blocked_points': list( obstruction_blocked_points[_] ),
+    #   }
+    #   for _ in raw_actions
+    # ]
 
     if self.logging:
       print '%i option(s):' % len( actions )
-      print actions
       for action in actions:
-        if action['move'] == start_location:
+        if action['move'] == self.dereduce_location( start_location ):
           out = '- no movement'
         else:
           out = '- move to %i' % action['move']
@@ -1197,12 +1380,17 @@ def perform_unit_tests( starting_scenario ):
     scenarios.init_from_test_scenario( scenario, scenario_index )
     if not scenario.valid:
       break
+    scenario.reduce_map()
 
     if not scenario.correct_answer:
       print 'test %3i: no answer listed' % scenario_index
       continue
 
     answers, _, _, _, _, _, _, _ = scenario.calculate_monster_move()
+    answers = set(
+      tuple( scenario.dereduce_location( _ ) for _ in _ )
+      for _ in answers
+    )
     if answers == scenario.correct_answer:
       print 'test %3i: pass' % scenario_index
     else:

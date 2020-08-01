@@ -2,7 +2,7 @@ import React from 'react';
 import * as C from './defines';
 import BorderHex from './BorderHex';
 
-export default function BorderGrid( props ) {
+const BorderGrid = React.memo( function( props ) {
   var hexes = [];
   var index = 0;
   var c;
@@ -20,4 +20,5 @@ export default function BorderGrid( props ) {
     hexes.push( <BorderHex key={index} r={r} c={c}/> );
   }
   return <g mask='url(#edge-fade)'>{hexes}</g>;
-}
+} );
+export default BorderGrid;

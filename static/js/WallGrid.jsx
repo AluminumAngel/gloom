@@ -2,7 +2,7 @@ import React from 'react';
 import * as C from './defines';
 import Wall from './Wall';
 
-export default function WallGrid( props ) {
+const WallGrid = React.memo( function( props ) {
   var walls = [];
   var index = 0;
   for ( var c = 0; c < C.GRID_WIDTH; c++ ) {
@@ -22,4 +22,5 @@ export default function WallGrid( props ) {
     }
   }
   return <React.Fragment>{walls}</React.Fragment>;
-}
+} );
+export default WallGrid;

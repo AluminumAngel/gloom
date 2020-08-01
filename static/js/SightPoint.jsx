@@ -4,7 +4,7 @@ import HexUtils from './HexUtils';
 
 const SIGHTLINE_ENDPOINT_RADIUS = 0.2 * C.SCALE;
 
-export default function SightPoint( props ) {
+const SightPoint = React.memo( function( props ) {
   const position = HexUtils.getGridHexPoint( props.point );
   return (
     <circle
@@ -15,4 +15,5 @@ export default function SightPoint( props ) {
       pointerEvents='none'
     />
   );
-}
+} );
+export default SightPoint;

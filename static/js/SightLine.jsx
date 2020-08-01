@@ -1,7 +1,7 @@
 import React from 'react';
 import HexUtils from './HexUtils';
 
-export default function SightLine( props ) {
+const SightLine = React.memo( function( props ) {
   const points = HexUtils.getLinePoints( props.line );
   const position_a = HexUtils.getGridHexPoint( points[0] );
   const position_b = HexUtils.getGridHexPoint( points[1] );
@@ -15,4 +15,5 @@ export default function SightLine( props ) {
       pointerEvents='none'
     />
   );
-}
+} );
+export default SightLine;

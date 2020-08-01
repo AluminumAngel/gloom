@@ -1,7 +1,7 @@
 import React from 'react';
 import * as C from './defines';
 
-export default function FigureTargetHighlightClip( props ) {
+const FigureTargetHighlightClip = React.memo( function( props ) {
   const clip_points = [
     props.x, props.y + 2 * C.FIGURE_RADIUS,
     props.x, props.y - 2 * C.FIGURE_RADIUS,
@@ -18,4 +18,5 @@ export default function FigureTargetHighlightClip( props ) {
       />
     </clipPath>    
   );  
-}
+} );
+export default FigureTargetHighlightClip;

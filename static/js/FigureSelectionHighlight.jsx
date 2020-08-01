@@ -1,7 +1,7 @@
 import React from 'react';
 import * as C from './defines';
 
-export default function FigureSelectionHighlight( props ) {
+const FigureSelectionHighlight = React.memo( function( props ) {
   return (
     <circle
       className='selection-highlight'
@@ -11,4 +11,5 @@ export default function FigureSelectionHighlight( props ) {
       pointerEvents='none'
     />
   );
-}
+} );
+export default FigureSelectionHighlight;

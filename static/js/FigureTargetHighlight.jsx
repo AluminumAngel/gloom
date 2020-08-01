@@ -4,7 +4,7 @@ import * as FIGURE_HIGHLIGHT from './figure_highlights';
 import FigureTargetHighlightBurst from './FigureTargetHighlightBurst';
 import FigureTargetHighlightClip from './FigureTargetHighlightClip';
 
-export default function FigureTargetHighlight( props ) {
+const FigureTargetHighlight = React.memo( function( props ) {
   if ( props.type < FIGURE_HIGHLIGHT.ATTACKED_MONSTER_FOCUS ) {
     return (
       <FigureTargetHighlightBurst
@@ -45,4 +45,5 @@ export default function FigureTargetHighlight( props ) {
       </React.Fragment>
     );
   }
-}
+} );
+export default FigureTargetHighlight;

@@ -2,7 +2,7 @@ import React from 'react';
 import * as C from './defines';
 import OverlayHex from './OverlayHex';
 
-export default function OverlayHexGrid( props ) {
+const OverlayHexGrid = React.memo( function( props ) {
   if ( !props.show || !props.grid ) return null;
 
   var hexes = [];
@@ -19,4 +19,5 @@ export default function OverlayHexGrid( props ) {
     }
   }
   return <React.Fragment>{hexes}</React.Fragment>;
-}
+} );
+export default OverlayHexGrid;

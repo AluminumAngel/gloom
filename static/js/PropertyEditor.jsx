@@ -59,7 +59,7 @@ const INITIATIVE_OPTIONS = [
   [ 9, '9' ],
 ];
 
-export default function PropertyEditor( props ) {
+const PropertyEditor = React.memo( function( props ) {
   return (
     <React.Fragment>
       <NumberSelector
@@ -139,4 +139,5 @@ export default function PropertyEditor( props ) {
       />
     </React.Fragment>
   );
-}
+} );
+export default PropertyEditor;

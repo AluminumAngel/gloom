@@ -2,7 +2,7 @@ import React from 'react';
 import { UncontrolledTooltip } from 'reactstrap';
 import * as C from './defines';
 
-export default function NumberSelector( props ) {
+const NumberSelector = React.memo( function( props ) {
   var options = [];
   props.options.forEach( ( option ) => {
     var class_name = 'btn btn-sm btn-dark';
@@ -44,4 +44,5 @@ export default function NumberSelector( props ) {
         </UncontrolledTooltip>
       </div>
   );
-}
+} );
+export default NumberSelector;

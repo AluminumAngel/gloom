@@ -7,7 +7,7 @@ const AOE_CENTER = ( C.AOE_SIZE - 1 ) / 2;
 const AOE_CENTER_ROW = ( C.AOE_HEIGHT - 1 ) / 2;
 const AOE_CENTER_COLUMN = ( C.AOE_WIDTH - 1 ) / 2;
 
-export default function AOEHexGrid( props ) {
+const AOEHexGrid = React.memo( function( props ) {
   var hexes = [];
 
   if ( props.melee ) {
@@ -60,4 +60,5 @@ export default function AOEHexGrid( props ) {
   }
 
   return <React.Fragment>{hexes}</React.Fragment>;
-}
+} );
+export default AOEHexGrid;

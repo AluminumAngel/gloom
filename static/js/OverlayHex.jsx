@@ -7,7 +7,7 @@ const CLASS_NAMES = [
   'sight',
 ];
 
-export default function OverlayHex( props ) {
+const OverlayHex = React.memo( function( props ) {
   return (
     <polygon
       className={CLASS_NAMES[props.content]}
@@ -15,4 +15,5 @@ export default function OverlayHex( props ) {
       pointerEvents='none'
     />
   );
-}
+} );
+export default OverlayHex;
