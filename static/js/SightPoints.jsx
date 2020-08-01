@@ -1,7 +1,7 @@
 import React from 'react';
 import SightPoint from './SightPoint';
 
-export default function SightPoints( props ) {
+const SightPoints = React.memo( function( props ) {
   if ( !props.points ) return null;
 
   var points = [];
@@ -15,4 +15,5 @@ export default function SightPoints( props ) {
     );
   } );
   return <React.Fragment>{points}</React.Fragment>;
-}
+} );
+export default SightPoints;

@@ -110,8 +110,27 @@ def line_line_intersection( line_a, line_b ):
   numerator1 = ( ( a[1] - c[1] ) * ( d[0] - c[0] ) ) - ( ( a[0] - c[0] ) * ( d[1] - c[1] ) )
   numerator2 = ( ( a[1] - c[1] ) * ( b[0] - a[0] ) ) - ( ( a[0] - c[0] ) * ( b[1] - a[1] ) )
 
+  # if parallel
   if denominator == 0:
-    return numerator1 == 0 and numerator2 == 0
+    # if collinear
+    if numerator1 == 0 and numerator2 == 0:
+      if a[0] != b[0]:
+        u = min( a[0], b[0] )
+        v = max( a[0], b[0] )
+        x = min( c[0], d[0] )
+        y = max( c[0], d[0] )
+      else:
+        u = min( a[1], b[1] )
+        v = max( a[1], b[1] )
+        x = min( c[1], d[1] )
+        y = max( c[1], d[1] )
+      if x <= u and y >= u:
+        return True
+      if x <= v and y >= v:
+        return True
+      if x >= u and y <= v:
+        return True
+    return False
 
   r = numerator1 / denominator
   s = numerator2 / denominator

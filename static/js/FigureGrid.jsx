@@ -2,7 +2,7 @@ import React from 'react';
 import * as C from './defines';
 import Figure from './Figure';
 
-export default function FigureGrid( props ) {
+const FigureGrid = React.memo( function( props ) {
   var figures = [];
   for ( var c = 0, index = 0; c < C.GRID_WIDTH; c++ ) {
     for ( var r = 0; r < C.GRID_HEIGHT; r++, index++ ) {
@@ -28,4 +28,5 @@ export default function FigureGrid( props ) {
     }
   }
   return <React.Fragment>{figures}</React.Fragment>;
-}
+} );
+export default FigureGrid;

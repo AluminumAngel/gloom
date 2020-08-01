@@ -2,7 +2,7 @@ import React from 'react';
 import * as C from './defines';
 import Hex from './Hex';
 
-export default function HexGrid( props ) {
+const HexGrid = React.memo( function( props ) {
   var hexes = [];
   for ( var c = 0, index = 0; c < C.GRID_WIDTH; c++ ) {
     for ( var r = 0; r < C.GRID_HEIGHT; r++, index++ ) {
@@ -20,4 +20,5 @@ export default function HexGrid( props ) {
     }
   }
   return <React.Fragment>{hexes}</React.Fragment>;
-}
+} );
+export default HexGrid;

@@ -1,9 +1,10 @@
 import React from 'react';
 
-export default function FigureTransform( props ) {
+const FigureTransform = React.memo( function( props ) {
   return (
     <g transform={props.rotate ? 'rotate(-90 ' + props.x + ' ' + props.y + ')' : ''}>
       {props.children}
     </g>
   );
-}
+} );
+export default FigureTransform;

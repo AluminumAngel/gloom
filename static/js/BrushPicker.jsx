@@ -19,7 +19,7 @@ function getButtonWallPoints() {
   return points_list.join( ',' );
 }
 
-export default function BrushPicker( props ) {
+const BrushPicker = React.memo( function( props ) {
   return (
     <div className='d-flex'>
       <div className='w-75 mb-3 ml-auto btn-group-vertical'>
@@ -279,4 +279,5 @@ export default function BrushPicker( props ) {
       </div>
     </div>
   );
-}
+} );
+export default BrushPicker;

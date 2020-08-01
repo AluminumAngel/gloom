@@ -8,7 +8,7 @@ import FigureSelectionHighlight from './FigureSelectionHighlight';
 import FigureTargetHighlight from './FigureTargetHighlight';
 import FigureTransform from './FigureTransform';
 
-export default function Figure( props ) {
+const Figure = React.memo( function( props ) {
   if ( props.figure === BRUSH.EMPTY ) {
     if ( !props.displaySolution ) return null;
     if ( !props.move && !props.destination ) return null;
@@ -91,4 +91,5 @@ export default function Figure( props ) {
       {selectionHighlight}
     </React.Fragment>
   );
-}
+} );
+export default Figure;

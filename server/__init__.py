@@ -14,7 +14,7 @@ debug = not production
 title = 'Gloomhaven Monster Mover'
 version_major = 2
 version_minor = 4
-version_build = 1
+version_build = 8
 version = str( version_major ) + '.' + str( version_minor ) + '.' + str( version_build )
 client_local_storage_version_major = 1
 client_local_storage_version_minor = 0
@@ -26,18 +26,13 @@ client_local_storage_version = str( client_local_storage_version_major ) + '.' +
 @app.route( '/' )
 @app.route( '/<scenario>' )
 def root( scenario='' ):
-  print 'scenario = [' + scenario + ']';
-  return templates( 'index.html', params={
-    'scenario': scenario,
-  } )
+  return templates( 'index.html' )
 
 @app.route( '/los' )
 @app.route( '/los/<scenario>' )
 def los( scenario='' ):
-  print 'scenario = [' + scenario + ']';
   return templates( 'index.html', params={
     'los_mode': True,
-    'scenario': scenario,
   } )
 
 @app.route( '/templates/<filename>' )

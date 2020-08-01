@@ -11,6 +11,7 @@
     <script>
       URL_FOR = {
         root: '{{ url_for( "root" ) }}',
+        los: '{{ url_for( "los" ) }}',
         solve: '{{ url_for( "solve" ) }}',
         views: '{{ url_for( "views" ) }}',
       };
@@ -22,7 +23,6 @@
       DATA_VERSION_MINOR = ( {{ client_local_storage_version_minor }} );
       DATA_VERSION_BUILD = ( {{ client_local_storage_version_build }} );
       START_IN_LOS_MODE = '{{ los_mode }}';
-      STARTING_SCENARIO = '{{ scenario }}';
     </script>
 
     <script async src='https://www.googletagmanager.com/gtag/js?id=UA-119941535-1'></script>

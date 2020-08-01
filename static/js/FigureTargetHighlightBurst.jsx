@@ -13,7 +13,7 @@ const HALF_TRIANGLE_WIDTH = 0.2 * C.FIGURE_RADIUS;
 const TRIANGLE_BASE_HEIGHT = C.FIGURE_RADIUS + 1;
 const TRIANGLE_TOP_HEIGHT = 1.5 * C.FIGURE_RADIUS;
 
-export default function FigureTargetHighlightBurst( props ) {
+const FigureTargetHighlightBurst = React.memo( function( props ) {
   const triangle_points = [
     props.x - HALF_TRIANGLE_WIDTH, props.y - TRIANGLE_BASE_HEIGHT,
     props.x, props.y - TRIANGLE_TOP_HEIGHT,
@@ -50,4 +50,5 @@ export default function FigureTargetHighlightBurst( props ) {
       {triangles}
     </g>
   );
-}
+} );
+export default FigureTargetHighlightBurst;

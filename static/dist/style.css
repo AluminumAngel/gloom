@@ -204,6 +204,18 @@ textarea.copy {
   left: -9999px;
 }
 
+p.footer {
+  margin:0;
+}
+
+a {
+  color: #444;
+}
+
+a:hover {
+  color: #444;
+}
+
 /*
  * no text selection
  */

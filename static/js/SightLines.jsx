@@ -1,7 +1,7 @@
 import React from 'react';
 import SightLine from './SightLine';
 
-export default function SightLines( props ) {
+const SightLines = React.memo( function( props ) {
   if ( !props.lines ) return null;
 
   var lines = [];
@@ -15,4 +15,5 @@ export default function SightLines( props ) {
     );
   } );
   return <React.Fragment>{lines}</React.Fragment>;
-}
+} );
+export default SightLines;

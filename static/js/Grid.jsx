@@ -11,53 +11,56 @@ import SightLines from './SightLines';
 import SightPoints from './SightPoints';
 import WallGrid from './WallGrid';
 
-export default function Grid( props ) {
-  const x_margin = C.GRID_MARGIN + ( props.rotate_grid ? 0 : C.GRID_DELTA );
-  const y_margin = C.GRID_MARGIN + ( props.rotate_grid ? C.GRID_DELTA : 0 );
-  const view_box = ( -x_margin ) + ' ' + ( -y_margin ) + ' ' + ( C.GRID_EXTENT ) + ' ' + ( C.GRID_EXTENT );
+const VIEW_BOX_SANDARD = -( C.GRID_MARGIN + C.GRID_DELTA ) + ' ' + -C.GRID_MARGIN + ' ' + ( C.GRID_EXTENT ) + ' ' + ( C.GRID_EXTENT );
+const VIEW_BOX_ROTATED = -C.GRID_MARGIN + ' ' + -( C.GRID_MARGIN + C.GRID_DELTA ) + ' ' + ( C.GRID_EXTENT ) + ' ' + ( C.GRID_EXTENT );
 
+const GridDefs = React.memo( function( props ) {
   const x_fade_margin = C.GRID_MARGIN + C.GRID_DELTA;
   const y_fade_margin = C.GRID_MARGIN;
+  return (
+    <defs>
+      <linearGradient id='fade-gradient-top' y2='1' x2='0'>
+        <stop offset='0' stopColor='black'/>
+        <stop offset='1' stopColor='white'/>
+      </linearGradient>
+      <linearGradient id='fade-gradient-bottom' y2='1' x2='0'>
+        <stop offset='0' stopColor='white'/>
+        <stop offset='1' stopColor='black'/>
+      </linearGradient>
+      <linearGradient id='fade-gradient-left' y2='0' x2='1'>
+        <stop offset='0' stopColor='black'/>
+        <stop offset='1' stopColor='white'/>
+      </linearGradient>
+      <linearGradient id='fade-gradient-right' y2='0' x2='1'>
+        <stop offset='0' stopColor='white'/>
+        <stop offset='1' stopColor='black'/>
+      </linearGradient>
+      <mask id='edge-fade' maskContentUnits='userSpaceOnUse'>
+        <rect x={-x_fade_margin} y={-y_fade_margin} width={x_fade_margin} height={C.GRID_SCALED_HEIGHT + 2 * y_fade_margin} fill='url(#fade-gradient-left)'/>
+        <rect x={C.GRID_SCALED_WIDTH} y={-y_fade_margin} width={x_fade_margin} height={C.GRID_SCALED_HEIGHT + 2 * y_fade_margin} fill='url(#fade-gradient-right)'/>
+        <rect x={0} y={-y_fade_margin} width={C.GRID_SCALED_WIDTH} height={y_fade_margin} fill='url(#fade-gradient-top)'/>
+        <rect x={0} y={C.GRID_SCALED_HEIGHT} width={C.GRID_SCALED_WIDTH} height={y_fade_margin} fill='url(#fade-gradient-bottom)'/>
+        <rect x={0} y={0} width={C.GRID_SCALED_WIDTH} height={C.GRID_SCALED_HEIGHT} fill='white'/>
+      </mask>
+    </defs>
+  );
+} );
 
+const Grid = React.memo( function( props ) {
   return (
     <svg
       id='grid_svg'
       width={C.GRID_EXTENT}
       height={C.GRID_EXTENT}
-      viewBox={view_box}
+      viewBox={props.rotateGrid ? VIEW_BOX_ROTATED : VIEW_BOX_SANDARD}
       onMouseUp={props.onGridMouseUp}
       onMouseLeave={props.onGridMouseLeave}
     >
-      <defs>
-        <linearGradient id='fade-gradient-top' y2='1' x2='0'>
-          <stop offset='0' stopColor='black'/>
-          <stop offset='1' stopColor='white'/>
-        </linearGradient>
-        <linearGradient id='fade-gradient-bottom' y2='1' x2='0'>
-          <stop offset='0' stopColor='white'/>
-          <stop offset='1' stopColor='black'/>
-        </linearGradient>
-        <linearGradient id='fade-gradient-left' y2='0' x2='1'>
-          <stop offset='0' stopColor='black'/>
-          <stop offset='1' stopColor='white'/>
-        </linearGradient>
-        <linearGradient id='fade-gradient-right' y2='0' x2='1'>
-          <stop offset='0' stopColor='white'/>
-          <stop offset='1' stopColor='black'/>
-        </linearGradient>
-        <mask id='edge-fade' maskContentUnits='userSpaceOnUse'>
-          <rect x={-x_fade_margin} y={-y_fade_margin} width={x_fade_margin} height={C.GRID_SCALED_HEIGHT + 2 * y_fade_margin} fill='url(#fade-gradient-left)'/>
-          <rect x={C.GRID_SCALED_WIDTH} y={-y_fade_margin} width={x_fade_margin} height={C.GRID_SCALED_HEIGHT + 2 * y_fade_margin} fill='url(#fade-gradient-right)'/>
-          <rect x={0} y={-y_fade_margin} width={C.GRID_SCALED_WIDTH} height={y_fade_margin} fill='url(#fade-gradient-top)'/>
-          <rect x={0} y={C.GRID_SCALED_HEIGHT} width={C.GRID_SCALED_WIDTH} height={y_fade_margin} fill='url(#fade-gradient-bottom)'/>
-          <rect x={0} y={0} width={C.GRID_SCALED_WIDTH} height={C.GRID_SCALED_HEIGHT} fill='white'/>
-        </mask>
-      </defs>
-
+      <GridDefs/>
       <g transform={props.rotateGrid ? C.GRID_TRANSFORM : ''}>
         <HexGrid
           grid={props.grid}
-          activeHexes={props.brush != BRUSH.THIN_WALL}
+          activeHexes={props.activeHexes}
           onHexClick={props.onHexClick}
           onHexMouseDown={props.onHexMouseDown}
           onHexMouseUp={props.onHexMouseUp}
@@ -65,7 +68,7 @@ export default function Grid( props ) {
         <BorderGrid/>
         <WallGrid
           walls={props.walls}
-          activeWalls={props.brush === BRUSH.THIN_WALL}
+          activeWalls={!props.activeHexes}
           onWallClick={props.onWallClick}
         />
         <OverlayHexGrid
@@ -123,7 +126,8 @@ export default function Grid( props ) {
           activeFaction={props.active_faction}
           onDragStart={props.onDragStart}
         />
-      </g>        
+      </g>
     </svg>
   );
-}
+} );
+export default Grid;

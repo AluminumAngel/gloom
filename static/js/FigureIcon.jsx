@@ -25,7 +25,7 @@ const ACTIVE_CHARACTER_TEXT = [
   'F',
 ];
 
-export default function FigureIcon( props ) {
+const FigureIcon = React.memo( function( props ) {
   const className = CLASS_NAMES[props.figure - BRUSH.FIRST_FIGURE_BRUSH] + props.className;
   var text;
   if ( props.figure === BRUSH.ACTIVE_MONSTER ) {
@@ -74,4 +74,5 @@ export default function FigureIcon( props ) {
       </text>
     </React.Fragment>
   );
-}
+} );
+export default FigureIcon;
