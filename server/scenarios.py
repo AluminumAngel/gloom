@@ -93,7 +93,6 @@ def unreduce_actions( s, actions ):
 #   scenario.ACTION_TARGET = s.ACTION_TARGET
 #   scenario.FLYING = s.FLYING
 #   scenario.JUMPING = s.JUMPING
-#   scenario.TELEPORTING = s.TELEPORTING
 #   scenario.MUDDLED = s.MUDDLED
 #   scenario.aoe = s.aoe
 
@@ -131,7 +130,6 @@ def init( s, width, height, aoe_width, aoe_height ):
   s.ACTION_TARGET = 1
   s.FLYING = False
   s.JUMPING = False
-  s.TELEPORTING = False
   s.MUDDLED = False
 
 # TODO should be a member function?
@@ -3325,139 +3323,9 @@ def init_from_test_scenario( s, scenario_index ):
 
     s.correct_answer = { ( 22, ), ( 23, ), ( 24, ) }
 
-  # elif scenario_index == 145:
-  #   s.message = 'trap tests'
-
-  #   s.figures[37] = 'C'
-
-  #   s.contents[2] = 'X'
-  #   s.contents[3] = 'X'
-  #   s.contents[8] = 'X'
-  #   s.contents[10] = 'X'
-  #   s.contents[15] = 'X'
-  #   s.contents[18] = 'X'
-  #   s.contents[28] = 'X'
-  #   s.contents[33] = 'X'
-  #   s.contents[35] = 'X'
-  #   s.contents[36] = 'X'
-  #   s.contents[38] = 'X'
-  #   s.contents[39] = 'X'
-  #   s.contents[44] = 'X'
-  #   s.contents[45] = 'X'
-
-  #   s.contents[16] = 'T'
-  #   s.contents[17] = 'T'
-  #   s.contents[21] = 'T'
-  #   s.contents[22] = 'T'
-  #   s.contents[23] = 'T'
-  #   s.contents[24] = 'T'
-  #   s.contents[25] = 'T'
-  #   s.contents[29] = 'T'
-  #   s.contents[30] = 'T'
-  #   s.contents[31] = 'T'
-  #   s.contents[32] = 'T'
-
-  #   s.walls[25][1] = True
-  #   s.walls[25][2] = True
-  #   s.walls[21][3] = True
-  #   s.walls[21][4] = True
-
-  #   s.figures[9] = 'A'
-
-  #   s.ACTION_MOVE = 2
-  #   s.JUMPING = True
-
-  #   s.correct_answer = { ( 22, ), ( 23, ), ( 24, ) }
-
-  # elif scenario_index == 146:
-  #   s.message = 'trap tests'
-
-  #   s.figures[37] = 'C'
-
-  #   s.contents[2] = 'X'
-  #   s.contents[3] = 'X'
-  #   s.contents[8] = 'X'
-  #   s.contents[10] = 'X'
-  #   s.contents[15] = 'X'
-  #   s.contents[18] = 'X'
-  #   s.contents[28] = 'X'
-  #   s.contents[33] = 'X'
-  #   s.contents[35] = 'X'
-  #   s.contents[36] = 'X'
-  #   s.contents[38] = 'X'
-  #   s.contents[39] = 'X'
-  #   s.contents[44] = 'X'
-  #   s.contents[45] = 'X'
-
-  #   s.contents[16] = 'T'
-  #   s.contents[17] = 'T'
-  #   s.contents[21] = 'T'
-  #   s.contents[22] = 'T'
-  #   s.contents[23] = 'T'
-  #   s.contents[24] = 'T'
-  #   s.contents[25] = 'T'
-  #   s.contents[29] = 'T'
-  #   s.contents[31] = 'T'
-  #   s.contents[32] = 'T'
-
-  #   s.walls[25][1] = True
-  #   s.walls[25][2] = True
-  #   s.walls[21][3] = True
-  #   s.walls[21][4] = True
-
-  #   s.figures[9] = 'A'
-
-  #   s.ACTION_MOVE = 2
-  #   s.JUMPING = True
-
-  #   s.correct_answer = { ( 22, ), ( 23, ) }
-
-  # elif scenario_index == 147:
-  #   s.message = 'trap tests'
-
-  #   s.figures[37] = 'C'
-
-  #   s.contents[2] = 'X'
-  #   s.contents[3] = 'X'
-  #   s.contents[8] = 'X'
-  #   s.contents[10] = 'X'
-  #   s.contents[15] = 'X'
-  #   s.contents[18] = 'X'
-  #   s.contents[28] = 'X'
-  #   s.contents[33] = 'X'
-  #   s.contents[35] = 'X'
-  #   s.contents[36] = 'X'
-  #   s.contents[38] = 'X'
-  #   s.contents[39] = 'X'
-  #   s.contents[44] = 'X'
-  #   s.contents[45] = 'X'
-
-  #   s.contents[16] = 'T'
-  #   s.contents[17] = 'T'
-  #   s.contents[21] = 'T'
-  #   s.contents[22] = 'T'
-  #   s.contents[23] = 'T'
-  #   s.contents[25] = 'T'
-  #   s.contents[29] = 'T'
-  #   s.contents[30] = 'T'
-  #   s.contents[31] = 'T'
-  #   s.contents[32] = 'T'
-
-  #   s.walls[25][1] = True
-  #   s.walls[25][2] = True
-  #   s.walls[21][3] = True
-  #   s.walls[21][4] = True
-
-  #   s.figures[9] = 'A'
-
-  #   s.ACTION_MOVE = 2
-  #   s.JUMPING = True
-
-  #   s.correct_answer = { ( 24, ) }
-
   #######################################
 
-  elif scenario_index == 148:
+  elif scenario_index == 145:
     s.message = 'The monster will choose to close the distance to its destination along a path that minimizes the number of traps it will trigger.'
 
     s.figures[34] = 'C'
@@ -3491,6 +3359,42 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_MOVE = 3
 
     s.correct_answer = { ( 38, ), }
+
+
+  elif scenario_index == 146:
+    s.message = 'Github bug'
+
+    s.figures[32] = 'C'
+
+    s.contents[8] = 'X'
+    s.contents[9] = 'X'
+    s.contents[10] = 'X'
+    s.contents[11] = 'X'
+    s.contents[19] = 'X'
+    s.contents[23] = 'X'
+    s.contents[24] = 'X'
+    s.contents[15] = 'X'
+    s.contents[21] = 'X'
+    s.contents[28] = 'X'
+    s.contents[35] = 'X'
+    s.contents[43] = 'X'
+    s.contents[50] = 'X'
+    s.contents[31] = 'X'
+    s.contents[37] = 'X'
+    s.contents[38] = 'X'
+    s.contents[39] = 'X'
+    s.contents[51] = 'X'
+
+    s.contents[25] = 'T'
+    s.contents[18] = 'T'
+    s.contents[36] = 'T'
+    s.contents[44] = 'T'
+
+    s.figures[30] = 'A'
+
+    s.ACTION_MOVE = 3
+
+    s.correct_answer = { ( 17, ), }
 
   else:
     s.valid = False

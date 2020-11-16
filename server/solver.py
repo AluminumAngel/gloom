@@ -175,7 +175,6 @@ class Scenario:
     self.ACTION_TARGET = int( packed_scenario['target'] )
     self.JUMPING = int( packed_scenario['flying'] ) == 1
     self.FLYING = int( packed_scenario['flying'] ) == 2
-    self.TELEPORTING = int( packed_scenario['flying'] ) == 3
     self.MUDDLED = int( packed_scenario['muddled'] ) == 1
 
     def get_index( column, row ):
@@ -261,8 +260,6 @@ class Scenario:
     return self.contents[location] in [ ' ', 'T', 'H', 'D' ] and self.figures[location] != 'C'
   def can_travel_through_flying( self, location ):
     return self.contents[location] in [ ' ', 'T', 'H', 'D', 'O' ]
-  def can_travel_through_teleporting( self, location ):
-    return self.contents[location] in [ ' ', 'X', 'T', 'H', 'D', 'O' ]
 
   def is_trap_standard( self, location ):
     return self.contents[location] in [ 'T', 'H' ]
@@ -548,8 +545,8 @@ class Scenario:
           continue
         if self.walls[current][edge]:
           continue
-        neighbor_distance = distance + 1 + int( not self.FLYING and not self.JUMPING and not self.TELEPORTING and self.additional_path_cost( neighbor ) )
-        neighbor_trap = int( not self.JUMPING and not self.TELEPORTING ) * trap + int( self.is_trap( self, neighbor ) )
+        neighbor_distance = distance + 1 + int( not self.FLYING and not self.JUMPING and self.additional_path_cost( neighbor ) )
+        neighbor_trap = int( not self.JUMPING ) * trap + int( self.is_trap( self, neighbor ) )
         if is_pair_less_than( neighbor_trap, traps[neighbor], neighbor_distance, distances[neighbor] ):
           frontier.append( neighbor )
           distances[neighbor] = neighbor_distance
@@ -575,7 +572,7 @@ class Scenario:
     distances, traps = self.find_path_distances( destination, traversal_test )
     distances = list( distances )
     traps = list( traps )
-    if not self.FLYING and not self.TELEPORTING:
+    if not self.FLYING:
       destination_additional_path_cost = self.additional_path_cost( destination )
       if destination_additional_path_cost > 0:
         distances = [ _ != MAX_VALUE and _ + destination_additional_path_cost or _ for _ in distances ]
@@ -667,10 +664,6 @@ class Scenario:
       self.can_end_move_on = Scenario.can_end_move_on_standard
       self.can_travel_through = Scenario.can_travel_through_flying
       self.is_trap = Scenario.is_trap_standard
-    elif self.TELEPORTING:
-      self.can_end_move_on = Scenario.can_end_move_on_standard
-      self.can_travel_through = Scenario.can_travel_through_teleporting
-      self.is_trap = Scenario.is_trap_standard
     else:
       self.can_end_move_on = Scenario.can_end_move_on_standard
       self.can_travel_through = Scenario.can_travel_through_standard
@@ -701,8 +694,6 @@ class Scenario:
         out += ', FLYING'
       elif self.JUMPING:
         out += ', JUMPING'
-      elif self.TELEPORTING:
-        out += ', TELEPORTING'
       if self.MUDDLED:
         out += ', MUDDLED'
       if out == '':
@@ -1118,8 +1109,7 @@ class Scenario:
         for destination in u.destinations:
           actions_for_this_destination = []
           best_move = (
-            MAX_VALUE - 1, # traps to destination
-            MAX_VALUE - 1, # ???
+            MAX_VALUE - 1, # traps to destination and along travel
             MAX_VALUE - 1, # distance to destination
             MAX_VALUE - 1, # travel distance
           )
@@ -1128,8 +1118,7 @@ class Scenario:
             if travel_distances[location] <= self.ACTION_MOVE:
               if self.can_end_move_on( self, location ):
                 this_move = (
-                  traps_to_destination[location],
-                  trap_counts[location],
+                  traps_to_destination[location] + trap_counts[location],
                   distance_to_destination[location],
                   travel_distances[location],
                 )
