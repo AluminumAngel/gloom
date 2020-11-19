@@ -88,6 +88,7 @@ const STATE_KEYS = [
   'target',
   'flying',
   'muddled',
+  'jotl',
   'aoe_grid',
   'active_faction',
 ];
@@ -124,6 +125,11 @@ const SIMPLE_STATE_PROPERTIES = {
     max: 2,
   },
   muddled: {
+    bits: 1,
+    min: 0,
+    max: 1,
+  },
+  jotl: {
     bits: 1,
     min: 0,
     max: 1,
@@ -203,6 +209,7 @@ export default class MapEditor extends React.PureComponent {
       target: 1,
       flying: 0,
       muddled: 0,
+      jotl: 0,
       aoe_grid: Array( C.AOE_SIZE ).fill( false ),
       active_faction: false,
 
@@ -281,13 +288,16 @@ export default class MapEditor extends React.PureComponent {
         localStorage.setItem( key, JSON.stringify( state[key] ) );
       }
     } );
+    localStorage.setItem( 'version', DATA_VERSION );
   }
 
   restoreState( state ) {
     if ( !this.local_storage_available ) return;
 
     var previous_version = localStorage.getItem( 'version' )
-    if ( previous_version !== DATA_VERSION ) {
+    if ( previous_version !== '1.0.0'
+      && previous_version !== DATA_VERSION
+    ) {
       localStorage.clear();
     }
     else {
@@ -809,6 +819,9 @@ export default class MapEditor extends React.PureComponent {
       bit_writer.writeBits( SIMPLE_STATE_PROPERTIES[key].bits, this.state[key] );
     } );
 
+    // write jotl
+    bit_writer.writeBits( SIMPLE_STATE_PROPERTIES['jotl'].bits, this.state['jotl'] );
+
     // write active_figure_index
     var value = this.state.active_figure_index;
     if ( value === -1 ) {
@@ -904,9 +917,19 @@ export default class MapEditor extends React.PureComponent {
       var bit_reader = new BitReader( url_scenario );
 
       // read data version
-      if ( bit_reader.readBits( 4 ) !== DATA_VERSION_MAJOR
-        || bit_reader.readBits( 3 ) !== DATA_VERSION_MINOR
-        || bit_reader.readBits( 3 ) !== DATA_VERSION_BUILD
+      var skip_jotl_read = false;
+      const data_version_major = bit_reader.readBits( 4 );      
+      const data_version_minor = bit_reader.readBits( 3 );      
+      const data_version_build = bit_reader.readBits( 3 );      
+      if ( data_version_major === 1
+        && data_version_minor === 0
+        && data_version_build === 0
+      ) {
+        skip_jotl_read = true;
+      }
+      else if ( data_version_major !== DATA_VERSION_MAJOR
+        || data_version_minor !== DATA_VERSION_MINOR
+        || data_version_build !== DATA_VERSION_BUILD
       ) {
         throw 'bad scenario URL';
       }
@@ -921,6 +944,17 @@ export default class MapEditor extends React.PureComponent {
         );
         scenario_state[key] = value;
       } );
+
+      // read jotl
+      if ( !skip_jotl_read ) {
+        const value = bit_reader.readBits( SIMPLE_STATE_PROPERTIES['jotl'].bits );
+        validate(
+          value,
+          SIMPLE_STATE_PROPERTIES['jotl'].min,
+          SIMPLE_STATE_PROPERTIES['jotl'].max
+        );
+        scenario_state['jotl'] = value;
+      }
 
       // read active_figure_index
       var value = bit_reader.readBits( C.GRID_SIZE_BITS );
@@ -1044,7 +1078,7 @@ export default class MapEditor extends React.PureComponent {
     } );
   };
 
-    handleAOEClear = () => {
+  handleAOEClear = () => {
     this.setScenario( {
       aoe_grid: Array( C.AOE_SIZE ).fill( false ),
     } );
@@ -1089,6 +1123,12 @@ export default class MapEditor extends React.PureComponent {
   handleDisplaysightlineLinesChanged = () => {
     this.setState( {
       'show_sightline': !this.state.show_sightline,
+    } );
+  };
+
+  handleJotLChanged = () => {
+    this.setScenario( {
+      'jotl': !this.state.jotl,
     } );
   };
 
@@ -1432,6 +1472,7 @@ export default class MapEditor extends React.PureComponent {
       target: this.state.target,
       flying: this.state.flying,
       muddled: this.state.muddled,
+      jotl: this.state.jotl,
       aoe: [],
 
       width: C.GRID_WIDTH,
@@ -2109,15 +2150,31 @@ export default class MapEditor extends React.PureComponent {
                 </UncontrolledTooltip>
               </div>
 
-              <div className='text-secondary small'>
+              <div className='w-75 mt-4 btn-group-vertical'>
+                <button
+                  type='button'
+                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.jotl ? ' active' : '' )}
+                  id='jotl-button'
+                  onClick={this.handleJotLChanged}
+                >
+                  Jaws of the Lion
+                </button>
+                <UncontrolledTooltip placement='left-end' delay={C.TOOLTIP_DELAY} target='jotl-button'>
+                  <div className='text-left'>
+                    Use the rules of Gloomhaven: Jaws of the Lion, in which proximity does not affect monster focus. Initiative is the only tiebreaker.
+                  </div>
+                </UncontrolledTooltip>
+              </div>
+
+              <div className='mt-2 mb-4 text-secondary small'>
                 <p/>
-                <p class='footer'/>
+                <p className='footer'/>
                 &copy; 2020 <a href='mailto:daniel.richard.nelson@gmail.com'>daniel.richard.nelson@gmail.com</a>
-                <p class='footer'/>
+                <p className='footer'/>
                 <a href='https://github.com/AluminumAngel/gloom'>github.com/AluminumAngel/gloom</a>
-                <p class='footer'/>
+                <p className='footer'/>
                 <a href='https://boardgamegeek.com/user/AluminumAngel'>boardgamegeek.com/user/AluminumAngel</a>
-                <p class='footer'/>
+                <p className='footer'/>
                 <a href='https://www.reddit.com/user/AluminumAngel'>u/AluminumAngel</a>
               </div>
             </div>
