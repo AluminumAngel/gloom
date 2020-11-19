@@ -1,0 +1,340 @@
+button > svg {
+  vertical-align: top;
+}
+
+/*
+ * thin walls
+ */
+
+polyline.wall {
+  stroke: darkgray;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+/*
+ * hex contents
+ */
+
+polyline.no-wall {
+  visibility: hidden;
+}
+
+polygon {
+  stroke: lightgray;
+}
+
+polygon.empty {
+  fill: #222222;
+}
+
+polygon.obstacle {
+  fill: rgb( 34, 112, 55 );
+}
+
+polygon.wall {
+  fill: darkgray;
+}
+
+polygon.trap {
+  fill: rgb( 143, 30, 31 );
+}
+
+polygon.hazardous-terrain {
+  fill: rgb( 215, 87, 41 );
+}
+
+polygon.difficult-terrain {
+  fill: rgb( 87, 47, 143 );
+}
+
+/*
+ * hex overlays
+ */
+
+polygon.aoe-coverage {
+  fill: red;
+  fill-opacity: 0.3;
+  stroke: red;
+  stroke-opacity: 1.0;
+}
+
+polygon.aoe-center {
+  fill: gray;
+}
+
+polygon.reach {
+  fill: #997300;
+  opacity: 0.3;
+  stroke-opacity: 0;
+}
+
+polygon.sight {
+  fill: #3e64a3;
+  opacity: 0.3;
+  stroke-opacity: 0;
+}
+
+/*
+ * figures
+ */
+
+circle.character {
+  fill: darkcyan;
+  stroke: black;
+  stroke-width: 2;
+}
+
+circle.monster {
+  fill: darkred;
+  stroke: black;
+  stroke-width: 2;
+}
+
+circle.active-monster {
+  fill: darkgoldenrod;
+  stroke: black;
+  stroke-width: 2;
+}
+
+circle.active-character {
+  fill: mediumorchid;
+  stroke: black;
+  stroke-width: 2;
+}
+
+circle.destination {
+  fill: blue;
+  stroke: black;
+  stroke-width: 2;
+}
+
+circle.ghost {
+  opacity: 0.5;
+}
+
+/*
+ * figure highlights
+ */
+
+polygon.attacked {
+  fill: #e60000;
+  stroke: #e60000;
+}
+
+circle.attacked {
+  fill-opacity: 0.0;
+  stroke: #e60000;
+  stroke-width: 2;
+}
+
+polygon.monster-focus {
+  fill: darkgoldenrod;
+  stroke: darkgoldenrod;
+}
+
+circle.monster-focus {
+  fill-opacity: 0.0;
+  stroke: darkgoldenrod;
+  stroke-width: 2;
+}
+
+polygon.character-focus {
+  fill: mediumorchid;
+  stroke: mediumorchid;
+}
+
+circle.character-focus {
+  fill-opacity: 0.0;
+  stroke: mediumorchid;
+  stroke-width: 2;
+}
+
+circle.selection-highlight {
+  fill-opacity: 0.0;
+  stroke-opacity: 0.9;
+  stroke: white;
+  stroke-width: 1;
+}
+
+/*
+ * miscellaneous
+ */
+
+path.play-scenario-fill {
+  fill: #606060;
+}
+
+path.play-scenario-stroke {
+  fill: #000000;
+}
+
+line.unblocked {
+  stroke: lightgreen;
+  stroke-width: 2;
+}
+
+line.blocked {
+  stroke: #ff3333;
+  stroke-width: 1.5;
+}
+
+circle.unblocked {
+  fill: lightgreen;
+}
+
+circle.blocked {
+  fill: orange;
+}
+
+div.message-container {
+  position: relative;
+  pointer-events: none;
+}
+
+div.message {
+  position: absolute;
+  top: 550px;
+  left: 100px;
+  right: 100px;
+}
+
+textarea.copy {
+  position: absolute;
+  left: -9999px;
+}
+
+p.footer {
+  margin:0;
+}
+
+a {
+  color: #444;
+}
+
+a:hover {
+  color: #444;
+}
+
+/*
+ * no text selection
+ */
+
+label {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+span {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+text {
+  font-family: Arial;
+  text-anchor: middle;
+  fill: white;
+
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/*
+ * fade
+ */
+
+@-moz-keyframes fade {
+  0% {
+    opacity: 1.0;
+  }
+  100% {
+    opacity: 0.0;
+  }
+}
+@-moz-keyframes fade {
+  0% {
+    opacity: 1.0;
+  }
+  100% {
+    opacity: 0.0;
+  }
+}
+@-webkit-keyframes fade {
+  0% {
+    opacity: 1.0;
+  }
+  100% {
+    opacity: 0.0;
+  }
+}
+div.fade {
+  -moz-animation: fade 1000ms linear;
+  -webkit-animation: fade 1000ms linear;
+  animation: fade 1000ms linear;
+}
+
+/*
+ * throbber
+ */
+
+@-moz-keyframes throbber {
+  0% {
+    -moz-transform: rotate( 0deg );
+    transform: rotate( 0deg );
+  }
+  100% {
+    -moz-transform: rotate( 360deg );
+    transform: rotate( 360deg );
+  }
+}
+@-webkit-keyframes throbber {
+  0% {
+    -webkit-transform: rotate( 0deg );
+    transform: rotate( 0deg );
+  }
+  100% {
+    -webkit-transform: rotate( 360deg );
+    transform: rotate( 360deg );
+  }
+}
+@keyframes throbber {
+  0% {
+    -moz-transform: rotate( 0deg );
+    -ms-transform: rotate( 0deg );
+    -webkit-transform: rotate( 0deg );
+    transform: rotate( 0deg );
+  }
+  100% {
+    -moz-transform: rotate( 360deg );
+    -ms-transform: rotate( 360deg );
+    -webkit-transform: rotate( 360deg );
+    transform: rotate( 360deg );
+  }
+}
+.throbber {
+  -moz-animation: throbber 1500ms infinite linear;
+  -webkit-animation: throbber 1500ms infinite linear;
+  animation: throbber 1500ms infinite linear;
+  -moz-border-radius: 0.1em;
+  -webkit-border-radius: 0.15em;
+  border-radius: 0.1em;
+  box-shadow: 0.3em 0 0 0, 0 0.3em 0 0, -0.3em 0 0 0, 0 -0.3em 0 0;
+  display: inline-block;
+  width: 0.2em;
+  height: 0.2em;
+  margin: 0.3em;
+  overflow: hidden;
+  text-indent: 100%;
+}
