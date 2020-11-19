@@ -132,9 +132,16 @@ def init( s, width, height, aoe_width, aoe_height ):
   s.JUMPING = False
   s.MUDDLED = False
 
+  s.JOTL_RULES = False
+
 # TODO should be a member function?
 def init_from_test_scenario( s, scenario_index ):
   init( s, 16, 7, 7, 7 )
+
+  NUM_SCENARIOS = 146
+  if scenario_index > NUM_SCENARIOS:
+    scenario_index -= NUM_SCENARIOS
+    s.JOTL_RULES = True
 
   # C : charcter
   # M : monster
@@ -256,6 +263,8 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_MOVE = 2
 
     s.correct_answer = { ( 36, 29 ), ( 22, 29 ) }
+    if s.JOTL_RULES:    
+      s.correct_answer = { ( 44, 50 ) }
 
   #######################################
   # 7 - like 6, but test that proximity is blocked by walls
@@ -787,6 +796,8 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_MOVE = 3
 
     s.correct_answer = { ( 46, ) }
+    if s.JOTL_RULES:
+      s.correct_answer = { ( 52, ) }
 
   #######################################
   # 23
@@ -1371,6 +1382,8 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_TARGET = 3
 
     s.correct_answer = { ( 18, 16, 31 ) }
+    if s.JOTL_RULES:
+      s.correct_answer = { ( 30, 16, 31, 35 ) }
 
   #######################################
   # plus attack
@@ -1419,6 +1432,8 @@ def init_from_test_scenario( s, scenario_index ):
     s.FLYING = True
 
     s.correct_answer = { ( 22, 16, 31, 35 ) }
+    if s.JOTL_RULES:
+      s.correct_answer = { ( 30, 16, 31, 35 ) }
 
   #######################################
   #
@@ -1442,6 +1457,8 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_RANGE = 2
 
     s.correct_answer = { ( 22, 15 ) }
+    if s.JOTL_RULES:
+      s.correct_answer = { ( 22, 36 ) }
 
   #######################################
   #
@@ -1465,6 +1482,8 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_TARGET = 2
 
     s.correct_answer = { ( 9, 23, 24 ), ( 10, 23, 24 ) }
+    if s.JOTL_RULES:
+      s.correct_answer = { ( 9, 22, 24 ) }
 
   #######################################
   #
@@ -1956,7 +1975,9 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_MOVE = 1
 
     s.correct_answer = { ( 30, ) }
-    
+    if s.JOTL_RULES:
+      s.correct_answer = { ( 38, ) }
+  
   #######################################
   #
 
@@ -2579,6 +2600,8 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_RANGE = 3
 
     s.correct_answer = { ( 35, 16, 17, 18 ) }
+    if s.JOTL_RULES:
+      s.correct_answer = { ( 35, 16, 17, 18 ), ( 35, 58, 59, 60 ) }
 
   #######################################
   #
@@ -2606,6 +2629,8 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_RANGE = 3
 
     s.correct_answer = { ( 35, 16 ) }
+    if s.JOTL_RULES:
+      s.correct_answer = { ( 35, 16 ), ( 35, 58, 59, 60 ) }
 
   #######################################
   #
@@ -2951,18 +2976,21 @@ def init_from_test_scenario( s, scenario_index ):
     s.aoe[31] = True
     s.aoe[32] = True
 
-    # s.correct_answer = {
-    #   ( 39, 8, 17, 23, 26, 46, 51, 58, ),
-    #   ( 52, 17, 23, 40, 46, 51, 57, 58, ),
-    #   ( 52, 17, 23, 26, 46, 51, 57, 58, ),
-    #   ( 33, 8, 17, 23, 40, 46, 51, 58, ),
-    #   ( 33, 8, 17, 23, 26, 46, 51, 58, ),
-    # }
     s.correct_answer = {
       ( 52, 17, 23, 26, 46, 51, 57, 58 ),
       ( 52, 17, 23, 40, 46, 51, 57, 58 ),
       ( 20, 8, 17, 23, 40, 46, 51, 58 ),
     }
+    if s.JOTL_RULES:
+      s.correct_answer = {
+        ( 52, 17, 23, 46, 51, 57, 58, 94 ),
+        ( 52, 17, 23, 46, 51, 57, 58, 102 ),
+        ( 52, 17, 23, 26, 46, 51, 57, 58 ),
+        ( 52, 17, 23, 40, 46, 51, 57, 58 ),
+        ( 20, 8, 17, 23, 40, 46, 51, 58 ),
+        ( 66, 17, 23, 46, 51, 57, 58, 80 ),
+        ( 66, 17, 23, 46, 51, 57, 58, 68 ),
+      }
 
   #######################################
   #
@@ -3031,6 +3059,8 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_TARGET = 2
 
     s.correct_answer = { ( 37, 44, 45 ) }
+    if s.JOTL_RULES:
+      s.correct_answer = { ( 37, 38, 45 ) }
 
   #######################################
   #
@@ -3361,8 +3391,8 @@ def init_from_test_scenario( s, scenario_index ):
     s.correct_answer = { ( 38, ), }
 
 
-  elif scenario_index == 146:
-    s.message = 'Github bug'
+  elif scenario_index == NUM_SCENARIOS:
+    s.message = 'Monster values traps triggered on later turns equal to those triggered on this turn.'
 
     s.figures[32] = 'C'
 

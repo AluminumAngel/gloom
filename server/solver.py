@@ -177,6 +177,9 @@ class Scenario:
     self.FLYING = int( packed_scenario['flying'] ) == 2
     self.MUDDLED = int( packed_scenario['muddled'] ) == 1
 
+    # added to packed_scenario in v2.5.0
+    self.JOTL_RULES = int( packed_scenario.get( 'jotl', '0' ) ) == 1
+
     def get_index( column, row ):
       index = column * self.MAP_HEIGHT + row
       return index
@@ -680,6 +683,8 @@ class Scenario:
       print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ] )
 
       out = ''
+      if self.JOTL_RULES:
+        out += ', JAWS OF THE LION'
       if self.ACTION_MOVE > 0 :
         out += ', MOVE %i' % self.ACTION_MOVE
       if self.ACTION_RANGE > 0 and self.ACTION_TARGET > 0:
@@ -775,7 +780,7 @@ class Scenario:
         this_path = (
           trap_counts[location],
           travel_distances[location],
-          proximity_distances[character],
+          0 if self.JOTL_RULES else proximity_distances[character],
           self.initiatives[character],
         )
         if is_tuple_equal( this_path, s.shortest_path ):
@@ -1361,7 +1366,8 @@ class Scenario:
 def perform_unit_tests( starting_scenario ):
   print 'performing unit tests...'
 
-  failures = 0
+  failed_scenarios = []
+
   scenario_index = starting_scenario - 1
   while True:
     scenario_index += 1
@@ -1369,6 +1375,8 @@ def perform_unit_tests( starting_scenario ):
     scenarios.init_from_test_scenario( scenario, scenario_index )
     if not scenario.valid:
       break
+
+    # map reduction is not yet used in deployed solver
     scenario.reduce_map()
 
     if not scenario.correct_answer:
@@ -1383,13 +1391,12 @@ def perform_unit_tests( starting_scenario ):
     if answers == scenario.correct_answer:
       print 'test %3i: pass' % scenario_index
     else:
-      failures += 1
+      failed_scenarios.append( scenario_index )
       print 'test %3i: fail' % scenario_index
 
   print
-  if failures == 0:
+  if len( failed_scenarios ) == 0:
     print 'passed all tests'
   else:
-    print 'failed %i test(s)' % failures
-
-  return failures
+    print 'failed %i test(s)' % len( failed_scenarios )
+    print failed_scenarios

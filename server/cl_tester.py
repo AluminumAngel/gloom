@@ -25,7 +25,7 @@ for arg in sys.argv[1:]:
     chosen_scenario_index = int( arg )
 
 if unit_tests:
-  failures = solver.perform_unit_tests( chosen_scenario_index )
+  solver.perform_unit_tests( chosen_scenario_index )
 
 elif print_los:
   scenario = solver.Scenario()
