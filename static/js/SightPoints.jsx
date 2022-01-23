@@ -5,10 +5,10 @@ const SightPoints = React.memo( function( props ) {
   if ( !props.points ) return null;
 
   var points = [];
-  props.points.forEach( ( point ) => {
+  props.points.forEach( ( point, index ) => {
     points.push(
       <SightPoint
-        key={point}
+        key={index}
         className={props.className}
         point={point}
       />

@@ -100,7 +100,7 @@ def unreduce_actions( s, actions ):
 
 # TODO should be a member function
 def init( s, width, height, aoe_width, aoe_height ):
-  s.test_switch = True#False
+  s.test_switch = False
   s.reduced = False
 
   s.MAP_WIDTH = width
@@ -135,13 +135,11 @@ def init( s, width, height, aoe_width, aoe_height ):
   s.JOTL_RULES = False
 
 # TODO should be a member function?
-def init_from_test_scenario( s, scenario_index ):
+NUM_SCENARIOS = 150
+def init_from_test_scenario( s, scenario_index, rules ):
   init( s, 16, 7, 7, 7 )
 
-  NUM_SCENARIOS = 146
-  if scenario_index > NUM_SCENARIOS:
-    scenario_index -= NUM_SCENARIOS
-    s.JOTL_RULES = True
+  s.set_rules( rules )
 
   # C : charcter
   # M : monster
@@ -286,7 +284,7 @@ def init_from_test_scenario( s, scenario_index ):
     s.correct_answer = { ( 44, 50 ) }
 
   #######################################
-  # 8 - test breaking focus ties with s.initiatives
+  # 8 - test breaking focus ties with initiatives
 
   elif scenario_index == 8:
     s.message = 'Given equal path distance and proximity, lowest initiative breaks the focus tie.'
@@ -1023,7 +1021,7 @@ def init_from_test_scenario( s, scenario_index ):
   # ranged
 
   elif scenario_index in [ 34, 35, 36, 37, 38, 39, 40, 41, 42, 43 ]:
-    s.message = 'Doorway line of sight. Use \'-l\' to draw visible hexe'
+    s.message = 'Doorway line of sight. Use \'-l\' to draw visible hexes'
 
     character = [ 15, 21, 22, 28, 29, 35, 36, 42, 43, 44 ][scenario_index - 34]
     s.figures[character] = 'C'
@@ -1067,7 +1065,7 @@ def init_from_test_scenario( s, scenario_index ):
   # ranged
 
   elif scenario_index in [ 44, 45, 46, 47, 48, 49, 50, 51, 52, 53 ]:
-    s.message = 'Doorway line of sight. Use \'-l\' to draw visible hexe'
+    s.message = 'Doorway line of sight. Use \'-l\' to draw visible hexes'
 
     character = [ 7, 15, 21, 8, 16, 22, 9, 17, 23, 31 ][scenario_index - 44]
     s.figures[character] = 'C'
@@ -1124,6 +1122,7 @@ def init_from_test_scenario( s, scenario_index ):
     s.contents[83] = 'X'
     s.walls[56][5] = True
     s.walls[62][1] = True
+    s.walls[63][4] = True
     s.walls[76][1] = True
 
     s.figures[43] = 'A'
@@ -1131,7 +1130,9 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_MOVE = 2
     s.ACTION_RANGE = 7
 
-    s.correct_answer = { ( 49, 76 ), ( 50, 76 ) }
+    s.correct_answer = { ( 43, 76 ) }
+    if s.GLOOM_RULES:
+      s.correct_answer = { ( 49, 76 ), ( 50, 76 ) }
 
   #######################################
   # https://boardgamegeek.com/image/3932321/codenamegreyfox
@@ -2306,7 +2307,7 @@ def init_from_test_scenario( s, scenario_index ):
   #
 
   elif scenario_index == 104:
-    s.message = 'Jumping monsters ignore the effects of difficult terrain, except on the last hex of movement. The monster moves only three steps towards the character.'
+    s.message = 'In Gloomhaven, jumping monsters ignore the effects of difficult terrain, except on the last hex of movement. The monster moves only three steps towards the character.'
 
     s.figures[52] = 'C'
 
@@ -2332,7 +2333,9 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_MOVE = 4
     s.JUMPING = True
 
-    s.correct_answer = { ( 31, ) }
+    s.correct_answer = { ( 37, ), ( 38, ) }
+    if s.GLOOM_RULES:
+      s.correct_answer = { ( 31, ) }
 
   #######################################
   #
@@ -2755,7 +2758,9 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_MOVE = 2
     s.ACTION_RANGE = 4
 
-    s.correct_answer = { ( 51, 36, ) }
+    s.correct_answer = { ( 59, 36, ) }
+    if s.GLOOM_RULES:
+      s.correct_answer = { ( 51, 36, ) }
 
   #######################################
   #
@@ -2921,7 +2926,7 @@ def init_from_test_scenario( s, scenario_index ):
     s.correct_answer = { ( 45, ) }
 
   #######################################
-  #
+  # http://localhost:5000/EdwVnHNE0oVlHziiCJQgpIBSCShJAEohCCfAAEEohSAIJQgfCEBJAlD6ACWgVIIAgSidIEDoQBBKKQgQgFIHKEEASiMIREkC
 
   elif scenario_index == 131:
     s.message = 'Large number of walls and characters, high target attack, large range and move, and a large aoe to use when timing optimizations.'
@@ -2976,20 +2981,27 @@ def init_from_test_scenario( s, scenario_index ):
     s.aoe[31] = True
     s.aoe[32] = True
 
-    s.correct_answer = {
-      ( 52, 17, 23, 26, 46, 51, 57, 58 ),
-      ( 52, 17, 23, 40, 46, 51, 57, 58 ),
-      ( 20, 8, 17, 23, 40, 46, 51, 58 ),
-    }
-    if s.JOTL_RULES:
+    if s.GLOOM_RULES:
       s.correct_answer = {
-        ( 52, 17, 23, 46, 51, 57, 58, 94 ),
-        ( 52, 17, 23, 46, 51, 57, 58, 102 ),
         ( 52, 17, 23, 26, 46, 51, 57, 58 ),
         ( 52, 17, 23, 40, 46, 51, 57, 58 ),
         ( 20, 8, 17, 23, 40, 46, 51, 58 ),
-        ( 66, 17, 23, 46, 51, 57, 58, 80 ),
-        ( 66, 17, 23, 46, 51, 57, 58, 68 ),
+      }
+    elif s.JOTL_RULES:
+      # jotl monster doesn't break focus ties with proximity, resulting in many equal focus options
+      s.correct_answer = {
+        ( 66, 17, 23, 46, 51, 57, 58, 102 ),
+        ( 66, 8, 17, 23, 46, 51, 58, 94 ),
+        ( 37, 8, 17, 23, 46, 51, 58, 80 ),
+        ( 66, 17, 23, 46, 51, 57, 58, 94 ),
+        ( 37, 8, 17, 23, 46, 51, 58, 68 ),
+        ( 66, 8, 17, 23, 46, 51, 58, 102 ),
+        ( 37, 8, 17, 23, 26, 46, 51, 58 ),
+      }
+    elif s.FROST_RULES:
+      # frosthaven monster doesn't need to move to get los to good attacks
+      s.correct_answer = {
+        ( 37, 8, 17, 23, 26, 46, 51, 58 ),
       }
 
   #######################################
@@ -3288,6 +3300,9 @@ def init_from_test_scenario( s, scenario_index ):
 
     s.correct_answer = { ( 52, 32 ) }
 
+  #######################################
+  #
+
   elif scenario_index == 143:
     s.message = 'Monster does not suffer disadvantage against an adjacent target if the range to that target is two.'
 
@@ -3309,6 +3324,9 @@ def init_from_test_scenario( s, scenario_index ):
     s.ACTION_RANGE = 2
 
     s.correct_answer = { ( 31, 32 ) }
+
+  #######################################
+  #
 
   elif scenario_index == 144:
     s.message = 'trap tests'
@@ -3354,6 +3372,7 @@ def init_from_test_scenario( s, scenario_index ):
     s.correct_answer = { ( 22, ), ( 23, ), ( 24, ) }
 
   #######################################
+  #
 
   elif scenario_index == 145:
     s.message = 'The monster will choose to close the distance to its destination along a path that minimizes the number of traps it will trigger.'
@@ -3388,10 +3407,12 @@ def init_from_test_scenario( s, scenario_index ):
 
     s.ACTION_MOVE = 3
 
-    s.correct_answer = { ( 38, ), }
+    s.correct_answer = { ( 38, ) }
 
+  #######################################
+  #
 
-  elif scenario_index == NUM_SCENARIOS:
+  elif scenario_index == 146:
     s.message = 'Monster values traps triggered on later turns equal to those triggered on this turn.'
 
     s.figures[32] = 'C'
@@ -3424,8 +3445,89 @@ def init_from_test_scenario( s, scenario_index ):
 
     s.ACTION_MOVE = 3
 
-    s.correct_answer = { ( 17, ), }
+    s.correct_answer = { ( 17, ) }
 
+  #######################################
+  #
+
+  elif scenario_index == 147:
+    s.message = 'Tests los angles from vertices with walls.'
+
+    s.figures[18] = 'C'
+
+    s.walls[12][4] = 'T'
+    s.walls[12][5] = 'T'
+
+    s.figures[12] = 'A'
+
+    s.ACTION_MOVE = 0
+    s.ACTION_RANGE = 4
+
+    s.correct_answer = { ( 12, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 148:
+    s.message = 'Simple test of Frosthaven hex to hex (not vertex to vertex) line of sight.'
+
+    s.figures[75] = 'C'
+
+    s.walls[47][2] = 'T'
+    s.walls[47][5] = 'T'
+
+    s.figures[33] = 'A'
+
+    s.ACTION_MOVE = 0
+    s.ACTION_RANGE = 6
+
+    s.correct_answer = { ( 33, 75 ) }
+    if s.GLOOM_RULES:
+      s.correct_answer = { ( 33, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 149:
+    s.message = 'Test Frosthaven hex-to-hex los algorithm for walls that are parallel to the sightline.'
+
+    s.figures[11] = 'C'
+
+    s.walls[33][4] = 'T'
+    s.walls[33][5] = 'T'
+    s.walls[32][2] = 'T'
+
+    s.figures[53] = 'A'
+
+    s.ACTION_MOVE = 0
+    s.ACTION_RANGE = 6
+
+    s.correct_answer = { ( 53, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == NUM_SCENARIOS:
+    s.message = 'Line-of-sight test that is very close to fully blocked.'
+
+    s.figures[31] = 'C'
+
+    s.contents[32] = 'X'
+    s.contents[52] = 'X'
+    s.contents[61] = 'X'
+    s.contents[66] = 'X'
+    s.contents[88] = 'X'
+
+    s.figures[89] = 'A'
+
+    s.ACTION_MOVE = 0
+    s.ACTION_RANGE = 9
+
+    s.correct_answer = { ( 89, 31 ) }
+    if s.GLOOM_RULES:
+      s.correct_answer = { ( 89, ) }
+
+  #######################################
   else:
     s.valid = False
 

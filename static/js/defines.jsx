@@ -5,7 +5,7 @@ function bitsRequired( value ){
 export const SCALE = 19;
 export const SQRT_3_OVER_2 = Math.sqrt( 3.0 ) / 2.0;
 
-export const GRID_HEIGHT = 20;
+export const GRID_HEIGHT = 20;//25;
 export const GRID_WIDTH = Math.round( Math.sqrt( 3.0 ) / 1.5 * GRID_HEIGHT );
 export const GRID_SCALED_WIDTH = SCALE * ( 0.5 + GRID_WIDTH * 1.5 );
 export const GRID_SCALED_HEIGHT = SCALE * ( SQRT_3_OVER_2 + 2.0 * GRID_HEIGHT * SQRT_3_OVER_2 );

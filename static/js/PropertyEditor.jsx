@@ -34,6 +34,7 @@ const TARGET_OPTIONS = [
   [ 3, '3' ],
   [ 4, '4' ],
   [ 5, '5' ],
+  [ 6, 'all' ],
 ];
 
 const FLYING_OPTIONS = [

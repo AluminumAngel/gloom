@@ -11,6 +11,7 @@ unit_tests = False
 print_los = False
 show_each_action_separately = False
 profile = False
+rules = 1
 
 for arg in sys.argv[1:]:
   if arg == '--run_unit_tests' or arg == '-t':
@@ -21,6 +22,12 @@ for arg in sys.argv[1:]:
     show_each_action_separately = True
   elif arg == '--profile' or arg == '-p':
     profile = True
+  elif arg == '--frost' or arg == '-f':
+    rules = 0
+  elif arg == '--gloom' or arg == '-g':
+    rules = 1
+  elif arg == '--jotl' or arg == '-j':
+    rules = 2
   else:
     chosen_scenario_index = int( arg )
 
@@ -29,7 +36,7 @@ if unit_tests:
 
 elif print_los:
   scenario = solver.Scenario()
-  scenarios.init_from_test_scenario( scenario, chosen_scenario_index )
+  scenarios.init_from_test_scenario( scenario, chosen_scenario_index, rules )
   scenario.prepare_map()
 
   character = scenario.figures.index( 'C' )
@@ -52,7 +59,7 @@ elif profile:
     print 'test parameters: %d' % test
     for sample in range( 0, SAMPLE_COUNT ):
       scenario = solver.Scenario()
-      scenarios.init_from_test_scenario( scenario, chosen_scenario_index )
+      scenarios.init_from_test_scenario( scenario, chosen_scenario_index, rules )
       scenario.test_switch = test
 
       start = time.time()
@@ -91,10 +98,10 @@ elif profile:
 
 else:
   scenario = solver.Scenario()
-  scenarios.init_from_test_scenario( scenario, chosen_scenario_index )
+  scenarios.init_from_test_scenario( scenario, chosen_scenario_index, rules )
   print_map( scenario, scenario.MAP_WIDTH, scenario.MAP_HEIGHT, scenario.effective_walls, [ format_content( *_ ) for _ in zip( scenario.figures, scenario.contents ) ], [ format_numerical_label( _ ) for _ in range( 0, scenario.MAP_SIZE ) ] )
-  scenario.reduce_map()
-  print_map( scenario, scenario.MAP_WIDTH, scenario.MAP_HEIGHT, scenario.effective_walls, [ format_content( *_ ) for _ in zip( scenario.figures, scenario.contents ) ], [ format_numerical_label( _ ) for _ in range( 0, scenario.MAP_SIZE ) ] )
+  # scenario.reduce_map()
+  # print_map( scenario, scenario.MAP_WIDTH, scenario.MAP_HEIGHT, scenario.effective_walls, [ format_content( *_ ) for _ in zip( scenario.figures, scenario.contents ) ], [ format_numerical_label( _ ) for _ in range( 0, scenario.MAP_SIZE ) ] )
   # scenario__ = solver.Scenario()
   # scenarios.reduce_scenario( scenario, scenario__ )
   # print_map( scenario__, scenario__.MAP_WIDTH, scenario__.MAP_HEIGHT, scenario__.effective_walls, [ format_content( *_ ) for _ in zip( scenario__.figures, scenario__.contents ) ], [ format_numerical_label( _ ) for _ in range( 0, scenario__.MAP_SIZE ) ] )
@@ -130,12 +137,12 @@ else:
   #   new_action['attacks'] = attacks
   #   new_actions.append( new_action )
 
-  # TODO LIST:
+  # MAP REDUCE TODO LIST:
   # - without fixing actions, do some profiling
   # - see waht the win is
   # - move this logic to unit tests
   # - fix all unit tests
-  # - move this fix-up logic deeper into the solve (if REDICE set)
+  # - move this fix-up logic deeper into the solve (if REDUCE set)
   # - make sure CL map prints look OK; OK to just print the smaller map?
   # - do more timing
   # - setup ability to run unit tests with and without reduction

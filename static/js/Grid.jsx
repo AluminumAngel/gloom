@@ -9,6 +9,7 @@ import HexGrid from './HexGrid';
 import OverlayHexGrid from './OverlayHexGrid';
 import SightLines from './SightLines';
 import SightPoints from './SightPoints';
+import DebugLines from './DebugLines';
 import WallGrid from './WallGrid';
 
 const VIEW_BOX_SANDARD = -( C.GRID_MARGIN + C.GRID_DELTA ) + ' ' + -C.GRID_MARGIN + ' ' + ( C.GRID_EXTENT ) + ' ' + ( C.GRID_EXTENT );
@@ -45,6 +46,26 @@ const GridDefs = React.memo( function( props ) {
     </defs>
   );
 } );
+
+// const Grid = React.memo( function( props ) {
+//   return (
+//     <svg
+//       id='grid_svg'
+//       width={C.GRID_EXTENT}
+//       height={C.GRID_EXTENT}
+//       viewBox={props.rotateGrid ? VIEW_BOX_ROTATED : VIEW_BOX_SANDARD}
+//       onMouseUp={props.onGridMouseUp}
+//       onMouseLeave={props.onGridMouseLeave}
+//     >
+//       <GridDefs/>
+//       <g transform={props.rotateGrid ? C.GRID_TRANSFORM : ''}>
+//         <DebugLines
+//           lines={props.displaySolution ? props.debugLines : null}
+//         />
+//       </g>
+//     </svg>
+//   );
+// } );
 
 const Grid = React.memo( function( props ) {
   return (
@@ -105,21 +126,12 @@ const Grid = React.memo( function( props ) {
           lines={props.displaySolution ? props.sightlineLines : null}
           className='unblocked'
         />
-        <SightLines
-          lines={props.displaySolution ? props.obstructionLines : null}
-          className='blocked'
-        />
         <SightPoints
           points={props.displaySolution ? props.sightlinePoints : null}
           className='unblocked'
         />
-        <SightPoints
-          points={props.displaySolution ? props.obstructionClearPoints : null}
-          className='unblocked'
-        />
-        <SightPoints
-          points={props.displaySolution ? props.obstructionBlockedPoints : null}
-          className='blocked'
+        <DebugLines
+          lines={props.displaySolution ? props.debugLines : null}
         />
         <DragFigure
           ref={props.dragRef}

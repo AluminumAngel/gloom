@@ -13,11 +13,11 @@ debug = not production
 
 title = 'Gloomhaven Monster Mover'
 version_major = 2
-version_minor = 5
-version_build = 1
+version_minor = 6
+version_build = 2
 version = str( version_major ) + '.' + str( version_minor ) + '.' + str( version_build )
 client_local_storage_version_major = 1
-client_local_storage_version_minor = 1
+client_local_storage_version_minor = 2
 client_local_storage_version_build = 0
 client_local_storage_version = str( client_local_storage_version_major ) + '.' + str( client_local_storage_version_minor ) + '.' + str( client_local_storage_version_build )
 
@@ -56,8 +56,8 @@ def templates( filename, params={} ):
 @app.route( '/solve', methods=[ 'PUT' ] )
 def solve():
   packed_scenario = request.json
-  if not production:
-    print packed_scenario
+  # if not production:
+  #   print packed_scenario
 
   # todo: validate packed scenario format
   map_width = packed_scenario['width']
@@ -68,6 +68,7 @@ def solve():
   s = solver.Scenario()
   if not production:
     s.logging = True
+    s.debug_visuals = True
   scenarios.init( s, map_width, map_height, 7, 7 )
   s.unpack_scenario( packed_scenario )
   actions, reach, sight = s.solve( solve_view > 0, solve_view > 1 )
@@ -81,15 +82,15 @@ def solve():
   if sight:
     solution['sight'] = sight
 
-  if not production:
-    print solution
+  # if not production:
+  #   print solution
   return jsonify( solution )
 
 @app.route( '/views', methods=[ 'PUT' ] )
 def views():
   packed_scenario = request.json
-  if not production:
-    print packed_scenario
+  # if not production:
+  #   print packed_scenario
 
   # todo: validate packed scenario format
   map_width = packed_scenario['width']
@@ -101,6 +102,7 @@ def views():
   s = solver.Scenario()
   if not production:
     s.logging = True
+    s.debug_visuals = True
   scenarios.init( s, map_width, map_height, 7, 7 )
   s.unpack_scenario_forviews( packed_scenario )
 
@@ -112,8 +114,8 @@ def views():
   if solve_view > 1:
     solution['sight'] = s.solve_sights( viewpoints )
 
-  if not production:
-    print solution
+  # if not production:
+    # print solution
   return jsonify( solution )
 
 # Debug Server
@@ -122,9 +124,10 @@ if __name__ == '__main__':
 
   if not production:
     if os.environ.get( 'WERKZEUG_RUN_MAIN' ) != 'true':
-      failures = solver.perform_unit_tests( 1 )
-      if failures > 0:
-        exit()
+      # failures = solver.perform_unit_tests( 1 )
+      # if failures > 0:
+      #   exit()
+      pass
 
   extra_files = []
   if not production:
