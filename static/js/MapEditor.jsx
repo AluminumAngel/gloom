@@ -1,5 +1,6 @@
 import React from 'react';
 import { UncontrolledTooltip } from 'reactstrap';
+import { UncontrolledDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
 import axios from 'axios';
 import * as C from './defines';
 import * as BRUSH from './brushes';
@@ -65,6 +66,15 @@ const NUMBER_WORDS = [
   'twelve',
 ];
 
+const GAME_RULES_FROST = 0;
+const GAME_RULES_GLOOM = 1;
+const GAME_RULES_JOTL = 2;
+const GAME_RULES_OPTIONS = [
+  [ GAME_RULES_FROST, 'Frosthaven' ],
+  [ GAME_RULES_GLOOM, 'Gloomhaven' ],
+  [ GAME_RULES_JOTL, 'Jaws of the Lion' ],
+];
+
 const STATE_KEYS = [
   // tools state
   // 'brush',
@@ -72,7 +82,6 @@ const STATE_KEYS = [
   // 'show_focus',
   // 'show_destination',
   // 'show_sightline',
-  // 'show_obstruction',
   // 'show_movement',
   // 'show_reach',
   // 'show_sight',
@@ -88,7 +97,7 @@ const STATE_KEYS = [
   'target',
   'flying',
   'muddled',
-  'jotl',
+  'game_rules',
   'aoe_grid',
   'active_faction',
 ];
@@ -117,7 +126,7 @@ const SIMPLE_STATE_PROPERTIES = {
   target: {
     bits: 3,
     min: 0,
-    max: 5,
+    max: 6, // make sure this change is safe for URLs
   },
   flying: {
     bits: 2,
@@ -133,6 +142,11 @@ const SIMPLE_STATE_PROPERTIES = {
     bits: 1,
     min: 0,
     max: 1,
+  },
+  game_rules: {
+    bits: 2,
+    min: 0,
+    max: 2,
   },
   active_faction: {
     bits: 1,
@@ -193,7 +207,6 @@ export default class MapEditor extends React.PureComponent {
       show_focus: false,
       show_destination: false,
       show_sightline: false,
-      show_obstruction: false,
       show_movement: !START_IN_LOS_MODE,
       show_reach: false,
       show_sight: START_IN_LOS_MODE,
@@ -210,6 +223,7 @@ export default class MapEditor extends React.PureComponent {
       flying: 0,
       muddled: 0,
       jotl: 0,
+      game_rules: 0,
       aoe_grid: Array( C.AOE_SIZE ).fill( false ),
       active_faction: false,
 
@@ -233,9 +247,7 @@ export default class MapEditor extends React.PureComponent {
       display_destinations: Array( C.GRID_SIZE ).fill( false ),
       display_sightline_lines: Array(),
       display_sightline_points: Array(),
-      display_obstruction_lines: Array(),
-      display_obstruction_clear_points: Array(),
-      display_obstruction_blocked_points: Array(),
+      display_debug_lines: Array(),
       display_reach: Array( C.GRID_SIZE ).fill( false ),
       display_sight: Array( C.GRID_SIZE ).fill( false ),
     };
@@ -296,6 +308,7 @@ export default class MapEditor extends React.PureComponent {
 
     var previous_version = localStorage.getItem( 'version' )
     if ( previous_version !== '1.0.0'
+      && previous_version !== '1.1.0'
       && previous_version !== DATA_VERSION
     ) {
       localStorage.clear();
@@ -767,10 +780,6 @@ export default class MapEditor extends React.PureComponent {
     } );
   };
 
-  generateGridMapping() {
-
-  }
-
   handleShareScenario = () => {
 
     // build grid mapping
@@ -819,8 +828,8 @@ export default class MapEditor extends React.PureComponent {
       bit_writer.writeBits( SIMPLE_STATE_PROPERTIES[key].bits, this.state[key] );
     } );
 
-    // write jotl
-    bit_writer.writeBits( SIMPLE_STATE_PROPERTIES['jotl'].bits, this.state['jotl'] );
+    // write game_rules
+    bit_writer.writeBits( SIMPLE_STATE_PROPERTIES['game_rules'].bits, this.state['game_rules'] );
 
     // write active_figure_index
     var value = this.state.active_figure_index;
@@ -913,19 +922,41 @@ export default class MapEditor extends React.PureComponent {
 
     var scenario_state = {};
 
+    // example URLs:
+    // v1.0.0
+    // - http://localhost:5000/AUgFMAe6fCZAgAABAgQIGQiCATAABsAgYQNhASEDgTAABgoPCBAgQIAAAQICBAoQQGhASAAGCIQBMFB4QAAKhAECBAgQEECAAAHCAgLQABKEMYQBAwbCAKEBAYgQBgSCIQEYICwgABmgQhhDGBKAAUIDAtAhDBAgQIAAAQIECBAWEBKAAUIHAgQIECBAAA
+    // - http://localhost:5000/AUgFMgfcZCFAgAABAgQIECBAgBCB0AAMFiYQDEMCMECIQBAMEQgTCA3AQCECIQEYJEBAAAHCBAIECAggQIAAwcIEAgYMEiAkIEwgAAbBgEABYCAMECIQBAMGCBAEA4UKBAwSIECwUIGAAAIECBAQQIBwgUABAgQKFQgaAAMECICBwgWCYJAgGCRcIBAGwEBhA2EBYQMBKAAJoAFEIHwgQIAAAQI
+    // v1.1.0
+    // - http://localhost:5000/EUgFYA50-UyAAAECBAgQMhAEA2AADIBBwgbCAkIGAmEADBQeECBAgAABAgQECBQggNCAkAAMEAgDYKDwgAAUCAMECBAgIIAAAQKEBQSgASQIYwgDBgyEAUIDAhAhDAgEQwIwQFhAADJAhTCGMCQAA4QGBKBDGCBAgAABAgQIECAsICQAA4QOBAgQIECAAA
+    // - http://localhost:5000/EUgFYg64yUKAAAECBAgQIECAACECoQEYLEwgGIYEYIAQgSAYIhAmEBqAgUIEQgIwSICAAAKECQQIEBBAgAABgoUJBAwYJEBIQJhAAAyCAYECwEAYIEQgCAYMECAIBgoVCBgkQIBgoQIBAQQIECAggADhAoECBAgUKhA0AAYIEAADhQsEwSBBMEi4QCAMgIHCBsICwgYCUAASQAOIQPhAgAABAgQ
+    // - http://localhost:5000/EUAOUAEgqAKGE0ACVAkgDeoIJBZAYQg0AA [Gloom rules]
+    // - http://localhost:5000/EUAOVAEgqAKGE0ACVAkgDeoIJBZAYQg0AA [JotL rules]
+    // v1.2.0
+    // - http://localhost:5000/IUgFxBzo8pkAAQIECBAgZCAIBsAAGACDhA2EBYQMBMIAGCg8IECAAAECBAgIEChAAKEBIQEYIBAGwEDhAQEoEAYIECBAQAABAgQICwhAA0gQxhAGDBgIA4QGBCBCGBAIhgRggLCAAGSACmEMYUgABggNCECHMECAAAECBAgQIEBYQEgABggdCBAgQIAAAQ
+    // - http://localhost:5000/IUgFxhxwk4UAAQIECBAgQIAAAUIEQgMwWJhAMAwJwAAhAkEwRCBMIDQAA4UIhARgkAABAQQIEwgQICCAAAECBAsTCBgwSICQgDCBABgEAwIFgIEwQIhAEAwYIEAQDBQqEDBIgADBQgUCAggQIEBAAAHCBQIFCBAoVCBoAAwQIAAGChcIgkGCYJBwgUAYAAOFDYQFhA0EoAAkgAYQgfCBAAECBAg
+    // - http://localhost:5000/IUAOoAJAUAUMJ4AEqBJAGtQRSCyAwhBoAA [Frost rules]
+    // - http://localhost:5000/IUAOpAJAUAUMJ4AEqBJAGtQRSCyAwhBoAA [Gloom rules]
+    // - http://localhost:5000/IUAOqAJAUAUMJ4AEqBJAGtQRSCyAwhBoAA [JotL rules]
+
     try {
       var bit_reader = new BitReader( url_scenario );
 
       // read data version
-      var skip_jotl_read = false;
-      const data_version_major = bit_reader.readBits( 4 );      
-      const data_version_minor = bit_reader.readBits( 3 );      
-      const data_version_build = bit_reader.readBits( 3 );      
+      const data_version_major = bit_reader.readBits( 4 );
+      const data_version_minor = bit_reader.readBits( 3 );
+      const data_version_build = bit_reader.readBits( 3 );
+      var game_rules_data_version = 2;   
       if ( data_version_major === 1
         && data_version_minor === 0
         && data_version_build === 0
       ) {
-        skip_jotl_read = true;
+        game_rules_data_version = 0;
+      }
+      else if ( data_version_major === 1
+        && data_version_minor === 1
+        && data_version_build === 0
+      ) {
+        game_rules_data_version = 1;
       }
       else if ( data_version_major !== DATA_VERSION_MAJOR
         || data_version_minor !== DATA_VERSION_MINOR
@@ -945,15 +976,37 @@ export default class MapEditor extends React.PureComponent {
         scenario_state[key] = value;
       } );
 
-      // read jotl
-      if ( !skip_jotl_read ) {
+      // read game_rules or jotl
+      if ( game_rules_data_version === 0 )
+      {
+        scenario_state['game_rules'] = GAME_RULES_GLOOM;
+      }
+      else if ( game_rules_data_version === 1 )
+      {
         const value = bit_reader.readBits( SIMPLE_STATE_PROPERTIES['jotl'].bits );
         validate(
           value,
           SIMPLE_STATE_PROPERTIES['jotl'].min,
           SIMPLE_STATE_PROPERTIES['jotl'].max
         );
-        scenario_state['jotl'] = value;
+        if ( value === 0 )
+        {
+          scenario_state['game_rules'] = GAME_RULES_GLOOM;
+        }
+        else
+        {
+          scenario_state['game_rules'] = GAME_RULES_JOTL;
+        }
+      }
+      else
+      {
+        const value = bit_reader.readBits( SIMPLE_STATE_PROPERTIES['game_rules'].bits );
+        validate(
+          value,
+          SIMPLE_STATE_PROPERTIES['game_rules'].min,
+          SIMPLE_STATE_PROPERTIES['game_rules'].max
+        );
+        scenario_state['game_rules'] = value;
       }
 
       // read active_figure_index
@@ -1114,21 +1167,15 @@ export default class MapEditor extends React.PureComponent {
     } );
   };
 
-  handleDisplayobstructionLinesChanged = () => {
-    this.setState( {
-      'show_obstruction': !this.state.show_obstruction,
-    } );
-  };
-
   handleDisplaysightlineLinesChanged = () => {
     this.setState( {
       'show_sightline': !this.state.show_sightline,
     } );
   };
 
-  handleJotLChanged = () => {
+  handleGameRulesChanged = ( value ) => {
     this.setScenario( {
-      'jotl': !this.state.jotl,
+      'game_rules': value,
     } );
   };
 
@@ -1309,10 +1356,8 @@ export default class MapEditor extends React.PureComponent {
     var aoe = Array( C.GRID_SIZE ).fill( false );
     var focuses = Array( C.GRID_SIZE ).fill( false );
     var destinations = Array( C.GRID_SIZE ).fill( false );
-    var sightline_lines = new Set();
-    var obstruction_lines = new Set();
-    var obstruction_clear_points = new Set();
-    var obstruction_blocked_points = new Set();
+    var sightline_lines = [];
+    var debug_lines = [];
     var reach = Array( C.GRID_SIZE ).fill( false );
     var sight = Array( C.GRID_SIZE ).fill( false );
 
@@ -1334,17 +1379,13 @@ export default class MapEditor extends React.PureComponent {
               destinations[location] = true;
             } );
             solution_actions[index].sightlines.forEach( ( line ) => {
-              sightline_lines.add( line );
+              sightline_lines.push( line );
             } );
-            solution_actions[index].obstruction_lines.forEach( ( line ) => {
-              obstruction_lines.add( line );
-            } );
-            solution_actions[index].obstruction_clear_points.forEach( ( point ) => {
-              obstruction_clear_points.add( point );
-            } );
-            solution_actions[index].obstruction_blocked_points.forEach( ( point ) => {
-              obstruction_blocked_points.add( point );
-            } );
+            if ( 'debug_lines' in solution_actions[index] ) {
+              solution_actions[index].debug_lines.forEach( ( line ) => {
+                debug_lines.push( line );
+              } );
+            }
             if ( show_reach && solution_actions_reach ) {
               solution_actions_reach[index].forEach( ( range ) => {
                 for ( var location = range[0]; location < range[1]; location++ ) {
@@ -1376,17 +1417,13 @@ export default class MapEditor extends React.PureComponent {
             destinations[location] = true;
           } );
           solution_actions[action_displayed].sightlines.forEach( ( line ) => {
-            sightline_lines.add( line );
+            sightline_lines.push( line );
           } );
-          solution_actions[action_displayed].obstruction_lines.forEach( ( line ) => {
-            obstruction_lines.add( line );
-          } );
-          solution_actions[action_displayed].obstruction_clear_points.forEach( ( point ) => {
-            obstruction_clear_points.add( point );
-          } );
-          solution_actions[action_displayed].obstruction_blocked_points.forEach( ( point ) => {
-            obstruction_blocked_points.add( point );
-          } );
+          if ( 'debug_lines' in solution_actions[action_displayed] ) {
+            solution_actions[action_displayed].debug_lines.forEach( ( line ) => {
+              debug_lines.push( line );
+            } );
+          }
           if ( show_reach && solution_actions_reach ) {
             solution_actions_reach[action_displayed].forEach( ( range ) => {
               for ( var location = range[0]; location < range[1]; location++ ) {
@@ -1421,11 +1458,10 @@ export default class MapEditor extends React.PureComponent {
       }
     }
 
-    var sightline_points = new Set();
+    var sightline_points = [];
     sightline_lines.forEach( ( line ) => {
-      const points = HexUtils.getLinePoints( line );
-      sightline_points.add( points[0] );
-      sightline_points.add( points[1] );
+      sightline_points.push( line[0] );
+      sightline_points.push( line[1] );
     } );
 
     var display_state = {
@@ -1438,11 +1474,9 @@ export default class MapEditor extends React.PureComponent {
       display_aoe: aoe,
       display_focuses: focuses,
       display_destinations: destinations,
-      display_sightline_lines: Array.from( sightline_lines ),
-      display_sightline_points: Array.from( sightline_points ),
-      display_obstruction_lines: Array.from( obstruction_lines ),
-      display_obstruction_clear_points: Array.from( obstruction_clear_points ),
-      display_obstruction_blocked_points: Array.from( obstruction_blocked_points ),
+      display_sightline_lines: sightline_lines,
+      display_sightline_points: sightline_points,
+      display_debug_lines: debug_lines,
       display_reach: reach,
       display_sight: sight,
     };
@@ -1472,7 +1506,7 @@ export default class MapEditor extends React.PureComponent {
       target: this.state.target,
       flying: this.state.flying,
       muddled: this.state.muddled,
-      jotl: this.state.jotl,
+      game_rules: this.state.game_rules,
       aoe: [],
 
       width: C.GRID_WIDTH,
@@ -1530,6 +1564,7 @@ export default class MapEditor extends React.PureComponent {
 
       range: this.state.range,
       target: this.state.target,
+      game_rules: this.state.game_rules,
 
       width: C.GRID_WIDTH,
       height: C.GRID_HEIGHT,
@@ -1647,15 +1682,6 @@ export default class MapEditor extends React.PureComponent {
       } );
   };
 
-  // handleRequestScenario = () => {
-  //   axios.get( URL_FOR.scenario )
-  //     .then( ( response ) => {
-  //       this.unpackscenario( response.data );
-  //     } )
-  //     .catch( () => {
-  //     } );
-  // };
-
   handlePreviousAction = () => {
     var action_displayed = this.state.action_displayed;
     if ( this.state.solution_actions && this.state.solution_actions.length > 1 ) {
@@ -1740,6 +1766,7 @@ export default class MapEditor extends React.PureComponent {
       }
     }
 
+    scenario.scenario_too_complex = false;
     if ( scenario.scenario_too_complex ) {
       var message;
       if ( complex_type === COMPLEXITY_ENEMIES ) {
@@ -1750,7 +1777,7 @@ export default class MapEditor extends React.PureComponent {
       else {
         message = 'The scenario cannot be solved in reasonable time. '
           + 'Reduce the target number of the attack, or remove the area '
-          + 'of effect, or change the range to melee.';
+          + 'of effect, or reduce the range to melee.';
       }
 
       setTimeout( () => {
@@ -1798,6 +1825,7 @@ export default class MapEditor extends React.PureComponent {
 
     const active_faction_string = this.state.active_faction ? 'character' : 'monster';
     const inactive_faction_string = this.state.active_faction ? 'monster' : 'character';
+    const game_rules_string = GAME_RULES_OPTIONS[this.state.game_rules][1];
 
     var display_move_solution = false;
     var status_label = null;
@@ -1851,7 +1879,7 @@ export default class MapEditor extends React.PureComponent {
             status_label = 'Showing range.';
           }
           else if ( this.state.show_sight ) {
-            status_label = 'Showing line of sight.';
+            status_label = 'Showing line-of-sight.';
           }
           break;
       }
@@ -1962,9 +1990,7 @@ export default class MapEditor extends React.PureComponent {
                   destinations={this.state.show_destination ? this.state.display_destinations : null}
                   sightlineLines={this.state.show_sightline ? this.state.display_sightline_lines : null}
                   sightlinePoints={this.state.show_sightline ? this.state.display_sightline_points : null}
-                  obstructionLines={this.state.show_obstruction ? this.state.display_obstruction_lines : null}
-                  obstructionClearPoints={this.state.show_obstruction ? this.state.display_obstruction_clear_points : null}
-                  obstructionBlockedPoints={this.state.show_obstruction ? this.state.display_obstruction_blocked_points : null}
+                  debugLines={this.state.display_debug_lines}
                   attacks={this.state.display_attacks}
                   focuses={this.state.show_focus ? this.state.display_focuses : null}
                   flying={this.state.flying}
@@ -2051,11 +2077,11 @@ export default class MapEditor extends React.PureComponent {
                   id='show-sight-button'
                   onClick={this.handleDisplaySightChanged}
                 >
-                  Show Line of Sight
+                  Show Line-of-Sight
                 </button>
                 <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-sight-button'>
                   <div className='text-left'>
-                    Show hexes within the active {active_faction_string}'s line of sight.
+                    Show hexes within the active {active_faction_string}'s line-of-sight.
                   </div>
                 </UncontrolledTooltip>
                 <button
@@ -2070,7 +2096,7 @@ export default class MapEditor extends React.PureComponent {
                   <div className='text-left'>
                     Show hexes within the range of the active {active_faction_string}'s attack.
                     <p/>
-                    For a ranged area of effect attack, only a single hex of the area needs to be within the attack's range, though all targets must be within line of sight.
+                    For a ranged area of effect attack, only a single hex of the area needs to be within the attack's range, though all targets must be within line-of-sight.
                   </div>
                 </UncontrolledTooltip>
                 <button
@@ -2085,7 +2111,7 @@ export default class MapEditor extends React.PureComponent {
                   <div className='text-left'>
                     Show movement options for the active {active_faction_string}.
                     <p/>
-                    Unset to test range or line of sight from the active {active_faction_string}'s initial location.
+                    Unset to test range or line-of-sight from the active {active_faction_string}'s initial location.
                   </div>
                 </UncontrolledTooltip>
                 <button
@@ -2130,46 +2156,70 @@ export default class MapEditor extends React.PureComponent {
                     Show a sightline for the active {active_faction_string}'s attack.
                   </div>
                 </UncontrolledTooltip>
-                <button
-                  type='button'
-                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_obstruction ? ' active' : '' )}
-                  id='show-blocked-lines-button'
-                  onClick={this.handleDisplayobstructionLinesChanged}
-                  disabled={!this.state.show_movement}
-                >
-                  Show Obstruction
-                </button>
-                <UncontrolledTooltip placement='left-end' delay={C.TOOLTIP_DELAY} target='show-blocked-lines-button'>
-                  <div className='text-left'>
-                    Show obstructed sightlines when the active {active_faction_string}'s focus could be attacked, but it is not in line of sight.
-                    <p/>
-                    Line of sight is obstructed between two hexes when all lines between their vertices start on, end on, or touch a wall.
-                    <p/>
-                    Blocked vertices (those touching walls) are colored orange. Open vertices are colored green. Lines are drawn between all open vertices to demonstrate blocked line of sight.
-                  </div>
-                </UncontrolledTooltip>
               </div>
 
               <div className='w-75 mt-4 btn-group-vertical'>
-                <button
-                  type='button'
-                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.jotl ? ' active' : '' )}
-                  id='jotl-button'
-                  onClick={this.handleJotLChanged}
-                >
-                  Jaws of the Lion
-                </button>
-                <UncontrolledTooltip placement='left-end' delay={C.TOOLTIP_DELAY} target='jotl-button'>
-                  <div className='text-left'>
-                    Use the rules of Gloomhaven: Jaws of the Lion, in which proximity does not affect monster focus. Initiative is the only tiebreaker.
-                  </div>
-                </UncontrolledTooltip>
+                <UncontrolledDropdown className='btn-group'>
+                  <DropdownToggle id='game-rules-dropdown' className='btn btn-sm btn-dark dropdown-toggle text-left'>
+                    {game_rules_string}
+                  </DropdownToggle>
+                  <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='game-rules-dropdown'>
+                    <div className='text-left'>
+                      Use the rules of this game.
+                    </div>
+                  </UncontrolledTooltip>
+                  <DropdownMenu>
+                    <DropdownItem
+                      className='btn-sm'
+                      id='use-frosthaven-rules-button'
+                      onClick={() => { this.handleGameRulesChanged( 0 ); }}
+                    >
+                      {GAME_RULES_OPTIONS[0][1]}
+                    </DropdownItem>
+                    <UncontrolledTooltip placement='left-end' delay={C.TOOLTIP_DELAY} target='use-frosthaven-rules-button'>
+                      <div className='text-left'>
+                        Two hexes have line-of-sight if a line can be drawn from any part of one hex to any part of the other without touching a wall.
+                      </div>
+                    </UncontrolledTooltip>
+                    <DropdownItem
+                      className='btn-sm'
+                      id='use-gloomhaven-rules-button'
+                      onClick={() => { this.handleGameRulesChanged( 1 ); }}
+                    >
+                      {GAME_RULES_OPTIONS[1][1]}
+                    </DropdownItem>
+                    <UncontrolledTooltip placement='left-end' delay={C.TOOLTIP_DELAY} target='use-gloomhaven-rules-button'>
+                      <div className='text-left'>
+                        Two hexes have line-of-sight if a line can be drawn from any vertex of one hex to any vertex of the other without touching a wall.
+                        <p/>
+                        A vertex that starts or ends at a wall is considered touching it and cannot be used to draw line-of-sight.
+                        <p/>
+                        The last hex of a jump costs two movement points if entering difficult terrain.
+                      </div>
+                    </UncontrolledTooltip>
+                    <DropdownItem
+                      className='btn-sm'
+                      id='use-jotl-rules-button'
+                      onClick={() => { this.handleGameRulesChanged( 2 ); }}
+                    >
+                      {GAME_RULES_OPTIONS[2][1]}
+                    </DropdownItem>
+                    <UncontrolledTooltip placement='left-end' delay={C.TOOLTIP_DELAY} target='use-jotl-rules-button'>
+                      <div className='text-left'>
+                        Two hexes have line-of-sight if a line can be drawn from any part of one hex to any part of the other without touching a wall.
+                        <p/>
+                        Proximity does not affect monster focus. Initiative is the only tiebreaker.
+                      </div>
+                    </UncontrolledTooltip>
+                  </DropdownMenu>
+                </UncontrolledDropdown>                             
+
               </div>
 
               <div className='mt-2 mb-4 text-secondary small'>
                 <p/>
                 <p className='footer'/>
-                &copy; 2020 <a href='mailto:daniel.richard.nelson@gmail.com'>daniel.richard.nelson@gmail.com</a>
+                &copy; 2022 <a href='mailto:daniel.richard.nelson@gmail.com'>daniel.richard.nelson@gmail.com</a>
                 <p className='footer'/>
                 <a href='https://github.com/AluminumAngel/gloom'>github.com/AluminumAngel/gloom</a>
                 <p className='footer'/>

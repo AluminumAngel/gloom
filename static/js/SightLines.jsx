@@ -5,10 +5,10 @@ const SightLines = React.memo( function( props ) {
   if ( !props.lines ) return null;
 
   var lines = [];
-  props.lines.forEach( ( line ) => {
+  props.lines.forEach( ( line, index ) => {
     lines.push(
       <SightLine
-        key={line}
+        key={index}
         className={props.className}
         line={line}
       />
