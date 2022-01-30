@@ -4,13 +4,6 @@ from utils import *
 from settings import *
 from print_map import *
 
-VERTEX_INSIDE = 1
-VERTEX_OUTSIDE_BOUND_ZERO = 2
-VERTEX_OUTSIDE_BOUND_ONE = 3
-
-DEBUG_PLOT_SCALE = 51.0 * math.sqrt( 3.0 ) / 2.0
-DEBUG_PLOT_OFFSET = 0.0
-
 class Scenario:
   def __init__( self ):
     self.correct_answer = None
