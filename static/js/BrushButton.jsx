@@ -41,6 +41,7 @@ export default class BrushButton extends React.PureComponent {
     var tooltip = this.state.hover ? (
       <UncontrolledTooltip
         placement={this.props.tooltipPlacement ? this.props.tooltipPlacement : 'right'}
+        fade={false}
         delay={C.TOOLTIP_DELAY}
         target={'brush-tooltip-' + this.props.brush}
       >
