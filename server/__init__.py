@@ -13,11 +13,11 @@ debug = not production
 
 title = 'Gloomhaven Monster Mover'
 version_major = 2
-version_minor = 6
-version_build = 2
+version_minor = 7
+version_build = 1
 version = str( version_major ) + '.' + str( version_minor ) + '.' + str( version_build )
 client_local_storage_version_major = 1
-client_local_storage_version_minor = 2
+client_local_storage_version_minor = 3
 client_local_storage_version_build = 0
 client_local_storage_version = str( client_local_storage_version_major ) + '.' + str( client_local_storage_version_minor ) + '.' + str( client_local_storage_version_build )
 
@@ -124,10 +124,9 @@ if __name__ == '__main__':
 
   if not production:
     if os.environ.get( 'WERKZEUG_RUN_MAIN' ) != 'true':
-      # failures = solver.perform_unit_tests( 1 )
-      # if failures > 0:
-      #   exit()
-      pass
+      failures = solver.perform_unit_tests( 1 )
+      if failures > 0:
+        exit()
 
   extra_files = []
   if not production:

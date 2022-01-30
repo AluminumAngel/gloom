@@ -8,7 +8,8 @@ VERTEX_INSIDE = 1
 VERTEX_OUTSIDE_BOUND_ZERO = 2
 VERTEX_OUTSIDE_BOUND_ONE = 3
 
-DEBUG_PLOT_SCALE = 35.0
+DEBUG_PLOT_SCALE = 51.0 * math.sqrt( 3.0 ) / 2.0
+DEBUG_PLOT_OFFSET = 0.0
 
 class Scenario:
   def __init__( self ):
@@ -226,6 +227,8 @@ class Scenario:
     # added to packed_scenario in v2.6.0
     self.set_rules( int( packed_scenario.get( 'game_rules', '0' ) ) )
 
+    self.DEBUG_TOGGLE = int( packed_scenario.get( 'debug_toggle', '0' ) )
+
     def add_elements( grid, key, content ):
       for _ in packed_scenario['map'][key]:
         grid[_] = content
@@ -433,6 +436,23 @@ class Scenario:
             wall_vertex_b = self.get_vertex( location, ( edge + 1 ) % 6 )
             yield ( wall_vertex_a, wall_vertex_b )
 
+  def walls_in( self, bounds ):
+    for column in range( bounds[1], bounds[3] ):
+      column_location = column * self.MAP_HEIGHT
+      for row in range( bounds[0], bounds[2] ):
+        location = column_location + row
+
+        encoded_wall = 0
+        for edge in range( 3 ):
+          if self.extra_walls[location][edge]:
+            encoded_wall += 1 << edge
+
+        if self.blocks_los( location ):
+          encoded_wall += 1 << 3
+
+        if encoded_wall != 0:
+          yield location, encoded_wall
+
   def test_line( self, bounds, vertex_position_a, vertex_position_b ):
     if vertex_position_a == vertex_position_b:
       return True
@@ -601,6 +621,84 @@ class Scenario:
           color = 6
         self.debug_plot_point( color, ( x, y ) )
 
+  def calculate_symmetric_coordinates( self, origin, location ):
+    column_a = origin / self.MAP_HEIGHT
+    row_a = origin % self.MAP_HEIGHT
+    column_b = location / self.MAP_HEIGHT
+    row_b = location % self.MAP_HEIGHT
+
+    c = column_b - column_a;
+    r = row_b - row_a;
+    q = column_a % 2
+
+    if c == 0:
+      if r > 0:
+        t = 0
+      else:
+        t = 3
+    elif c < 0:
+      if r < ( q + c ) / 2:
+        t = 3
+      elif r < ( q - c ) / 2:
+        t = 2
+      else:
+        t = 1
+    else:
+      if r <= ( q - c ) / 2:
+        t = 4
+      elif r <= ( q + c ) / 2:
+        t = 5
+      else:
+        t = 0
+
+    if t == 0:
+      u = r - ( q - c ) / 2
+      v = c
+    elif t == 1:
+      u = r - ( q + c ) / 2
+      v = r - ( q - c ) / 2
+    elif t == 2:
+      u = -c
+      v = r - ( q + c ) / 2
+    elif t == 3:
+      u = -r + ( q - c ) / 2
+      v = -c
+    elif t == 4:
+      u = -r + ( q + c ) / 2
+      v = -r + ( q - c ) / 2
+    else:
+      u = c
+      v = -r + ( q + c ) / 2
+
+    return t, u, v
+
+  # can be used to implement a long-term collision cache
+  # that is, a server-wide cache not cleared between scenarios
+  # to do so, use FileSystemCache of flask_caching 
+  # tested, but not in use do to size concerns
+  # cache quickly grows to be many MB and has relatively unbounded size
+  # gives ~24% speed up on standard (simple) senarios with long, blocking walls
+  # gives ~10% speed up on 131 (complex unit test)
+  # gives no speed up on many unit tests (as they have very few occluders)
+  # the savings was measured with an in-memory cache (dictionary), not a file system, which may be slower
+  def calculate_occluder_cache_key( self, location_a, location_b ):
+    # does not take advantage of reflection symetry
+    t, u, v = self.calculate_symmetric_coordinates( location_a, location_b )
+    orientation = 6 - t
+    cache_key = [ ( u, v ) ]
+
+    for location, encoded_wall in self.walls_in( self.calculate_bounds( location_a, location_b ) ):
+      t, u, v = self.calculate_symmetric_coordinates( location_a, location )
+      t = ( t + orientation ) % 6
+      cache_key.append( ( t, u, v, encoded_wall ) )
+
+    if len( cache_key ) == 1:
+      # no occluders; use None to short circuit los test in calling function
+      return None
+
+    cache_key.sort()
+    return tuple( cache_key )
+
   def test_full_hex_los_between_locations( self, location_a, location_b ):
     # handle simple case of neighboring locations
     if location_b in self.neighbors[location_a]:
@@ -631,11 +729,28 @@ class Scenario:
     occluder_mapping_set = self.calculate_occluder_mapping_set( location_a, location_b )
     if occluder_mapping_set is None:
       return False
-
     # at each line intersection, determine whether there is a visibility window
     for x in occluder_intersections( occluder_mapping_set[0] ):
       if get_visibility_windows_at( x, occluder_mapping_set, True ):
         return True
+
+    # this logic can be used to prove that both cross_sections are not needed with
+    # Gloomhaven's grid-locked occluders
+    # https://www.reddit.com/r/Gloomhaven/comments/saevcj/comment/huedfq9/?utm_source=share&utm_medium=web2x&context=3
+    # the third parameter to calculate_occluder_mapping_set is meant to return the
+    # second-most perpendicular cross section
+    # # for each cross section line
+    # for cross_section in [ False, True ]:
+    #   # find occluders and generate the lines that bound each occluder's blocked area
+    #   occluder_mapping_set = self.calculate_occluder_mapping_set( location_a, location_b, cross_section )
+    #   if occluder_mapping_set is None:
+    #     continue
+    #   # at each line intersection, determine whether there is a visibility window
+    #   for x in occluder_intersections( occluder_mapping_set[0] ):
+    #     if get_visibility_windows_at( x, occluder_mapping_set, True ):
+    #       assert not cross_section
+    #       return True
+
     return False
 
   def find_best_full_hex_los_sightline( self, location_a, location_b ):
@@ -1005,6 +1120,7 @@ class Scenario:
         out += ', JUMPING'
       if self.MUDDLED:
         out += ', MUDDLED'
+      out += ', DEBUG_TOGGLE = %s' % ( 'TRUE' if self.DEBUG_TOGGLE else 'FALSE' )
       if out == '':
         out = 'NO ACTION'
       else:
@@ -1027,6 +1143,11 @@ class Scenario:
     # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in travel_distances ] )
     # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in proximity_distances ] )
     # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in rev_travel_distances ] )
+
+    # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( self.calculate_symmetric_coordinates( active_monster, _ )[0] ) for _ in range( self.MAP_SIZE ) ] )
+    # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( self.calculate_symmetric_coordinates( active_monster, _ )[1] ) for _ in range( self.MAP_SIZE ) ] )
+    # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( self.calculate_symmetric_coordinates( active_monster, _ )[2] ) for _ in range( self.MAP_SIZE ) ] )
+    # _ = [ self.calculate_symmetric_coordinates( active_monster, _ ) for _ in range( self.MAP_SIZE ) ]
 
     # doesn't speed things up but makes los testing order more intuitive for debugging
     travel_distance_sorted_map = sorted( range( self.MAP_SIZE ), key=lambda x: travel_distances[x] )
@@ -1608,7 +1729,6 @@ class Scenario:
     sight = self.solve_sights( _['move'] for _ in actions ) if solve_sight else None
     return actions, reach, sight
 
-  DEBUG_PLOT_SCALE = 35.0
   def debug_plot_line( self, color, line ):
     self.debug_lines.add( ( color, ( scale_vector( DEBUG_PLOT_SCALE, line[0] ), scale_vector( DEBUG_PLOT_SCALE, line[1] ) ) ) )
   def debug_plot_point( self, color, point ):

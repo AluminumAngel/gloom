@@ -132,7 +132,7 @@ def init( s, width, height, aoe_width, aoe_height ):
   s.JUMPING = False
   s.MUDDLED = False
 
-  s.JOTL_RULES = False
+  s.DEBUG_TOGGLE = False
 
 # TODO should be a member function?
 NUM_SCENARIOS = 150
