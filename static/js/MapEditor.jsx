@@ -222,8 +222,8 @@ export default class MapEditor extends React.PureComponent {
       target: 1,
       flying: 0,
       muddled: 0,
-      jotl: 0,
       game_rules: 0,
+      // debug_toggle: 0,
       aoe_grid: Array( C.AOE_SIZE ).fill( false ),
       active_faction: false,
 
@@ -934,9 +934,17 @@ export default class MapEditor extends React.PureComponent {
     // v1.2.0
     // - http://localhost:5000/IUgFxBzo8pkAAQIECBAgZCAIBsAAGACDhA2EBYQMBMIAGCg8IECAAAECBAgIEChAAKEBIQEYIBAGwEDhAQEoEAYIECBAQAABAgQICwhAA0gQxhAGDBgIA4QGBCBCGBAIhgRggLCAAGSACmEMYUgABggNCECHMECAAAECBAgQIEBYQEgABggdCBAgQIAAAQ
     // - http://localhost:5000/IUgFxhxwk4UAAQIECBAgQIAAAUIEQgMwWJhAMAwJwAAhAkEwRCBMIDQAA4UIhARgkAABAQQIEwgQICCAAAECBAsTCBgwSICQgDCBABgEAwIFgIEwQIhAEAwYIEAQDBQqEDBIgADBQgUCAggQIEBAAAHCBQIFCBAoVCBoAAwQIAAGChcIgkGCYJBwgUAYAAOFDYQFhA0EoAAkgAYQgfCBAAECBAg
-    // - http://localhost:5000/IUAOoAJAUAUMJ4AEqBJAGtQRSCyAwhBoAA [Frost rules]
     // - http://localhost:5000/IUAOpAJAUAUMJ4AEqBJAGtQRSCyAwhBoAA [Gloom rules]
     // - http://localhost:5000/IUAOqAJAUAUMJ4AEqBJAGtQRSCyAwhBoAA [JotL rules]
+    // - http://localhost:5000/IUAOoAJAUAUMJ4AEqBJAGtQRSCyAwhBoAA [Frost rules]
+    // - http://localhost:5000/IUgFxBwwAKEE4QThYwFCCQI
+    // v1.3.0
+    // - http://localhost:5000/MUgFVC3QRacECBAgQIAAoQSCYAAMgAEwSBiBsAChBAJhAAwULiBAgAABAgQICBAoQAAhA0ICYIBAGAADhQsIQIEwQIAAAQICCBAgQLiAADSABGEMYcCAgTBAqIAARAgDAsGQABggXEAAMkCFMIYwJAAGCBUQgA5hgAABAgQIECBAgHABIQEwQCiBAAECBAgQAA
+    // - http://localhost:5000/MUgFVi3gxkEECBAgQIAAAQIECBA6IDQABgsbEAxDAmCA0AFBMERA2IDQABgodEBIAAwSICCAAGEDAgQICCBAgADBwgcEDBgkQEiAsAEBMAgGBAoAA2GA0AFBMGCAAEEwUOiAgEECBAgWQiAggAABAgQEECB8QKAAAQKFEAgaAAMECICBwgcEwSBBMEgYgUAYAAOFEQgLEE4gAAUgATSACIQTCBAgQIAA
+    // - http://localhost:5000/MUAOFAiAwEBgmAFIgGoBSIPaAhILQOEKaAA [Gloom rules]
+    // - http://localhost:5000/MUAOGAiAwEBgmAFIgGoBSIPaAhILQOEKaAA [JotL rules]
+    // - http://localhost:5000/MUAOEAiAwEBgmAFIgGoBSIPaAhILQOEKaAA [Frost rules]
+    // - http://localhost:5000/MUgFVC1gwCaEEggzEM4nJEAogQA
 
     try {
       var bit_reader = new BitReader( url_scenario );
@@ -945,24 +953,38 @@ export default class MapEditor extends React.PureComponent {
       const data_version_major = bit_reader.readBits( 4 );
       const data_version_minor = bit_reader.readBits( 3 );
       const data_version_build = bit_reader.readBits( 3 );
-      var game_rules_data_version = 2;   
+      var game_rules_data_version;
+      var grid_data_version;
       if ( data_version_major === 1
         && data_version_minor === 0
         && data_version_build === 0
       ) {
         game_rules_data_version = 0;
+        grid_data_version = 0;
       }
       else if ( data_version_major === 1
         && data_version_minor === 1
         && data_version_build === 0
       ) {
         game_rules_data_version = 1;
+        grid_data_version = 0;
+      }
+      else if ( data_version_major === 1
+        && data_version_minor === 2
+        && data_version_build === 0
+      ) {
+        game_rules_data_version = 2;
+        grid_data_version = 0;
       }
       else if ( data_version_major !== DATA_VERSION_MAJOR
         || data_version_minor !== DATA_VERSION_MINOR
         || data_version_build !== DATA_VERSION_BUILD
       ) {
         throw 'bad scenario URL';
+      }
+      else {
+        game_rules_data_version = 2;
+        grid_data_version = 1;
       }
 
       // read simple keys
@@ -1009,11 +1031,34 @@ export default class MapEditor extends React.PureComponent {
         scenario_state['game_rules'] = value;
       }
 
+      var grid_size;
+      var grid_size_bits;
+      var adjust_location;
+      if ( grid_data_version === 0 ) {
+        grid_size = C.GRID_SIZE_V0;
+        grid_size_bits = C.GRID_SIZE_BITS_V0;
+        adjust_location = function( location ) {
+          const column = Math.floor( location / C.GRID_HEIGHT_V0 ) + C.COLUMN_ADJUST;
+          const row = location % C.GRID_HEIGHT_V0 + C.ROW_ADJUST - column % 2;
+          return column * C.GRID_HEIGHT + row
+        }
+      }
+      else {
+        grid_size = C.GRID_SIZE;
+        grid_size_bits = C.GRID_SIZE_BITS;
+        adjust_location = function( location ) {
+          return location;
+        }
+      }
+
       // read active_figure_index
-      var value = bit_reader.readBits( C.GRID_SIZE_BITS );
-      validate( value, 0, C.GRID_SIZE );
-      if ( value === C.GRID_SIZE ) {
+      var value = bit_reader.readBits( grid_size_bits );
+      validate( value, 0, grid_size );
+      if ( value === grid_size ) {
         value = NULL_INDEX;
+      }
+      else {
+        value = adjust_location( value );
       }
       scenario_state.active_figure_index = value;
 
@@ -1036,18 +1081,19 @@ export default class MapEditor extends React.PureComponent {
       scenario_state.initiatives = Array( C.GRID_SIZE ).fill( 1 );
       scenario_state.walls = Array( 3 * C.GRID_SIZE ).fill( false );
       var last_location_read = -1;
-      const grid_mapping_size = bit_reader.readBits( C.GRID_SIZE_BITS );
+      const grid_mapping_size = bit_reader.readBits( grid_size_bits );
       for ( var i = 0; i < grid_mapping_size; i++ ) {
         var location_delta;
         if ( bit_reader.readBits( 1 ) === 0 ) {
           location_delta = bit_reader.readBits( 2 );
         }
         else {
-          location_delta = bit_reader.readBits( C.GRID_SIZE_BITS );
+          location_delta = bit_reader.readBits( grid_size_bits );
         }
-        const location = last_location_read + location_delta + 1;
-        validate( location, 0, C.GRID_SIZE - 1 );
-        last_location_read = location;
+        const location_read = last_location_read + location_delta + 1;
+        validate( location_read, 0, grid_size - 1 );
+        last_location_read = location_read;
+        const location = adjust_location( location_read );
 
         scenario_state.grid[location] = bit_reader.readBits( 3 );
         validate( scenario_state.grid[location], BRUSH.EMPTY, BRUSH.LAST_TERRAIN_BRUSH );
@@ -1172,6 +1218,12 @@ export default class MapEditor extends React.PureComponent {
       'show_sightline': !this.state.show_sightline,
     } );
   };
+
+  // handleDebugToggle = () => {
+  //   this.setScenario( {
+  //     'debug_toggle': !this.state.debug_toggle,
+  //   } );
+  // };
 
   handleGameRulesChanged = ( value ) => {
     this.setScenario( {
@@ -1507,6 +1559,7 @@ export default class MapEditor extends React.PureComponent {
       flying: this.state.flying,
       muddled: this.state.muddled,
       game_rules: this.state.game_rules,
+      // debug_toggle: this.state.debug_toggle,
       aoe: [],
 
       width: C.GRID_WIDTH,
@@ -1932,6 +1985,7 @@ export default class MapEditor extends React.PureComponent {
                   </button>
                   <UncontrolledTooltip
                     placement='bottom'
+                    fade={false}
                     delay={C.TOOLTIP_DELAY}
                     target='previous-action-button'
                   >
@@ -1948,6 +2002,7 @@ export default class MapEditor extends React.PureComponent {
                   </button>
                   <UncontrolledTooltip
                     placement='bottom'
+                    fade={false}
                     delay={C.TOOLTIP_DELAY}
                     target='all-actions-button'
                   >
@@ -1964,6 +2019,7 @@ export default class MapEditor extends React.PureComponent {
                   </button>
                   <UncontrolledTooltip
                     placement='bottom'
+                    fade={false}
                     delay={C.TOOLTIP_DELAY}
                     target='next-action-button'
                   >
@@ -2019,7 +2075,7 @@ export default class MapEditor extends React.PureComponent {
                 >
                   Switch Active Faction
                 </button>
-                <UncontrolledTooltip placement='top' delay={C.TOOLTIP_DELAY} target='switch-aggressors-button'>
+                <UncontrolledTooltip placement='top' fade={false} delay={C.TOOLTIP_DELAY} target='switch-aggressors-button'>
                   When set, the characters are the active faction. Use to determine the attack of an allied summon.
                 </UncontrolledTooltip>
                 <button
@@ -2044,7 +2100,7 @@ export default class MapEditor extends React.PureComponent {
                 >
                   Share Scenario
                 </button>
-                <UncontrolledTooltip placement='top' delay={C.TOOLTIP_DELAY} target='share-scenario-button'>
+                <UncontrolledTooltip placement='top' fade={false} delay={C.TOOLTIP_DELAY} target='share-scenario-button'>
                   Copy a URL for the scenario to your clipboard.
                 </UncontrolledTooltip>
               </div>
@@ -2079,7 +2135,7 @@ export default class MapEditor extends React.PureComponent {
                 >
                   Show Line-of-Sight
                 </button>
-                <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-sight-button'>
+                <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-sight-button'>
                   <div className='text-left'>
                     Show hexes within the active {active_faction_string}'s line-of-sight.
                   </div>
@@ -2092,7 +2148,7 @@ export default class MapEditor extends React.PureComponent {
                 >
                   Show Range
                 </button>
-                <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-reach-button'>
+                <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-reach-button'>
                   <div className='text-left'>
                     Show hexes within the range of the active {active_faction_string}'s attack.
                     <p/>
@@ -2107,7 +2163,7 @@ export default class MapEditor extends React.PureComponent {
                 >
                   Show Movement
                 </button>
-                <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-movement-button'>
+                <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-movement-button'>
                   <div className='text-left'>
                     Show movement options for the active {active_faction_string}.
                     <p/>
@@ -2123,7 +2179,7 @@ export default class MapEditor extends React.PureComponent {
                 >
                   Show Focus
                 </button>
-                <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-focus-button'>
+                <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-focus-button'>
                   <div className='text-left'>
                     Show the active {active_faction_string}'s focus.
                   </div>
@@ -2137,7 +2193,7 @@ export default class MapEditor extends React.PureComponent {
                 >
                   Show Destination
                 </button>
-                <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-destination-button'>
+                <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-destination-button'>
                   <div className='text-left'>
                     Show the active {active_faction_string}'s destination when the {active_faction_string} cannot reach it.
                   </div>
@@ -2151,11 +2207,21 @@ export default class MapEditor extends React.PureComponent {
                 >
                   Show Sightline
                 </button>
-                <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='show-unblocked-lines-button'>
+                <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-unblocked-lines-button'>
                   <div className='text-left'>
                     Show a sightline for the active {active_faction_string}'s attack.
                   </div>
                 </UncontrolledTooltip>
+                {/*
+                <button
+                  type='button'
+                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.debug_toggle ? ' active' : '' )}
+                  id='show-unblocked-lines-button'
+                  onClick={this.handleDebugToggle}
+                >
+                  Debug Toggle
+                </button>
+                */}
               </div>
 
               <div className='w-75 mt-4 btn-group-vertical'>
@@ -2163,7 +2229,7 @@ export default class MapEditor extends React.PureComponent {
                   <DropdownToggle id='game-rules-dropdown' className='btn btn-sm btn-dark dropdown-toggle text-left'>
                     {game_rules_string}
                   </DropdownToggle>
-                  <UncontrolledTooltip placement='left' delay={C.TOOLTIP_DELAY} target='game-rules-dropdown'>
+                  <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='game-rules-dropdown'>
                     <div className='text-left'>
                       Use the rules of this game.
                     </div>
@@ -2176,7 +2242,7 @@ export default class MapEditor extends React.PureComponent {
                     >
                       {GAME_RULES_OPTIONS[0][1]}
                     </DropdownItem>
-                    <UncontrolledTooltip placement='left-end' delay={C.TOOLTIP_DELAY} target='use-frosthaven-rules-button'>
+                    <UncontrolledTooltip placement='left-end' fade={false} delay={C.TOOLTIP_DELAY} target='use-frosthaven-rules-button'>
                       <div className='text-left'>
                         Two hexes have line-of-sight if a line can be drawn from any part of one hex to any part of the other without touching a wall.
                       </div>
@@ -2188,7 +2254,7 @@ export default class MapEditor extends React.PureComponent {
                     >
                       {GAME_RULES_OPTIONS[1][1]}
                     </DropdownItem>
-                    <UncontrolledTooltip placement='left-end' delay={C.TOOLTIP_DELAY} target='use-gloomhaven-rules-button'>
+                    <UncontrolledTooltip placement='left-end' fade={false} delay={C.TOOLTIP_DELAY} target='use-gloomhaven-rules-button'>
                       <div className='text-left'>
                         Two hexes have line-of-sight if a line can be drawn from any vertex of one hex to any vertex of the other without touching a wall.
                         <p/>
@@ -2204,7 +2270,7 @@ export default class MapEditor extends React.PureComponent {
                     >
                       {GAME_RULES_OPTIONS[2][1]}
                     </DropdownItem>
-                    <UncontrolledTooltip placement='left-end' delay={C.TOOLTIP_DELAY} target='use-jotl-rules-button'>
+                    <UncontrolledTooltip placement='left-end' fade={false} delay={C.TOOLTIP_DELAY} target='use-jotl-rules-button'>
                       <div className='text-left'>
                         Two hexes have line-of-sight if a line can be drawn from any part of one hex to any part of the other without touching a wall.
                         <p/>

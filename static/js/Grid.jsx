@@ -47,6 +47,7 @@ const GridDefs = React.memo( function( props ) {
   );
 } );
 
+// Use to hide the grid when viewing debug plots.
 // const Grid = React.memo( function( props ) {
 //   return (
 //     <svg

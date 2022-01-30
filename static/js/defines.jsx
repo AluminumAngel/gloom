@@ -5,7 +5,7 @@ function bitsRequired( value ){
 export const SCALE = 19;
 export const SQRT_3_OVER_2 = Math.sqrt( 3.0 ) / 2.0;
 
-export const GRID_HEIGHT = 20;//25;
+export const GRID_HEIGHT = 25;
 export const GRID_WIDTH = Math.round( Math.sqrt( 3.0 ) / 1.5 * GRID_HEIGHT );
 export const GRID_SCALED_WIDTH = SCALE * ( 0.5 + GRID_WIDTH * 1.5 );
 export const GRID_SCALED_HEIGHT = SCALE * ( SQRT_3_OVER_2 + 2.0 * GRID_HEIGHT * SQRT_3_OVER_2 );
@@ -15,6 +15,13 @@ export const GRID_MARGIN = 10;
 export const GRID_EXTENT = Math.max( GRID_SCALED_WIDTH, GRID_SCALED_HEIGHT ) + 2 * GRID_MARGIN;
 export const GRID_DELTA = Math.abs( GRID_SCALED_WIDTH - GRID_SCALED_HEIGHT ) / 2.0;
 export const GRID_TRANSFORM = 'translate(' + ( GRID_SCALED_HEIGHT / 2.0 ) + ' ' + ( GRID_SCALED_WIDTH / 2.0 ) + ') rotate(90) translate(-' + ( GRID_SCALED_WIDTH / 2.0 ) + ' -' + ( GRID_SCALED_HEIGHT / 2.0 ) + ')';
+
+export const GRID_HEIGHT_V0 = 20;
+export const GRID_WIDTH_V0 = Math.round( Math.sqrt( 3.0 ) / 1.5 * GRID_HEIGHT_V0 );
+export const GRID_SIZE_V0 = GRID_HEIGHT_V0 * GRID_WIDTH_V0;
+export const GRID_SIZE_BITS_V0 = bitsRequired( GRID_SIZE_V0 + 1 );
+export const ROW_ADJUST = ~~( ( GRID_HEIGHT - GRID_HEIGHT_V0 ) / 2 ) + 1;
+export const COLUMN_ADJUST = ~~( ( GRID_WIDTH - GRID_WIDTH_V0 ) / 4 ) * 2 + 1;
 
 export const AOE_HEIGHT = 7;
 export const AOE_WIDTH = 7;

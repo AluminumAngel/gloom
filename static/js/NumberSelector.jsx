@@ -35,6 +35,7 @@ const NumberSelector = React.memo( function( props ) {
         </div>
         <UncontrolledTooltip
           placement='right'
+          fade={false}
           delay={C.TOOLTIP_DELAY}
           target={props.label}
         >

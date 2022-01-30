@@ -1,13 +1,12 @@
 {
   "name": "gloom",
-  "version": "2.5.1",
+  "version": "2.7.1",
   "description": "A Gloomhaven monster mover web app and server.",
   "main": "index.js",
   "scripts": {
-    "build": "webpack -p --progress --config webpack.config.js",
-    "dev-build": "webpack --progress -d --config webpack.config.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "watch": "webpack --progress -d --config webpack.config.js --watch"
+    "build": "webpack --progress --mode production --config webpack.config.js",
+    "dev-build": "webpack --progress --mode development --config webpack.config.js",
+    "watch": "webpack watch --progress --mode development --config webpack.config.js"
   },
   "repository": {
     "type": "git",
@@ -20,7 +19,7 @@
   },
   "homepage": "https://github.com/AluminumAngel/gloom#readme",
   "devDependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.25.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.4",
     "babel-plugin-transform-class-properties": "^6.24.1",
@@ -28,9 +27,9 @@
     "babel-preset-react": "^6.24.1",
     "react": "^16.6.0",
     "react-dom": "^16.6.0",
-    "reactstrap": "^6.2.0",
-    "webpack": "^4.46.0",
-    "webpack-cli": "^3.2.1"
+    "reactstrap": "^8.0.0",
+    "webpack": "^5.67.0",
+    "webpack-cli": "^4.9.2"
   },
   "babel": {
     "presets": [
