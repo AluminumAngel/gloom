@@ -8,9 +8,7 @@
             "preLaunchTask": "RunServer",
             "type": "msedge",
             "request": "launch",
-            "name": "Launch Gloomhaven Monster Mover",
-            "url": "http://localhost:5000",
-            "webRoot": "${workspaceFolder}"
+            "name": "Launch Gloomhaven Monster Mover"
         }
     ]
 }
