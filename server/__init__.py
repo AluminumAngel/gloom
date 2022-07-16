@@ -141,4 +141,4 @@ if __name__ == '__main__':
         file = os.path.join( template_diretory, file )
         extra_files.append( file )
 
-  app.run(host="0.0.0.0", debug=debug, extra_files=extra_files )
+  app.run(debug=debug, extra_files=extra_files )
