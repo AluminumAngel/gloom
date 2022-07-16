@@ -3,6 +3,8 @@ FROM python:2
 WORKDIR /usr/src/app
 
 RUN pip install Flask
+RUN pip install pytest
+RUN pip install pytest-xdist
 
 COPY . .
 
