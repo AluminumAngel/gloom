@@ -1,0 +1,11 @@
+FROM python:2
+
+WORKDIR /usr/src/app
+
+RUN pip install Flask
+
+COPY . .
+
+EXPOSE 5000
+
+CMD [ "python", "./server/__init__.py" ]
