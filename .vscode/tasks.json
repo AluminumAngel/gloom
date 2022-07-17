@@ -3,7 +3,7 @@
     "tasks": [{
         "label": "RunServer",
         "command": "python",
-        "args": ["-m ./server/__main__.py"],
+        "args": ["./server/__main__.py"],
         "type": "shell"
     }]
 }
