@@ -1,14 +1,13 @@
-import scenarios
-import solver
+from solver.solver import Scenario, init, perform_unit_tests
 
-from flask import Flask, url_for, jsonify, redirect, request, render_template, abort
+from flask import Flask, jsonify, request, render_template
 import time
 app = Flask( __name__, static_folder='../static/dist', template_folder='../static' )
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 
 # Configuration
-from production import production
+from solver.production import production
 debug = not production
 
 title = 'Gloomhaven Monster Mover'
@@ -65,11 +64,11 @@ def solve():
   scenario_id = packed_scenario['scenario_id']
   solve_view = packed_scenario['solve_view']
 
-  s = solver.Scenario()
+  s = Scenario()
   if not production:
     s.logging = True
     s.debug_visuals = True
-  scenarios.init( s, map_width, map_height, 7, 7 )
+  init( s, map_width, map_height, 7, 7 )
   s.unpack_scenario( packed_scenario )
   actions, reach, sight = s.solve( solve_view > 0, solve_view > 1 )
 
@@ -99,11 +98,11 @@ def views():
   viewpoints = packed_scenario['viewpoints']
   solve_view = packed_scenario['solve_view']
 
-  s = solver.Scenario()
+  s = Scenario()
   if not production:
     s.logging = True
     s.debug_visuals = True
-  scenarios.init( s, map_width, map_height, 7, 7 )
+  init( s, map_width, map_height, 7, 7 )
   s.unpack_scenario_forviews( packed_scenario )
 
   solution = {
@@ -124,7 +123,7 @@ if __name__ == '__main__':
 
   if not production:
     if os.environ.get( 'WERKZEUG_RUN_MAIN' ) != 'true':
-      failures = solver.perform_unit_tests( 1 )
+      failures = perform_unit_tests( 1 )
       if failures > 0:
         exit()
 

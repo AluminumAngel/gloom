@@ -2,9 +2,9 @@ import sys
 import time
 import math
 
-import scenarios
-import solver
-from print_map import *
+from . import scenarios
+from . import solver
+from .print_map import *
 
 chosen_scenario_index = 1
 unit_tests = False
@@ -56,7 +56,7 @@ elif profile:
   results = {}
   for test in ( False, True ):
     results[test] = []
-    print 'test parameters: %d' % test
+    print('test parameters: %d' % test)
     for sample in range( 0, SAMPLE_COUNT ):
       scenario = solver.Scenario()
       scenarios.init_from_test_scenario( scenario, chosen_scenario_index, rules )
@@ -70,31 +70,31 @@ elif profile:
 
       end = time.time()
       results[test].append( end - start )
-      print 'run %d: %.2fs' % ( sample + 1, end - start )
+      print('run %d: %.2fs' % ( sample + 1, end - start ))
 
-    test_average = sum( _ for _ in results[test] ) / SAMPLE_COUNT
+    test_average = sum( _ for _ in results[test] ) // SAMPLE_COUNT
     test_error = math.sqrt(
-      sum( ( _ - test_average )**2 for _ in results[test] ) / ( SAMPLE_COUNT - 1 )
-    ) / math.sqrt( SAMPLE_COUNT )
+      sum( ( _ - test_average )**2 for _ in results[test] ) // ( SAMPLE_COUNT - 1 )
+    ) // math.sqrt( SAMPLE_COUNT )
 
-    print 'average = %f +/- %f seconds' % ( test_average, test_error )
-    print
+    print('average = %f +/- %f seconds' % ( test_average, test_error ))
+    print()
 
-  zipped_results = zip( results[False], results[True] )
-  average = sum( _[1] - _[0] for _ in zipped_results ) / SAMPLE_COUNT
+  zipped_results = list(zip( results[False], results[True] ))
+  average = sum( _[1] - _[0] for _ in zipped_results ) // SAMPLE_COUNT
   error = math.sqrt(
-    sum( ( _[1] - _[0] - average )**2 for _ in zipped_results ) / ( SAMPLE_COUNT - 1 )
-  ) / math.sqrt( SAMPLE_COUNT )
-  print 'delta = %f +/- %f seconds' % ( average, error )
+    sum( ( _[1] - _[0] - average )**2 for _ in zipped_results ) // ( SAMPLE_COUNT - 1 )
+  ) // math.sqrt( SAMPLE_COUNT )
+  print('delta = %f +/- %f seconds' % ( average, error ))
   if -average > error:
-    a0 = sum( _ for _ in results[False] ) / SAMPLE_COUNT
-    a1 = sum( _ for _ in results[True] ) / SAMPLE_COUNT
-    savings = ( a0 - a1 ) / a0 * 100
-    print 'SUCCESS; savings exceeds noise; %.1f%% savings' % savings
+    a0 = sum( _ for _ in results[False] ) // SAMPLE_COUNT
+    a1 = sum( _ for _ in results[True] ) // SAMPLE_COUNT
+    savings = ( a0 - a1 ) // a0 * 100
+    print('SUCCESS; savings exceeds noise; %.1f%% savings' % savings)
   elif average > error:
-    print 'FAIL; new method is slower'
+    print('FAIL; new method is slower')
   else:
-    print 'any savings is less than noise'
+    print('any savings is less than noise')
 
 else:
   scenario = solver.Scenario()
@@ -121,7 +121,7 @@ else:
   # NEW_MAP_WIDTH = scenario__.MAP_WIDTH
 
   # def fix_location( location ):
-  #   column = location / NEW_MAP_HEIGHT
+  #   column = location // NEW_MAP_HEIGHT
   #   row = location % NEW_MAP_HEIGHT
   #   column += scenario__.REDUCE_COLUMN
   #   row += scenario__.REDUCE_ROW

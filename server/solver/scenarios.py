@@ -1,6 +1,6 @@
 def unreduce_actions( s, actions ):
   def fix_location( location ):
-    column = location / s.MAP_HEIGHT
+    column = location // s.MAP_HEIGHT
     row = location % s.MAP_HEIGHT
     column += s.REDUCE_COLUMN
     row += s.REDUCE_ROW
@@ -35,7 +35,7 @@ def unreduce_actions( s, actions ):
 #   figures = [ _ for _, figure in enumerate( s.figures ) if figure != ' ' ]
 #   contents = [ _ for _, content in enumerate( s.contents ) if content != ' ' ]
 #   for location in figures:
-#     column = location / s.MAP_HEIGHT
+#     column = location // s.MAP_HEIGHT
 #     min_column = min( min_column, column )
 #     max_column = max( max_column, column )
 #     row = location % s.MAP_HEIGHT
@@ -43,7 +43,7 @@ def unreduce_actions( s, actions ):
 #     max_row = max( max_row, row )
 #     print s.figures[location], column, row
 #   for location in contents:
-#     column = location / s.MAP_HEIGHT
+#     column = location // s.MAP_HEIGHT
 #     min_column = min( min_column, column )
 #     max_column = max( max_column, column )
 #     row = location % s.MAP_HEIGHT
@@ -53,7 +53,7 @@ def unreduce_actions( s, actions ):
 #   print min_column, max_column
 #   print min_row, max_row
 
-#   reduce_column = min_column / 2 * 2
+#   reduce_column = min_column // 2 * 2
 #   reduce_row = min_row
 
 #   scenario.REDUCE_COLUMN = reduce_column
@@ -66,7 +66,7 @@ def unreduce_actions( s, actions ):
 #   init( scenario, width, height, s.AOE_WIDTH, s.AOE_HEIGHT )
 
 #   for location in figures:
-#     column = location / s.MAP_HEIGHT
+#     column = location // s.MAP_HEIGHT
 #     row = location % s.MAP_HEIGHT
 #     column -= reduce_column
 #     row -= reduce_row
@@ -75,7 +75,7 @@ def unreduce_actions( s, actions ):
 #     scenario.figures[new_location] = s.figures[location]
 #     scenario.initiatives[new_location] = s.initiatives[location]
 #   for location in contents:
-#     column = location / s.MAP_HEIGHT
+#     column = location // s.MAP_HEIGHT
 #     row = location % s.MAP_HEIGHT
 #     column -= reduce_column
 #     row -= reduce_row
@@ -107,12 +107,12 @@ def init( s, width, height, aoe_width, aoe_height ):
   s.MAP_HEIGHT = height
   s.MAP_SIZE = s.MAP_WIDTH * s.MAP_HEIGHT
   s.MAP_VERTEX_COUNT = 6 * s.MAP_SIZE
-  # s.MAP_CENTER = ( s.MAP_SIZE - 1 ) / 2;
+  # s.MAP_CENTER = ( s.MAP_SIZE - 1 ) // 2;
 
   s.AOE_WIDTH = aoe_width
   s.AOE_HEIGHT = aoe_height
   s.AOE_SIZE = s.AOE_WIDTH * s.AOE_HEIGHT
-  s.AOE_CENTER = ( s.AOE_SIZE - 1 ) / 2;
+  s.AOE_CENTER = ( s.AOE_SIZE - 1 ) // 2;
   if s.AOE_WIDTH != 7 or s.AOE_HEIGHT != 7:
     exit()
   if int( s.AOE_CENTER ) - s.AOE_CENTER != 0:

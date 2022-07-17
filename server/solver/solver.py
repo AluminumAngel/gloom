@@ -1,8 +1,8 @@
 import sys, collections, textwrap, itertools, pprint
-import scenarios
-from utils import *
-from settings import *
-from print_map import *
+from solver.scenarios import *
+from solver.utils import *
+from solver.settings import *
+from solver.print_map import *
 
 class Scenario:
   def __init__( self ):
@@ -59,7 +59,7 @@ class Scenario:
     # time
 
     for location in figures:
-      column = location / old_height
+      column = location // old_height
       min_column = min( min_column, column )
       max_column = max( max_column, column )
       row = location % old_height
@@ -71,7 +71,7 @@ class Scenario:
         targets_min_row = min( targets_min_row, row )
         targets_max_row = max( targets_max_row, row )
     for location in contents:
-      column = location / old_height
+      column = location // old_height
       min_column = min( min_column, column )
       max_column = max( max_column, column )
       row = location % old_height
@@ -79,7 +79,7 @@ class Scenario:
       max_row = max( max_row, row )
     for i in range( 6 ):
       for location in walls[i]:
-        column = location / old_height
+        column = location // old_height
         min_column = min( min_column, column )
         max_column = max( max_column, column )
         row = location % old_height
@@ -106,7 +106,7 @@ class Scenario:
     max_row = max( max_row, targets_max_row )
     max_column = max( max_column, targets_max_column )
 
-    reduce_column = min_column / 2 * 2
+    reduce_column = min_column // 2 * 2
     reduce_row = min_row
 
     self.REDUCE_COLUMN = reduce_column
@@ -121,7 +121,7 @@ class Scenario:
     self.MAP_HEIGHT = height
     self.MAP_SIZE = self.MAP_WIDTH * self.MAP_HEIGHT
     self.MAP_VERTEX_COUNT = 6 * self.MAP_SIZE
-    # s.MAP_CENTER = ( s.MAP_SIZE - 1 ) / 2;
+    # s.MAP_CENTER = ( s.MAP_SIZE - 1 ) // 2;
 
     self.walls = [ [ False ] * 6 for _ in range( self.MAP_SIZE ) ]
     self.contents = [ ' ' ] * self.MAP_SIZE
@@ -129,7 +129,7 @@ class Scenario:
     self.initiatives = [ 0 ] * self.MAP_SIZE
 
     for location in figures:
-      column = location / old_height
+      column = location // old_height
       row = location % old_height
       column -= reduce_column
       row -= reduce_row
@@ -137,7 +137,7 @@ class Scenario:
       self.figures[new_location] = old_figures[location]
       self.initiatives[new_location] = old_initiatives[location]
     for location in contents:
-      column = location / old_height
+      column = location // old_height
       row = location % old_height
       column -= reduce_column
       row -= reduce_row
@@ -145,7 +145,7 @@ class Scenario:
       self.contents[new_location] = old_contents[location]
     for i in range( 6 ):
       for location in walls[i]:
-        column = location / old_height
+        column = location // old_height
         row = location % old_height
         column -= reduce_column
         row -= reduce_row
@@ -319,12 +319,12 @@ class Scenario:
   def setup_vertices_list( self ):
     def calculate_vertex( location, vertex ):
       hex_row = location % self.MAP_HEIGHT
-      hex_column = location / self.MAP_HEIGHT
+      hex_column = location // self.MAP_HEIGHT
 
       vertex_column = hex_column + [ 1, 1, 0, 0, 0, 1 ][vertex]
       vertex_row = 2 * hex_row + [ 1, 2, 2, 1, 0, 0 ][vertex] + ( hex_column % 2 )
 
-      x = 3 * ( vertex_column / 2 )
+      x = 3 * ( vertex_column // 2 )
       if vertex_row % 2 == 0:
         x += 0.5 + vertex_column % 2
       else:
@@ -345,7 +345,7 @@ class Scenario:
   def setup_neighbors_mapping( self ):
     def get_neighbors( location ):
       row = location % self.MAP_HEIGHT
-      column = location / self.MAP_HEIGHT
+      column = location // self.MAP_HEIGHT
 
       bottom_edge = row == 0
       top_edge = row == self.MAP_HEIGHT - 1
@@ -391,8 +391,8 @@ class Scenario:
     return apply_offset( center, offset, self.MAP_HEIGHT, self.MAP_SIZE )
 
   def calculate_bounds( self, location_a, location_b ):
-    column_a = location_a / self.MAP_HEIGHT
-    column_b = location_b / self.MAP_HEIGHT
+    column_a = location_a // self.MAP_HEIGHT
+    column_b = location_b // self.MAP_HEIGHT
     if column_a < column_b:
       column_lower = max( column_a - 1, 0 )
       column_upper = min( column_b + 2, self.MAP_WIDTH )
@@ -602,10 +602,10 @@ class Scenario:
     # shade the graph to indicate visibility windows
     POINT_DENSITY = 40
     for nx in range( POINT_DENSITY ):
-      x = nx / float( POINT_DENSITY - 1 )
+      x = nx // float( POINT_DENSITY - 1 )
       windows = get_visibility_windows_at( x, occluder_mapping_set, False )
       for ny in range( POINT_DENSITY ):
-        y = ny / float( POINT_DENSITY - 1 )
+        y = ny // float( POINT_DENSITY - 1 )
         for window in windows:
           if y >= window[1] and y <= window[2]:
             color = 7
@@ -615,9 +615,9 @@ class Scenario:
         self.debug_plot_point( color, ( x, y ) )
 
   def calculate_symmetric_coordinates( self, origin, location ):
-    column_a = origin / self.MAP_HEIGHT
+    column_a = origin // self.MAP_HEIGHT
     row_a = origin % self.MAP_HEIGHT
-    column_b = location / self.MAP_HEIGHT
+    column_b = location // self.MAP_HEIGHT
     row_b = location % self.MAP_HEIGHT
 
     c = column_b - column_a;
@@ -630,38 +630,38 @@ class Scenario:
       else:
         t = 3
     elif c < 0:
-      if r < ( q + c ) / 2:
+      if r < ( q + c ) // 2:
         t = 3
-      elif r < ( q - c ) / 2:
+      elif r < ( q - c ) // 2:
         t = 2
       else:
         t = 1
     else:
-      if r <= ( q - c ) / 2:
+      if r <= ( q - c ) // 2:
         t = 4
-      elif r <= ( q + c ) / 2:
+      elif r <= ( q + c ) // 2:
         t = 5
       else:
         t = 0
 
     if t == 0:
-      u = r - ( q - c ) / 2
+      u = r - ( q - c ) // 2
       v = c
     elif t == 1:
-      u = r - ( q + c ) / 2
-      v = r - ( q - c ) / 2
+      u = r - ( q + c ) // 2
+      v = r - ( q - c ) // 2
     elif t == 2:
       u = -c
-      v = r - ( q + c ) / 2
+      v = r - ( q + c ) // 2
     elif t == 3:
-      u = -r + ( q - c ) / 2
+      u = -r + ( q - c ) // 2
       v = -c
     elif t == 4:
-      u = -r + ( q + c ) / 2
-      v = -r + ( q - c ) / 2
+      u = -r + ( q + c ) // 2
+      v = -r + ( q - c ) // 2
     else:
       u = c
-      v = -r + ( q + c ) / 2
+      v = -r + ( q + c ) // 2
 
     return t, u, v
 
@@ -813,7 +813,7 @@ class Scenario:
     # self.debug_lines.add( ( 2, edge_zero ) )
     # N = 4
     # for n in range( N ):
-    #   x = n / float( N - 1 )
+    #   x = n // float( N - 1 )
     #   y, _ = get_occluder_value_at( occluder_mappings[2], x )
     #   self.debug_lines.add( ( 3, ( lerp_along_line( edge_source, x ), lerp_along_line( edge_target, 1.0 - y ) ) ) )
 
@@ -922,7 +922,7 @@ class Scenario:
   def dereduce_location( self, location ):
     if not self.reduced:
       return location
-    column = location / self.MAP_HEIGHT
+    column = location // self.MAP_HEIGHT
     row = location % self.MAP_HEIGHT
     column += self.REDUCE_COLUMN
     row += self.REDUCE_ROW
@@ -1118,9 +1118,9 @@ class Scenario:
         out = 'NO ACTION'
       else:
         out = out[2:]
-      print out
+      print(out)
       if self.message:
-        print textwrap.fill( self.message, 82 )
+        print(textwrap.fill( self.message, 82 ))
 
     actions = set()
     aoes = {}
@@ -1143,7 +1143,7 @@ class Scenario:
     # _ = [ self.calculate_symmetric_coordinates( active_monster, _ ) for _ in range( self.MAP_SIZE ) ]
 
     # doesn't speed things up but makes los testing order more intuitive for debugging
-    travel_distance_sorted_map = sorted( range( self.MAP_SIZE ), key=lambda x: travel_distances[x] )
+    travel_distance_sorted_map = sorted( list(range( self.MAP_SIZE)), key=lambda x: travel_distances[x] )
 
     # process aoe
     if AOE_ACTION:
@@ -1158,7 +1158,7 @@ class Scenario:
       PRECALC_GRID_HEIGHT = 21
       PRECALC_GRID_WIDTH = 21
       PRECALC_GRID_SIZE = PRECALC_GRID_HEIGHT * PRECALC_GRID_WIDTH
-      PRECALC_GRID_CENTER = ( PRECALC_GRID_SIZE - 1 ) / 2
+      PRECALC_GRID_CENTER = ( PRECALC_GRID_SIZE - 1 ) // 2
 
       aoe_pattern_set = set()
       for aoe_pin in aoe:
@@ -1697,7 +1697,7 @@ class Scenario:
         actions[_]['debug_lines'] = list( debug_lines[raw_action] )
 
     if self.logging:
-      print '%i option(s):' % len( actions )
+      print('%i option(s):' % len( actions ))
       for action in actions:
         if action['move'] == self.dereduce_location( start_location ):
           out = '- no movement'
@@ -1706,7 +1706,7 @@ class Scenario:
         if action['attacks']:
           for attack in action['attacks']:
             out += ', attack %i' % attack
-        print out
+        print(out)
 
     return actions
 
@@ -1728,7 +1728,7 @@ class Scenario:
     self.debug_lines.add( ( color, ( scale_vector( DEBUG_PLOT_SCALE, point ), ) ) )
 
 def perform_unit_tests( starting_scenario ):
-  print 'performing unit tests...'
+  print('performing unit tests...')
 
   failed_scenarios = []
 
@@ -1737,7 +1737,7 @@ def perform_unit_tests( starting_scenario ):
   while True:
     scenario_index += 1
     scenario = Scenario()
-    scenarios.init_from_test_scenario( scenario, scenario_index, rules )
+    init_from_test_scenario( scenario, scenario_index, rules )
     if not scenario.valid:
       if rules == 2:
         break
@@ -1749,7 +1749,7 @@ def perform_unit_tests( starting_scenario ):
     # scenario.reduce_map()
 
     if not scenario.correct_answer:
-      print 'test %3i: no answer listed' % scenario_index
+      print('test %3i: no answer listed' % scenario_index)
       continue
 
     answers, _, _, _, _, _ = scenario.calculate_monster_move()
@@ -1762,13 +1762,13 @@ def perform_unit_tests( starting_scenario ):
     else:
       failed_scenarios.append( ( rules, scenario_index ) )
       result = 'fail'
-    print 'test %s-%3i: %s' % ( [ 'F', 'G', 'J' ][rules], scenario_index, result )
+    print('test %s-%3i: %s' % ( [ 'F', 'G', 'J' ][rules], scenario_index, result ))
 
-  print
+  print()
   if len( failed_scenarios ) == 0:
-    print 'passed all tests'
+    print('passed all tests')
   else:
-    print 'failed %i test(s):' % len( failed_scenarios )
+    print('failed %i test(s):' % len( failed_scenarios ))
     for rules, scenario in failed_scenarios:
       rule_text = [ 'Frosthaven', 'Gloomhaven', 'Jaws of the Lion' ][rules]
-      print '  %s - %i' % ( rule_text, scenario )
+      print('  %s - %i' % ( rule_text, scenario ))

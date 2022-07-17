@@ -1,4 +1,4 @@
-FROM python:2
+FROM python:3
 
 WORKDIR /usr/src/app
 
@@ -9,5 +9,3 @@ RUN pip install pytest-xdist
 COPY . .
 
 EXPOSE 5000
-
-CMD [ "python", "./server/__init__.py" ]
