@@ -5,6 +5,7 @@ import math
 from . import scenarios
 from . import solver
 from .print_map import *
+from past.utils import old_div
 
 chosen_scenario_index = 1
 unit_tests = False
@@ -72,24 +73,24 @@ elif profile:
       results[test].append( end - start )
       print('run %d: %.2fs' % ( sample + 1, end - start ))
 
-    test_average = sum( _ for _ in results[test] ) // SAMPLE_COUNT
-    test_error = math.sqrt(
-      sum( ( _ - test_average )**2 for _ in results[test] ) // ( SAMPLE_COUNT - 1 )
-    ) // math.sqrt( SAMPLE_COUNT )
+    test_average = old_div(sum( _ for _ in results[test] ) , SAMPLE_COUNT)
+    test_error = old_div(math.sqrt(
+      old_div(sum( ( _ - test_average )**2 for _ in results[test] ), ( SAMPLE_COUNT - 1 ))
+    ) , math.sqrt( SAMPLE_COUNT ))
 
     print('average = %f +/- %f seconds' % ( test_average, test_error ))
     print()
 
   zipped_results = list(zip( results[False], results[True] ))
-  average = sum( _[1] - _[0] for _ in zipped_results ) // SAMPLE_COUNT
-  error = math.sqrt(
-    sum( ( _[1] - _[0] - average )**2 for _ in zipped_results ) // ( SAMPLE_COUNT - 1 )
-  ) // math.sqrt( SAMPLE_COUNT )
+  average = old_div(sum( _[1] - _[0] for _ in zipped_results ) , SAMPLE_COUNT)
+  error = old_div(math.sqrt(
+    old_div(sum( ( _[1] - _[0] - average )**2 for _ in zipped_results ) , ( SAMPLE_COUNT - 1 ))
+  ) , math.sqrt( SAMPLE_COUNT ))
   print('delta = %f +/- %f seconds' % ( average, error ))
   if -average > error:
-    a0 = sum( _ for _ in results[False] ) // SAMPLE_COUNT
-    a1 = sum( _ for _ in results[True] ) // SAMPLE_COUNT
-    savings = ( a0 - a1 ) // a0 * 100
+    a0 = old_div(sum( _ for _ in results[False] ) , SAMPLE_COUNT)
+    a1 = old_div(sum( _ for _ in results[True] ) , SAMPLE_COUNT)
+    savings = old_div(( a0 - a1 ) , a0 * 100)
     print('SUCCESS; savings exceeds noise; %.1f%% savings' % savings)
   elif average > error:
     print('FAIL; new method is slower')
@@ -121,7 +122,7 @@ else:
   # NEW_MAP_WIDTH = scenario__.MAP_WIDTH
 
   # def fix_location( location ):
-  #   column = location // NEW_MAP_HEIGHT
+  #   column = old_div(location , NEW_MAP_HEIGHT)
   #   row = location % NEW_MAP_HEIGHT
   #   column += scenario__.REDUCE_COLUMN
   #   row += scenario__.REDUCE_ROW

@@ -3,6 +3,7 @@ from solver.scenarios import *
 from solver.utils import *
 from solver.settings import *
 from solver.print_map import *
+from past.utils import old_div
 
 class Scenario:
   def __init__( self ):
@@ -26,133 +27,133 @@ class Scenario:
     # TODO: currently not used
     assert False
 
-    # TODO: make sure we don't prepare twice
+    # # TODO: make sure we don't prepare twice
 
-    old_height = self.MAP_HEIGHT
-    old_width = self.MAP_WIDTH
-    old_walls = self.walls
-    old_contents = self.contents
-    old_figures = self.figures
-    old_initiatives = self.initiatives
+    # old_height = self.MAP_HEIGHT
+    # old_width = self.MAP_WIDTH
+    # old_walls = self.walls
+    # old_contents = self.contents
+    # old_figures = self.figures
+    # old_initiatives = self.initiatives
 
-    min_row = 9999
-    min_column = 9999
-    max_row = 0
-    max_column = 0
-    targets_min_row = 9999
-    targets_min_column = 9999
-    targets_max_row = 0
-    targets_max_column = 0
+    # min_row = 9999
+    # min_column = 9999
+    # max_row = 0
+    # max_column = 0
+    # targets_min_row = 9999
+    # targets_min_column = 9999
+    # targets_max_row = 0
+    # targets_max_column = 0
 
-    # TODO: don't need to prepare_map first map
+    # # TODO: don't need to prepare_map first map
 
-    figures = [ _ for _, figure in enumerate( self.figures ) if figure != ' ' ]
-    contents = [ _ for _, content in enumerate( self.contents ) if content != ' ' ]
-    walls = [
-      [ _ for _, wall in enumerate( self.walls ) if wall[a] ]
-      for a in range( 6 )
-    ]
+    # figures = [ _ for _, figure in enumerate( self.figures ) if figure != ' ' ]
+    # contents = [ _ for _, content in enumerate( self.contents ) if content != ' ' ]
+    # walls = [
+    #   [ _ for _, wall in enumerate( self.walls ) if wall[a] ]
+    #   for a in range( 6 )
+    # ]
 
-    # TODO
-    # only need ACTION_RANGE to potential targets
-    # handle AOE based range extensions (need test cases)
-    # time
+    # # TODO
+    # # only need ACTION_RANGE to potential targets
+    # # handle AOE based range extensions (need test cases)
+    # # time
 
-    for location in figures:
-      column = location // old_height
-      min_column = min( min_column, column )
-      max_column = max( max_column, column )
-      row = location % old_height
-      min_row = min( min_row, row )
-      max_row = max( max_row, row )
-      if old_figures[location] == 'C':
-        targets_min_column = min( targets_min_column, column )
-        targets_max_column = max( targets_max_column, column )
-        targets_min_row = min( targets_min_row, row )
-        targets_max_row = max( targets_max_row, row )
-    for location in contents:
-      column = location // old_height
-      min_column = min( min_column, column )
-      max_column = max( max_column, column )
-      row = location % old_height
-      min_row = min( min_row, row )
-      max_row = max( max_row, row )
-    for i in range( 6 ):
-      for location in walls[i]:
-        column = location // old_height
-        min_column = min( min_column, column )
-        max_column = max( max_column, column )
-        row = location % old_height
-        min_row = min( min_row, row )
-        max_row = max( max_row, row )
+    # for location in figures:
+    #   column = old_div(location , old_height)
+    #   min_column = min( min_column, column )
+    #   max_column = max( max_column, column )
+    #   row = location % old_height
+    #   min_row = min( min_row, row )
+    #   max_row = max( max_row, row )
+    #   if old_figures[location] == 'C':
+    #     targets_min_column = min( targets_min_column, column )
+    #     targets_max_column = max( targets_max_column, column )
+    #     targets_min_row = min( targets_min_row, row )
+    #     targets_max_row = max( targets_max_row, row )
+    # for location in contents:
+    #   column = location / old_height
+    #   min_column = min( min_column, column )
+    #   max_column = max( max_column, column )
+    #   row = location % old_height
+    #   min_row = min( min_row, row )
+    #   max_row = max( max_row, row )
+    # for i in range( 6 ):
+    #   for location in walls[i]:
+    #     column = location / old_height
+    #     min_column = min( min_column, column )
+    #     max_column = max( max_column, column )
+    #     row = location % old_height
+    #     min_row = min( min_row, row )
+    #     max_row = max( max_row, row )
 
-    edge = 1
-    # edge = max( 1, self.ACTION_RANGE )
-    min_row = max( min_row - edge, 0 )
-    min_column = max( min_column - edge, 0 )
-    max_row = min( max_row + edge, old_height - 1 )
-    max_column = min( max_column + edge, old_width - 1 )
+    # edge = 1
+    # # edge = max( 1, self.ACTION_RANGE )
+    # min_row = max( min_row - edge, 0 )
+    # min_column = max( min_column - edge, 0 )
+    # max_row = min( max_row + edge, old_height - 1 )
+    # max_column = min( max_column + edge, old_width - 1 )
 
-    attack_range = self.ACTION_RANGE
-    # TODO - account for AOE here
-    edge = max( 1, attack_range )
-    targets_min_row = max( targets_min_row - edge, 0 )
-    targets_min_column = max( targets_min_column - edge, 0 )
-    targets_max_row = min( targets_max_row + edge, old_height - 1 )
-    targets_max_column = min( targets_max_column + edge, old_width - 1 )
+    # attack_range = self.ACTION_RANGE
+    # # TODO - account for AOE here
+    # edge = max( 1, attack_range )
+    # targets_min_row = max( targets_min_row - edge, 0 )
+    # targets_min_column = max( targets_min_column - edge, 0 )
+    # targets_max_row = min( targets_max_row + edge, old_height - 1 )
+    # targets_max_column = min( targets_max_column + edge, old_width - 1 )
 
-    min_row = min( min_row, targets_min_row )
-    min_column = min( min_column, targets_min_column )
-    max_row = max( max_row, targets_max_row )
-    max_column = max( max_column, targets_max_column )
+    # min_row = min( min_row, targets_min_row )
+    # min_column = min( min_column, targets_min_column )
+    # max_row = max( max_row, targets_max_row )
+    # max_column = max( max_column, targets_max_column )
 
-    reduce_column = min_column // 2 * 2
-    reduce_row = min_row
+    # reduce_column = min_column / 2 * 2
+    # reduce_row = min_row
 
-    self.REDUCE_COLUMN = reduce_column
-    self.REDUCE_ROW = reduce_row
-    self.ORIGINAL_MAP_HEIGHT = old_height
+    # self.REDUCE_COLUMN = reduce_column
+    # self.REDUCE_ROW = reduce_row
+    # self.ORIGINAL_MAP_HEIGHT = old_height
 
-    width = max_column - reduce_column + 1
-    height = max_row - reduce_row + 1
+    # width = max_column - reduce_column + 1
+    # height = max_row - reduce_row + 1
 
-    # init( scenario, width, height, s.AOE_WIDTH, s.AOE_HEIGHT )
-    self.MAP_WIDTH = width
-    self.MAP_HEIGHT = height
-    self.MAP_SIZE = self.MAP_WIDTH * self.MAP_HEIGHT
-    self.MAP_VERTEX_COUNT = 6 * self.MAP_SIZE
-    # s.MAP_CENTER = ( s.MAP_SIZE - 1 ) // 2;
+    # # init( scenario, width, height, s.AOE_WIDTH, s.AOE_HEIGHT )
+    # self.MAP_WIDTH = width
+    # self.MAP_HEIGHT = height
+    # self.MAP_SIZE = self.MAP_WIDTH * self.MAP_HEIGHT
+    # self.MAP_VERTEX_COUNT = 6 * self.MAP_SIZE
+    # # s.MAP_CENTER = ( s.MAP_SIZE - 1 ) / 2;
 
-    self.walls = [ [ False ] * 6 for _ in range( self.MAP_SIZE ) ]
-    self.contents = [ ' ' ] * self.MAP_SIZE
-    self.figures = [ ' ' ] * self.MAP_SIZE
-    self.initiatives = [ 0 ] * self.MAP_SIZE
+    # self.walls = [ [ False ] * 6 for _ in range( self.MAP_SIZE ) ]
+    # self.contents = [ ' ' ] * self.MAP_SIZE
+    # self.figures = [ ' ' ] * self.MAP_SIZE
+    # self.initiatives = [ 0 ] * self.MAP_SIZE
 
-    for location in figures:
-      column = location // old_height
-      row = location % old_height
-      column -= reduce_column
-      row -= reduce_row
-      new_location = row + column * self.MAP_HEIGHT
-      self.figures[new_location] = old_figures[location]
-      self.initiatives[new_location] = old_initiatives[location]
-    for location in contents:
-      column = location // old_height
-      row = location % old_height
-      column -= reduce_column
-      row -= reduce_row
-      new_location = row + column * self.MAP_HEIGHT
-      self.contents[new_location] = old_contents[location]
-    for i in range( 6 ):
-      for location in walls[i]:
-        column = location // old_height
-        row = location % old_height
-        column -= reduce_column
-        row -= reduce_row
-        new_location = row + column * self.MAP_HEIGHT
-        self.walls[new_location][i] = True
+    # for location in figures:
+    #   column = location / old_height
+    #   row = location % old_height
+    #   column -= reduce_column
+    #   row -= reduce_row
+    #   new_location = row + column * self.MAP_HEIGHT
+    #   self.figures[new_location] = old_figures[location]
+    #   self.initiatives[new_location] = old_initiatives[location]
+    # for location in contents:
+    #   column = location / old_height
+    #   row = location % old_height
+    #   column -= reduce_column
+    #   row -= reduce_row
+    #   new_location = row + column * self.MAP_HEIGHT
+    #   self.contents[new_location] = old_contents[location]
+    # for i in range( 6 ):
+    #   for location in walls[i]:
+    #     column = location / old_height
+    #     row = location % old_height
+    #     column -= reduce_column
+    #     row -= reduce_row
+    #     new_location = row + column * self.MAP_HEIGHT
+    #     self.walls[new_location][i] = True
 
-    self.prepare_map()
+    # self.prepare_map()
 
   def prepare_map( self ):
     self.setup_vertices_list()
@@ -319,12 +320,12 @@ class Scenario:
   def setup_vertices_list( self ):
     def calculate_vertex( location, vertex ):
       hex_row = location % self.MAP_HEIGHT
-      hex_column = location // self.MAP_HEIGHT
+      hex_column = old_div(location , self.MAP_HEIGHT)
 
       vertex_column = hex_column + [ 1, 1, 0, 0, 0, 1 ][vertex]
       vertex_row = 2 * hex_row + [ 1, 2, 2, 1, 0, 0 ][vertex] + ( hex_column % 2 )
 
-      x = 3 * ( vertex_column // 2 )
+      x = 3 * ( old_div(vertex_column , 2) )
       if vertex_row % 2 == 0:
         x += 0.5 + vertex_column % 2
       else:
@@ -345,7 +346,7 @@ class Scenario:
   def setup_neighbors_mapping( self ):
     def get_neighbors( location ):
       row = location % self.MAP_HEIGHT
-      column = location // self.MAP_HEIGHT
+      column = old_div(location , self.MAP_HEIGHT)
 
       bottom_edge = row == 0
       top_edge = row == self.MAP_HEIGHT - 1
@@ -391,8 +392,8 @@ class Scenario:
     return apply_offset( center, offset, self.MAP_HEIGHT, self.MAP_SIZE )
 
   def calculate_bounds( self, location_a, location_b ):
-    column_a = location_a // self.MAP_HEIGHT
-    column_b = location_b // self.MAP_HEIGHT
+    column_a = old_div(location_a , self.MAP_HEIGHT)
+    column_b = old_div(location_b , self.MAP_HEIGHT)
     if column_a < column_b:
       column_lower = max( column_a - 1, 0 )
       column_upper = min( column_b + 2, self.MAP_WIDTH )
@@ -602,10 +603,10 @@ class Scenario:
     # shade the graph to indicate visibility windows
     POINT_DENSITY = 40
     for nx in range( POINT_DENSITY ):
-      x = nx // float( POINT_DENSITY - 1 )
+      x = old_div(nx , float( POINT_DENSITY - 1 ))
       windows = get_visibility_windows_at( x, occluder_mapping_set, False )
       for ny in range( POINT_DENSITY ):
-        y = ny // float( POINT_DENSITY - 1 )
+        y = old_div(ny , float( POINT_DENSITY - 1 ))
         for window in windows:
           if y >= window[1] and y <= window[2]:
             color = 7
@@ -615,9 +616,9 @@ class Scenario:
         self.debug_plot_point( color, ( x, y ) )
 
   def calculate_symmetric_coordinates( self, origin, location ):
-    column_a = origin // self.MAP_HEIGHT
+    column_a = old_div(origin , self.MAP_HEIGHT)
     row_a = origin % self.MAP_HEIGHT
-    column_b = location // self.MAP_HEIGHT
+    column_b = old_div(location , self.MAP_HEIGHT)
     row_b = location % self.MAP_HEIGHT
 
     c = column_b - column_a;
@@ -630,38 +631,38 @@ class Scenario:
       else:
         t = 3
     elif c < 0:
-      if r < ( q + c ) // 2:
+      if r < old_div( (q + c ) , 2):
         t = 3
-      elif r < ( q - c ) // 2:
+      elif r < old_div(( q - c ), 2):
         t = 2
       else:
         t = 1
     else:
-      if r <= ( q - c ) // 2:
+      if r <= old_div(( q - c ) , 2):
         t = 4
-      elif r <= ( q + c ) // 2:
+      elif r <= old_div(( q + c ) , 2):
         t = 5
       else:
         t = 0
 
     if t == 0:
-      u = r - ( q - c ) // 2
+      u = r - old_div(( q - c ) , 2)
       v = c
     elif t == 1:
-      u = r - ( q + c ) // 2
-      v = r - ( q - c ) // 2
+      u = r - old_div( (q + c ) , 2)
+      v = r - old_div(( q - c ) , 2)
     elif t == 2:
       u = -c
-      v = r - ( q + c ) // 2
+      v = r - old_div( (q + c ) , 2)
     elif t == 3:
-      u = -r + ( q - c ) // 2
+      u = -r + old_div( (q - c ) , 2)
       v = -c
     elif t == 4:
-      u = -r + ( q + c ) // 2
-      v = -r + ( q - c ) // 2
+      u = -r + old_div( (q + c ) , 2)
+      v = -r + old_div( (q - c ) , 2)
     else:
       u = c
-      v = -r + ( q + c ) // 2
+      v = -r + old_div( (q + c ) , 2)
 
     return t, u, v
 
@@ -813,7 +814,7 @@ class Scenario:
     # self.debug_lines.add( ( 2, edge_zero ) )
     # N = 4
     # for n in range( N ):
-    #   x = n // float( N - 1 )
+    #   x = n / float( N - 1 )
     #   y, _ = get_occluder_value_at( occluder_mappings[2], x )
     #   self.debug_lines.add( ( 3, ( lerp_along_line( edge_source, x ), lerp_along_line( edge_target, 1.0 - y ) ) ) )
 
@@ -922,7 +923,7 @@ class Scenario:
   def dereduce_location( self, location ):
     if not self.reduced:
       return location
-    column = location // self.MAP_HEIGHT
+    column = old_div(location , self.MAP_HEIGHT)
     row = location % self.MAP_HEIGHT
     column += self.REDUCE_COLUMN
     row += self.REDUCE_ROW
@@ -1158,7 +1159,7 @@ class Scenario:
       PRECALC_GRID_HEIGHT = 21
       PRECALC_GRID_WIDTH = 21
       PRECALC_GRID_SIZE = PRECALC_GRID_HEIGHT * PRECALC_GRID_WIDTH
-      PRECALC_GRID_CENTER = ( PRECALC_GRID_SIZE - 1 ) // 2
+      PRECALC_GRID_CENTER = old_div(( PRECALC_GRID_SIZE - 1 ) , 2)
 
       aoe_pattern_set = set()
       for aoe_pin in aoe:
@@ -1772,3 +1773,4 @@ def perform_unit_tests( starting_scenario ):
     for rules, scenario in failed_scenarios:
       rule_text = [ 'Frosthaven', 'Gloomhaven', 'Jaws of the Lion' ][rules]
       print('  %s - %i' % ( rule_text, scenario ))
+  return len( failed_scenarios )
