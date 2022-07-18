@@ -5,10 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "preLaunchTask": "RunServer",
-            "type": "msedge",
+            "name": "Python: Flask",
+            "type": "python",
             "request": "launch",
-            "name": "Launch Gloomhaven Monster Mover"
+            "module": "flask",
+            "env": {
+                "FLASK_APP": "./server/app.py:app",
+                "FLASK_ENV": "development"
+            },
+            "args": [
+                "run",
+                "--no-debugger"
+            ],
+            "jinja": true,
+            "justMyCode": true
         }
     ]
 }

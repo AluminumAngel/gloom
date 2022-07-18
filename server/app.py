@@ -2,6 +2,7 @@ from solver.solver import Scenario, init, perform_unit_tests
 
 from flask import Flask, jsonify, request, render_template
 import time
+import os
 app = Flask( __name__, static_folder='../static/dist', template_folder='../static' )
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
@@ -118,8 +119,8 @@ def views():
   return jsonify( solution )
 
 # Debug Server
-if __name__ == '__main__':
-  import os
+if __name__ == 'app':
+
 
   if not production:
     if os.environ.get( 'WERKZEUG_RUN_MAIN' ) != 'true':
