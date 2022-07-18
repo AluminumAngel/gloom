@@ -8,8 +8,7 @@ app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 
 # Configuration
-from solver.production import production
-debug = not production
+debug = os.environ.get('FLASK_ENV') == "development"
 
 title = 'Gloomhaven Monster Mover'
 version_major = 2
@@ -117,28 +116,3 @@ def views():
   # if not production:
     # print solution
   return jsonify( solution )
-
-# Debug Server
-if __name__ == 'app':
-
-
-  if not production:
-    if os.environ.get( 'WERKZEUG_RUN_MAIN' ) != 'true':
-      failures = perform_unit_tests( 1 )
-      if failures > 0:
-        exit()
-
-  extra_files = []
-  if not production:
-    template_diretory = '../static'
-    for _, _, files in os.walk( template_diretory ):
-      for file in files:
-        file = os.path.join( template_diretory, file )
-        extra_files.append( file )
-    template_diretory = '../static/dist'
-    for _, _, files in os.walk( template_diretory ):
-      for file in files:
-        file = os.path.join( template_diretory, file )
-        extra_files.append( file )
-
-  app.run(debug=debug, extra_files=extra_files )
