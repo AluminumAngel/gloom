@@ -1,8 +1,9 @@
-from solver.solver import Scenario, init
-
-from flask import Flask, jsonify, request, render_template
 import time
 import os
+import json
+from solver.solver import Scenario, init
+from flask import Flask, jsonify, request, render_template
+
 app = Flask(__name__, static_folder='../static/dist',
             template_folder='../static')
 app.jinja_env.trim_blocks = True
@@ -61,7 +62,7 @@ def templates(filename, params={}):
 
 @app.route('/solve', methods=['PUT'])
 def solve():
-    packed_scenario = request.json
+    packed_scenario = json.loads(request.data)
     # if IsDebugEnv:
     #   print packed_scenario
 
@@ -95,7 +96,7 @@ def solve():
 
 @app.route('/views', methods=['PUT'])
 def views():
-    packed_scenario = request.json
+    packed_scenario = json.loads(request.data)
     # if IsDebugEnv:
     #   print packed_scenario
 
