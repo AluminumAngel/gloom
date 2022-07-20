@@ -11,7 +11,39 @@ from past.utils import old_div
 
 
 class Scenario:
-    def __init__(self):
+    correct_answer = None
+    valid = True
+    logging = False
+    debug_visuals = False
+    show_each_action_separately = False
+    visibility_cache = {}
+    path_cache = [{}, {}, {}, {}]
+    debug_lines = set()
+    test_switch = False
+    reduced = False    
+    ACTION_MOVE = 0
+    ACTION_RANGE = 0
+    ACTION_TARGET = 1
+    FLYING = False
+    JUMPING = False
+    MUDDLED = False
+    DEBUG_TOGGLE = False
+    message = ''
+    MAP_WIDTH = 0
+    MAP_HEIGHT = 0
+    MAP_SIZE = 0
+    MAP_VERTEX_COUNT = 0
+    walls = [[False] * 6 for _ in range(0)]
+    contents = [' '] * 0
+    figures = [' '] * 0
+    initiatives = [0] * 0
+    AOE_WIDTH = 0
+    AOE_HEIGHT = 0
+    AOE_SIZE = 0
+    aoe = [False] * 0
+    AOE_CENTER = old_div((0 - 1), 2)
+
+    def __init__(self, width, height, aoe_width, aoe_height):
         self.correct_answer = None
         self.valid = True
         self.logging = False
@@ -22,6 +54,42 @@ class Scenario:
         self.path_cache = [{}, {}, {}, {}]
 
         self.debug_lines = set()
+        self.init4(width, height, aoe_width, aoe_height)
+
+    def init4(self, width, height, aoe_width, aoe_height):
+        self.test_switch = False
+        self.reduced = False
+
+        self.MAP_WIDTH = width
+        self.MAP_HEIGHT = height
+        self.MAP_SIZE = self.MAP_WIDTH * self.MAP_HEIGHT
+        self.MAP_VERTEX_COUNT = 6 * self.MAP_SIZE
+        # s.MAP_CENTER = ( s.MAP_SIZE - 1 ) / 2;
+
+        self.AOE_WIDTH = aoe_width
+        self.AOE_HEIGHT = aoe_height
+        self.AOE_SIZE = self.AOE_WIDTH * self.AOE_HEIGHT
+        self.AOE_CENTER = old_div((self.AOE_SIZE - 1), 2)
+        if self.AOE_WIDTH != 7 or self.AOE_HEIGHT != 7:
+            exit()
+        if int(self.AOE_CENTER) - self.AOE_CENTER != 0:
+            exit('aoe has no center')
+
+        self.walls = [[False] * 6 for _ in range(self.MAP_SIZE)]
+        self.contents = [' '] * self.MAP_SIZE
+        self.figures = [' '] * self.MAP_SIZE
+        self.initiatives = [0] * self.MAP_SIZE
+        self.aoe = [False] * self.AOE_SIZE
+        self.message = ''
+
+        self.ACTION_MOVE = 0
+        self.ACTION_RANGE = 0
+        self.ACTION_TARGET = 1
+        self.FLYING = False
+        self.JUMPING = False
+        self.MUDDLED = False
+
+        self.DEBUG_TOGGLE = False
 
     def reduce_map(self):
         self.reduced = True

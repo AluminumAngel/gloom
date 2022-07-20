@@ -105,37 +105,37 @@ from past.utils import old_div
 # TODO should be a member function
 
 
-def init(s, width, height, aoe_width, aoe_height):
-    s.test_switch = False
-    s.reduced = False
+# def init(s, width, height, aoe_width, aoe_height):
+#     s.test_switch = False
+#     s.reduced = False
 
-    s.MAP_WIDTH = width
-    s.MAP_HEIGHT = height
-    s.MAP_SIZE = s.MAP_WIDTH * s.MAP_HEIGHT
-    s.MAP_VERTEX_COUNT = 6 * s.MAP_SIZE
-    # s.MAP_CENTER = ( s.MAP_SIZE - 1 ) / 2;
+#     s.MAP_WIDTH = width
+#     s.MAP_HEIGHT = height
+#     s.MAP_SIZE = s.MAP_WIDTH * s.MAP_HEIGHT
+#     s.MAP_VERTEX_COUNT = 6 * s.MAP_SIZE
+#     # s.MAP_CENTER = ( s.MAP_SIZE - 1 ) / 2;
 
-    s.AOE_WIDTH = aoe_width
-    s.AOE_HEIGHT = aoe_height
-    s.AOE_SIZE = s.AOE_WIDTH * s.AOE_HEIGHT
-    s.AOE_CENTER = old_div((s.AOE_SIZE - 1), 2)
-    if s.AOE_WIDTH != 7 or s.AOE_HEIGHT != 7:
-        exit()
-    if int(s.AOE_CENTER) - s.AOE_CENTER != 0:
-        exit('aoe has no center')
+#     s.AOE_WIDTH = aoe_width
+#     s.AOE_HEIGHT = aoe_height
+#     s.AOE_SIZE = s.AOE_WIDTH * s.AOE_HEIGHT
+#     s.AOE_CENTER = old_div((s.AOE_SIZE - 1), 2)
+#     if s.AOE_WIDTH != 7 or s.AOE_HEIGHT != 7:
+#         exit()
+#     if int(s.AOE_CENTER) - s.AOE_CENTER != 0:
+#         exit('aoe has no center')
 
-    s.walls = [[False] * 6 for _ in range(s.MAP_SIZE)]
-    s.contents = [' '] * s.MAP_SIZE
-    s.figures = [' '] * s.MAP_SIZE
-    s.initiatives = [0] * s.MAP_SIZE
-    s.aoe = [False] * s.AOE_SIZE
-    s.message = ''
+#     s.walls = [[False] * 6 for _ in range(s.MAP_SIZE)]
+#     s.contents = [' '] * s.MAP_SIZE
+#     s.figures = [' '] * s.MAP_SIZE
+#     s.initiatives = [0] * s.MAP_SIZE
+#     s.aoe = [False] * s.AOE_SIZE
+#     s.message = ''
 
-    s.ACTION_MOVE = 0
-    s.ACTION_RANGE = 0
-    s.ACTION_TARGET = 1
-    s.FLYING = False
-    s.JUMPING = False
-    s.MUDDLED = False
+#     s.ACTION_MOVE = 0
+#     s.ACTION_RANGE = 0
+#     s.ACTION_TARGET = 1
+#     s.FLYING = False
+#     s.JUMPING = False
+#     s.MUDDLED = False
 
-    s.DEBUG_TOGGLE = False
+#     s.DEBUG_TOGGLE = False

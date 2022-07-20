@@ -1,7 +1,7 @@
 import time
 import os
 import json
-from solver.solver import Scenario, init
+from solver.solver import Scenario
 from flask import Flask, jsonify, request, render_template
 
 app = Flask(__name__, static_folder='../static/dist',
@@ -72,11 +72,10 @@ def solve():
     scenario_id = packed_scenario['scenario_id']
     solve_view = packed_scenario['solve_view']
 
-    s = Scenario()
+    s = Scenario(map_width, map_height, 7, 7)
     if IsDebugEnv:
         s.logging = True
         s.debug_visuals = True
-    init(s, map_width, map_height, 7, 7)
     s.unpack_scenario(packed_scenario)
     actions, reach, sight = s.solve(solve_view > 0, solve_view > 1)
 
@@ -107,11 +106,10 @@ def views():
     viewpoints = packed_scenario['viewpoints']
     solve_view = packed_scenario['solve_view']
 
-    s = Scenario()
+    s = Scenario(map_width, map_height, 7, 7)
     if IsDebugEnv:
         s.logging = True
         s.debug_visuals = True
-    init(s, map_width, map_height, 7, 7)
     s.unpack_scenario_forviews(packed_scenario)
 
     solution = {

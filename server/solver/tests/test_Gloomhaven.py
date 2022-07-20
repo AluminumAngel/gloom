@@ -1,9 +1,7 @@
-from solver.scenarios import init
 from solver.solver import Scenario
 
 def init_test():
-    scenario = Scenario()
-    init(scenario, 16, 7, 7, 7)
+    scenario = Scenario(16, 7, 7, 7)
     scenario.set_rules(1)
     return scenario
 
