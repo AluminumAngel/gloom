@@ -49,47 +49,41 @@ class Scenario:
         self.logging = False
         self.debug_visuals = False
         self.show_each_action_separately = False
-
         self.visibility_cache = {}
         self.path_cache = [{}, {}, {}, {}]
-
         self.debug_lines = set()
-        self.init4(width, height, aoe_width, aoe_height)
-
-    def init4(self, width, height, aoe_width, aoe_height):
         self.test_switch = False
         self.reduced = False
-
+        
         self.MAP_WIDTH = width
         self.MAP_HEIGHT = height
         self.MAP_SIZE = self.MAP_WIDTH * self.MAP_HEIGHT
         self.MAP_VERTEX_COUNT = 6 * self.MAP_SIZE
-        # s.MAP_CENTER = ( s.MAP_SIZE - 1 ) / 2;
-
-        self.AOE_WIDTH = aoe_width
-        self.AOE_HEIGHT = aoe_height
-        self.AOE_SIZE = self.AOE_WIDTH * self.AOE_HEIGHT
-        self.AOE_CENTER = old_div((self.AOE_SIZE - 1), 2)
-        if self.AOE_WIDTH != 7 or self.AOE_HEIGHT != 7:
-            exit()
-        if int(self.AOE_CENTER) - self.AOE_CENTER != 0:
-            exit('aoe has no center')
-
         self.walls = [[False] * 6 for _ in range(self.MAP_SIZE)]
         self.contents = [' '] * self.MAP_SIZE
         self.figures = [' '] * self.MAP_SIZE
         self.initiatives = [0] * self.MAP_SIZE
+        
+        self.AOE_WIDTH = aoe_width
+        self.AOE_HEIGHT = aoe_height
+        self.AOE_SIZE = self.AOE_WIDTH * self.AOE_HEIGHT
+        self.AOE_CENTER = old_div((self.AOE_SIZE - 1), 2)
         self.aoe = [False] * self.AOE_SIZE
-        self.message = ''
 
+        self.message = ''
         self.ACTION_MOVE = 0
         self.ACTION_RANGE = 0
         self.ACTION_TARGET = 1
         self.FLYING = False
         self.JUMPING = False
         self.MUDDLED = False
-
         self.DEBUG_TOGGLE = False
+
+        if self.AOE_WIDTH != 7 or self.AOE_HEIGHT != 7:
+            exit()
+        if int(self.AOE_CENTER) - self.AOE_CENTER != 0:
+            exit('aoe has no center')
+
 
     def reduce_map(self):
         self.reduced = True
