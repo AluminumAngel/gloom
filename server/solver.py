@@ -14,6 +14,7 @@ class Scenario:
 
     self.visibility_cache = {}
     self.path_cache = [ {}, {}, {}, {} ]
+    self.spoiler_cache = [ {}, {}, {}, {} ]
 
     self.debug_lines = set()
 
@@ -127,6 +128,7 @@ class Scenario:
     self.contents = [ ' ' ] * self.MAP_SIZE
     self.figures = [ ' ' ] * self.MAP_SIZE
     self.initiatives = [ 0 ] * self.MAP_SIZE
+    self.characters = []
 
     for location in figures:
       column = location / old_height
@@ -292,6 +294,30 @@ class Scenario:
 
     self.prepare_map()
 
+  def unpack_scenario_for_spoilers( self, packed_scenario ):
+    self.DEBUG_TOGGLE = int( packed_scenario.get( 'debug_toggle', '0' ) )
+
+    def add_elements( grid, key, content ):
+      for _ in packed_scenario['map'][key]:
+        grid[_] = content
+
+    add_elements( self.contents, 'walls', 'X' )
+
+    lam = [1,2,3]
+
+    self.characters = packed_scenario['map']['characters']
+
+    remap = {
+      1: 0,
+      0: 1,
+      2: 5,
+    }
+    for _ in packed_scenario['map']['thin_walls']:
+      s = remap[_[1]]
+      self.walls[_[0]][s] = True
+
+    self.prepare_map()
+
   def can_end_move_on_standard( self, location ):
     return self.contents[location] in [ ' ', 'T', 'H', 'D' ] and self.figures[location] in [ ' ', 'A' ]
   def can_end_move_on_flying( self, location ):
@@ -301,7 +327,11 @@ class Scenario:
     return self.contents[location] in [ ' ', 'T', 'H', 'D' ] and self.figures[location] != 'C'
   def can_travel_through_flying( self, location ):
     return self.contents[location] in [ ' ', 'T', 'H', 'D', 'O' ]
-
+  def can_travel_through_spoiler( self, location ):
+    return self.contents[location] in [ ' ', 'T', 'H', 'D', 'O' ]
+  def is_wall( self, location ):
+    return self.contents[location] == 'X'
+  
   def is_trap_standard( self, location ):
     return self.contents[location] in [ 'T', 'H' ]
   def is_trap_flying( self, location ):
@@ -1716,11 +1746,85 @@ class Scenario:
   def solve_sights( self, viewpoints ):
     return [ self.solve_sight( _ ) for _ in viewpoints ]
 
-  def solve( self, solve_reach, solve_sight ):
+  def find_character_spoilers( self, character, characters, traversal_test, spoilers ):
+    frontier = collections.deque()
+    frontier.append( character )
+    visited = []
+    found_characters = []
+
+    while not len( frontier ) == 0:
+      current = frontier.popleft()
+      spoilers[current] = False
+      visited.append(current)
+      if current in characters and current not in found_characters:
+        found_characters.append(current)
+
+      for edge, neighbor in enumerate( self.neighbors[current] ):
+        if neighbor == -1:
+          continue
+        if neighbor in visited:
+          continue
+        else:
+          visited.append(neighbor)
+        if self.is_wall(neighbor):
+          spoilers[neighbor] = False
+        if not traversal_test( self, neighbor ):
+          continue
+        if self.walls[current][edge]:
+          continue
+
+        frontier.append( neighbor )
+
+    # self.spoiler_cache[0][cache_key] = (spoilers)
+    #
+    # # optimization: use the same distances for characters encountered during the traversal
+    # for c in found_characters:
+    #   cache_key = ( c, traversal_test )
+    #   self.spoiler_cache[0][cache_key] = ( spoilers )
+
+    return spoilers
+
+  # def solve_spoilers( self ):
+  #   self.calculate_spoilers()
+
+  #   def dereduce_locations( locations ):
+  #     return [ self.dereduce_location( _ ) for _ in locations ]
+
+  #   actions = [
+  #     {
+  #       'move': self.dereduce_location( _[0] ),
+  #       'attacks': dereduce_locations( _[1:] ),
+  #       'aoe': dereduce_locations( aoes[_] ),
+  #       'destinations': dereduce_locations( destinations[_] ),
+  #       'focuses': dereduce_locations( focuses[_] ),
+  #       'sightlines': list( sightlines[_] ),
+  #     }
+  #     for _ in raw_actions
+  #   ]
+
+  #   return 
+
+  def calculate_spoilers( self ):
+    # characters = [i for i,d in enumerate(self.figures) if d == 'C' ]
+
+    if len(self.characters) > 0:
+      spoilers = [True] * self.MAP_SIZE
+      for c in self.characters:
+        self.find_character_spoilers( c, self.characters, Scenario.can_travel_through_spoiler, spoilers )
+      return spoilers
+    else:
+      return [ False ] * self.MAP_SIZE
+
+  def solve_spoilers( self ):
+    spoilers = self.calculate_spoilers()
+    return spoilers
+
+  def solve( self, solve_reach, solve_sight, solve_spoilers ):
     actions = self.solve_move( False )
     reach = self.solve_reaches( _['move'] for _ in actions ) if solve_reach else None
     sight = self.solve_sights( _['move'] for _ in actions ) if solve_sight else None
-    return actions, reach, sight
+    spoilers = self.solve_spoilers() if solve_spoilers else None
+    return actions, reach, sight, spoilers
 
   def debug_plot_line( self, color, line ):
     self.debug_lines.add( ( color, ( scale_vector( DEBUG_PLOT_SCALE, line[0] ), scale_vector( DEBUG_PLOT_SCALE, line[1] ) ) ) )

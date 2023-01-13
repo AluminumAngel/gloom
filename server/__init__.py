@@ -118,6 +118,33 @@ def views():
     # print solution
   return jsonify( solution )
 
+@app.route( '/spoilers', methods=[ 'PUT' ] )
+def spoilers():
+  packed_scenario = request.json
+  # if not production:
+  #   print packed_scenario
+
+  # todo: validate packed scenario format
+  map_width = packed_scenario['width']
+  map_height = packed_scenario['height']
+  scenario_id = packed_scenario['scenario_id']
+
+  s = solver.Scenario()
+  if not production:
+    s.logging = True
+    s.debug_visuals = True
+  scenarios.init( s, map_width, map_height, 7, 7 )
+  s.unpack_scenario_for_spoilers( packed_scenario )
+
+  solution = {
+    'scenario_id': scenario_id,
+  }
+  solution['spoilers'] = s.solve_spoilers()
+
+  # if not production:
+    # print solution
+  return jsonify( solution )
+
 # Debug Server
 if __name__ == '__main__':
   import os

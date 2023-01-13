@@ -29,6 +29,9 @@ const ACTION_NO_REQUEST = 4;
 const ACTION_REQUEST_SOLUTION = 5;
 const ACTION_REQUEST_START_VIEWS = 6;
 const ACTION_REQUEST_SOLUTION_VIEWS = 7;
+const ACTION_REQUEST_START_SPOILERS = 9;
+const ACTION_REQUEST_SOLUTION_SPOILERS = 10;
+const ACTION_WAITING_ON_SPOILERS = 11;
 const ACTION_NONE_REQUIRED = 8;
 
 const COMPLEXITY_AOE = 0;
@@ -197,6 +200,7 @@ export default class MapEditor extends React.PureComponent {
       // app state
       solution_pending: false,
       views_pending: false,
+      spoilers_pending: false,
       scenario_id: 1,
       drag_source_index: NULL_INDEX,
       selection: NULL_INDEX,
@@ -210,6 +214,7 @@ export default class MapEditor extends React.PureComponent {
       show_movement: !START_IN_LOS_MODE,
       show_reach: false,
       show_sight: START_IN_LOS_MODE,
+      show_spoilers: false,
 
       // scenario state
       grid: Array( C.GRID_SIZE ).fill( 0 ),
@@ -226,6 +231,7 @@ export default class MapEditor extends React.PureComponent {
       // debug_toggle: 0,
       aoe_grid: Array( C.AOE_SIZE ).fill( false ),
       active_faction: false,
+      characters: 0,
 
       // dependent state
       scenario_too_complex: false,
@@ -239,6 +245,7 @@ export default class MapEditor extends React.PureComponent {
       solution_actions_sight: null,
       solution_start_reach: null,
       solution_start_sight: null,
+      solution_start_spoilers: null,
       action_displayed: DISPLAY_ALL_ACTIONS,
       display_moves: Array( C.GRID_SIZE ).fill( false ),
       display_attacks: Array( C.GRID_SIZE ).fill( false ),
@@ -250,6 +257,8 @@ export default class MapEditor extends React.PureComponent {
       display_debug_lines: Array(),
       display_reach: Array( C.GRID_SIZE ).fill( false ),
       display_sight: Array( C.GRID_SIZE ).fill( false ),
+      //display_spoilers: Array( C.GRID_SIZE ).fill( false ),
+      display_spoilers: null,
     };
 
     var starting_scenario;
@@ -360,6 +369,7 @@ export default class MapEditor extends React.PureComponent {
       switch ( this.determineActionRequired() ) {
         case ACTION_WAITING_ON_SOLUTION:
         case ACTION_WAITING_ON_VIEW:
+        case ACTION_WAITING_ON_SPOILERS:
         case ACTION_NO_ACTIVE_FIGURE:
         case ACTION_SCENARIO_TOO_COMPLEX:
         case ACTION_NO_REQUEST:
@@ -377,6 +387,14 @@ export default class MapEditor extends React.PureComponent {
         case ACTION_REQUEST_SOLUTION_VIEWS:
           this.handleRequestViewsForActions();
           return;
+        
+        case ACTION_REQUEST_START_SPOILERS:
+          this.handleRequestSpoilersForStart();
+          return;
+        
+        case ACTION_REQUEST_SOLUTION_SPOILERS:
+          this.handleRequestSpoilersForActions();
+          return;
       }
     }, 0 );
   }
@@ -388,9 +406,17 @@ export default class MapEditor extends React.PureComponent {
     if ( this.state.views_pending ) {
       return ACTION_WAITING_ON_VIEW;
     }
+    if ( this.state.spoilers_pending ) {
+      return ACTION_WAITING_ON_SPOILERS;
+    }   
 
-    if ( this.state.active_figure_index === NULL_INDEX ) {
-      return ACTION_NO_ACTIVE_FIGURE;
+    if ( this.state.active_figure_index === NULL_INDEX ) {      
+      if ( ( this.state.show_spoilers && !this.state.solution_start_spoilers ) ) {
+        return ACTION_REQUEST_SOLUTION_SPOILERS;
+      }
+      else {
+        return ACTION_NO_ACTIVE_FIGURE;
+      }
     }
 
     if ( this.state.scenario_id !== this.state.solution_scenario_id ) {
@@ -422,6 +448,9 @@ export default class MapEditor extends React.PureComponent {
         else if ( ( this.state.show_reach && !this.state.solution_actions_reach ) || ( this.state.show_sight && !this.state.solution_actions_sight ) ) {
           return ACTION_REQUEST_SOLUTION_VIEWS;
         }
+        else if ( ( this.state.show_spoilers && !this.state.solution_actions_spoilers ) ) {
+          return ACTION_REQUEST_SOLUTION_SPOILERS;
+        }
         else {
           return ACTION_NONE_REQUIRED;
         }
@@ -429,6 +458,9 @@ export default class MapEditor extends React.PureComponent {
       else {
         if ( ( this.state.show_reach && !this.state.solution_start_reach ) || ( this.state.show_sight && !this.state.solution_start_sight ) ) {
           return ACTION_REQUEST_START_VIEWS;
+        }
+        else if ( ( this.state.show_spoilers && !this.state.solution_start_spoilers ) ) {
+          return ACTION_REQUEST_START_SPOILERS;
         }
         else {
           return ACTION_NONE_REQUIRED;
@@ -678,7 +710,7 @@ export default class MapEditor extends React.PureComponent {
               figures = this.state.figures.slice();
               figures[index] = BRUSH.EMPTY;
               selection = NULL_INDEX;
-            }
+            }            
           }
           else {
             if ( isFigureAllowed( this.state.grid[index] ) ) {
@@ -690,12 +722,16 @@ export default class MapEditor extends React.PureComponent {
               if ( this.state.brush === this.inactiveFactionBrush() ) {
                 initiatives = this.state.initiatives.slice();
                 initiatives[index] = this.state.next_initiative;
-                selection = index;
+                selection = index;                
               }
               else {
                 initiatives = this.state.initiatives.slice();
                 initiatives[index] = 1;
                 selection = NULL_INDEX;
+              }
+
+              if ( this.state.brush === BRUSH.CHARACTER ) {
+                this.state.characters++;
               }
             }
           }
@@ -705,6 +741,9 @@ export default class MapEditor extends React.PureComponent {
             grid = this.state.grid.slice();
             grid[index] = BRUSH.EMPTY;
             selection = NULL_INDEX;
+            // if ( this.state.brush === BRUSH.CHARACTER ) {
+            //   this.state.characters--;
+            // }
           }
           else {
             grid = this.state.grid.slice();
@@ -717,6 +756,9 @@ export default class MapEditor extends React.PureComponent {
               }
             }
             selection = NULL_INDEX;
+            // if ( this.state.brush === BRUSH.CHARACTER ) {
+            //   this.state.characters++;
+            // }
           }
         }
       }
@@ -728,6 +770,10 @@ export default class MapEditor extends React.PureComponent {
             if ( active_figure_index === index ) {
               active_figure_index = NULL_INDEX;
             }
+
+            if ( this.state.brush === BRUSH.CHARACTER ) {
+              this.state.characters--;
+            }
             selection = NULL_INDEX;
           }
         }
@@ -738,6 +784,8 @@ export default class MapEditor extends React.PureComponent {
         }
       }
     }
+
+    console.log("characters == " + this.state.characters);
 
     const scenario_changed = grid || figures || initiatives || active_figure_index != this.state.active_figure_index;
     if ( scenario_changed || selection != this.state.selection ) {
@@ -1219,6 +1267,12 @@ export default class MapEditor extends React.PureComponent {
     } );
   };
 
+  handleDisplaySpoilersChanged = () => {
+    this.setState( {
+      'show_spoilers': !this.state.show_spoilers,
+    } );
+  };
+
   // handleDebugToggle = () => {
   //   this.setScenario( {
   //     'debug_toggle': !this.state.debug_toggle,
@@ -1306,6 +1360,7 @@ export default class MapEditor extends React.PureComponent {
         solution_actions: solution.actions.slice(),
         solution_actions_reach: solution.reach ? solution.reach.slice() : null,
         solution_actions_sight: solution.sight ? solution.sight.slice() : null,
+        solution_actions_spoilers: solution.spoilers ? solution.spoilers.slice() : null,
         solution_start_reach: null,
         solution_start_sight: null,
       };
@@ -1328,6 +1383,9 @@ export default class MapEditor extends React.PureComponent {
           if ( solution.sight ) {
             solution_state['solution_start_sight'] = solution.sight[index].slice();
           }
+          // if ( solution.spoilers ) {
+          //   solution_state['solution_start_spoilers'] = solution.spoilers[index].slice();
+          // }
           break;        
         }
       }
@@ -1345,7 +1403,7 @@ export default class MapEditor extends React.PureComponent {
       solution_actions_reach: views.reach ? views.reach.slice() : null,
       solution_actions_sight: views.sight ? views.sight.slice() : null,
     };
-    this.setDisplayedSolution( this.state.action_displayed, this.state.show_movement, this.state.show_reach, this.state.show_sight, solution_state );
+    this.setDisplayedSolution( this.state.action_displayed, this.state.show_movement, this.state.show_reach, this.state.show_sight, this.state.show_spoilers, solution_state );
   }
 
   unpackViewsForStart( views ) {
@@ -1364,17 +1422,49 @@ export default class MapEditor extends React.PureComponent {
     else {
       solution_state = {
         solution_start_reach: views.reach ? views.reach[0].slice() : null,
-        solution_start_sight: views.sight ? views.sight[0].slice() : null,
       };
     }
-    this.setDisplayedSolution( this.state.action_displayed, this.state.show_movement, this.state.show_reach, this.state.show_sight, solution_state );
+    this.setDisplayedSolution( this.state.action_displayed, this.state.show_movement, this.state.show_reach, this.state.show_sight, this.state.show_spoilers, solution_state );
+  }
+
+  unpackSpoilersForActions( spoilers ) {
+    // if ( this.state.solution_scenario_id !== spoilers.scenario_id ) {
+    //   return;
+    // }
+
+    var solution_state = {
+      solution_actions_spoilers: spoilers.spoilers ? spoilers.spoilers.slice() : null,
+    };
+    this.setDisplayedSolution( this.state.action_displayed, this.state.show_movement, this.state.show_reach, this.state.show_sight, this.state.show_spoilers, solution_state );
+  }
+
+  unpackSpoilersForStart( spoilers ) {
+    var solution_state;
+    if ( this.state.solution_scenario_id !== spoilers.scenario_id ) {
+      solution_state = {
+        solution_scenario_id: spoilers.scenario_id,
+
+        solution_actions: null,
+        solution_actions_reach: null,
+        solution_actions_sight: null,
+        solution_start_reach: null,
+        solution_start_sight: null,
+        solution_start_spoilers: spoilers.spoilers ? spoilers.spoilers[0].slice() : null,
+      };
+    }
+    else {
+      solution_state = {
+        solution_start_spoilers: spoilers.spoilers ? spoilers.spoilers[0].slice() : null,
+      };
+    }
+    this.setDisplayedSolution( this.state.action_displayed, this.state.show_movement, this.state.show_reach, this.state.show_sight, this.state.show_spoilers, solution_state );
   }
 
   setActionDisplayed( action_displayed ) {
     if ( action_displayed === this.state.action_displayed ) {
       return;
     }
-    this.setDisplayedSolution( action_displayed, this.state.show_movement, this.state.show_reach, this.state.show_sight, null );
+    this.setDisplayedSolution( action_displayed, this.state.show_movement, this.state.show_reach, this.state.show_sight, this.state.show_spoilers, null );
   }
 
   setReachSightDisplayed( show_movement, show_reach, show_sight ) {
@@ -1396,12 +1486,14 @@ export default class MapEditor extends React.PureComponent {
     this.setDisplayedSolution( action_displayed, show_movement, show_reach, show_sight, null );
   }
 
-  setDisplayedSolution( action_displayed, show_movement, show_reach, show_sight, solution_state ) {
+  setDisplayedSolution( action_displayed, show_movement, show_reach, show_sight, show_spoilers, solution_state ) {
     var solution_actions = solution_state && solution_state.solution_actions ? solution_state.solution_actions : this.state.solution_actions;
     var solution_actions_reach = solution_state && solution_state.solution_actions_reach ? solution_state.solution_actions_reach : this.state.solution_actions_reach;
     var solution_actions_sight = solution_state && solution_state.solution_actions_sight ? solution_state.solution_actions_sight : this.state.solution_actions_sight;
+    var solution_actions_spoilers = solution_state && solution_state.solution_actions_spoilers ? solution_state.solution_actions_spoilers : this.state.solution_actions_spoilers;
     var solution_start_reach = solution_state && solution_state.solution_start_reach ? solution_state.solution_start_reach : this.state.solution_start_reach;
     var solution_start_sight = solution_state && solution_state.solution_start_sight ? solution_state.solution_start_sight : this.state.solution_start_sight;
+    var solution_start_spoilers = solution_state && solution_state.solution_start_spoilers ? solution_state.solution_start_spoilers : this.state.solution_start_spoilers;
     
     var moves = Array( C.GRID_SIZE ).fill( false );
     var attacks = Array( C.GRID_SIZE ).fill( false );
@@ -1412,6 +1504,8 @@ export default class MapEditor extends React.PureComponent {
     var debug_lines = [];
     var reach = Array( C.GRID_SIZE ).fill( false );
     var sight = Array( C.GRID_SIZE ).fill( false );
+    var spoilers = null;
+    //var spoilers = Array( C.GRID_SIZE ).fill( false );
 
     if ( show_movement ) {
       if ( solution_actions ) { 
@@ -1510,6 +1604,16 @@ export default class MapEditor extends React.PureComponent {
       }
     }
 
+    if ( show_spoilers && solution_start_spoilers )
+    {
+      spoilers = solution_start_spoilers;
+    }
+
+    if ( show_spoilers && solution_actions_spoilers )
+    {
+      spoilers = solution_actions_spoilers;
+    }
+
     var sightline_points = [];
     sightline_lines.forEach( ( line ) => {
       sightline_points.push( line[0] );
@@ -1521,6 +1625,7 @@ export default class MapEditor extends React.PureComponent {
       show_movement: show_movement,
       show_reach: show_reach,
       show_sight: show_sight,
+      show_spoilers: show_spoilers,
       display_moves: moves,
       display_attacks: attacks,
       display_aoe: aoe,
@@ -1531,6 +1636,7 @@ export default class MapEditor extends React.PureComponent {
       display_debug_lines: debug_lines,
       display_reach: reach,
       display_sight: sight,
+      display_spoilers: spoilers,
     };
     this.setToolsState( Object.assign( display_state, solution_state ) );
   }
@@ -1645,6 +1751,42 @@ export default class MapEditor extends React.PureComponent {
     return scenario;
   }
 
+  packScenarioForSpoilers() {
+    var scenario = {
+      scenario_id: this.state.scenario_id,
+      width: C.GRID_WIDTH,
+      height: C.GRID_HEIGHT,
+      map: {},
+    };
+
+    function add_elements( map_layer, key, brush ) {
+      scenario.map[key] = [];
+      map_layer.forEach( ( element, index ) => {
+        if ( element === brush ) {
+          scenario.map[key].push( index );
+        }
+      } );
+    }
+
+    add_elements( this.state.grid, 'walls', BRUSH.WALL );
+
+    scenario.map.characters = [];
+    this.state.figures.forEach( ( element, index ) => {
+      if ( element === BRUSH.CHARACTER ) {
+        scenario.map.characters.push( index );
+      }
+    } );
+
+    scenario.map.thin_walls = [];
+    this.state.walls.forEach( ( wall, index ) => {
+      if ( wall ) {
+        scenario.map.thin_walls.push( [ Math.trunc( index / 3 ), index % 3 ] );
+      }
+    } );
+
+    return scenario;
+  }
+
   handleRequestSolution = () => {
     if ( !DEVELOPMENT ) {
       gtag( 'event', 'request', {
@@ -1710,7 +1852,7 @@ export default class MapEditor extends React.PureComponent {
 
     if ( !DEVELOPMENT ) {
       gtag( 'event', 'request', {
-        event_category: 'StartViews',
+        event_category: 'StartSpoilers',
         event_label: this.getSolveViewLevel() > 1 ? 'sight' : 'reach',
         value: viewpoints.length,
       } );
@@ -1731,6 +1873,65 @@ export default class MapEditor extends React.PureComponent {
       .catch( () => {
         this.setState( {
           views_pending: false,
+        } );
+      } );
+  };
+
+  handleRequestSpoilersForActions = () => {
+    // var viewpoints = [];
+    // for ( var i = 0; i < this.state.solution_actions.length; i++ ) {
+    //   viewpoints.push( this.state.solution_actions[i]['move'] );
+    // }
+
+    if ( !DEVELOPMENT ) {
+      gtag( 'event', 'request', {
+        event_category: 'SolutionSpoilers',
+        event_label: 'spoilers',
+        value: 0,
+      } );
+    }
+
+    var spoilers_request = this.packScenarioForSpoilers();
+    this.setState( {
+      spoilers_pending: true,
+    } );
+    axios.put( URL_FOR.spoilers, spoilers_request )
+      .then( ( response ) => {
+        this.setState( {
+          spoilers_pending: false,
+        } );
+        this.unpackSpoilersForActions( response.data );
+      } )
+      .catch( () => {
+        this.setState( {
+          spoilers_pending: false,
+        } );
+      } );
+  };
+
+  handleRequestSpoilersForStart = () => {
+    if ( !DEVELOPMENT ) {
+      gtag( 'event', 'request', {
+        event_category: 'StartSpoilers',
+        event_label: 'spoilers',
+        value: 0,
+      } );
+    }
+
+    var spoilers_request = this.packScenarioForSpoilers();
+    this.setState( {
+      spoilers_pending: true,
+    } );
+    axios.put( URL_FOR.spoilers, spoilers_request )
+      .then( ( response ) => {
+        this.setState( {
+          spoilers_pending: false,
+        } );
+        this.unpackSpoilersForStart( response.data );
+      } )
+      .catch( () => {
+        this.setState( {
+          spoilers_pending: false,
         } );
       } );
   };
@@ -1899,6 +2100,15 @@ export default class MapEditor extends React.PureComponent {
           }
           break;
 
+        case ACTION_WAITING_ON_SPOILERS:
+        case ACTION_REQUEST_START_SPOILERS:
+        case ACTION_REQUEST_SOLUTION_SPOILERS:
+          status_label = <React.Fragment><div className='mr-2 throbber'></div> Calculating spoilers...</React.Fragment>
+          if ( this.state.show_movement && this.state.solution_actions ) {
+            display_move_solution = true;
+          }
+          break;
+
         case ACTION_NO_ACTIVE_FIGURE:
         case ACTION_NO_REQUEST:
           break;
@@ -2046,6 +2256,7 @@ export default class MapEditor extends React.PureComponent {
                   destinations={this.state.show_destination ? this.state.display_destinations : null}
                   sightlineLines={this.state.show_sightline ? this.state.display_sightline_lines : null}
                   sightlinePoints={this.state.show_sightline ? this.state.display_sightline_points : null}
+                  spoilers={this.state.show_spoilers ? this.state.display_spoilers : null}
                   debugLines={this.state.display_debug_lines}
                   attacks={this.state.display_attacks}
                   focuses={this.state.show_focus ? this.state.display_focuses : null}
@@ -2210,6 +2421,20 @@ export default class MapEditor extends React.PureComponent {
                 <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-unblocked-lines-button'>
                   <div className='text-left'>
                     Show a sightline for the active {active_faction_string}'s attack.
+                  </div>
+                </UncontrolledTooltip>
+                <button
+                  type='button'
+                  className={'btn btn-sm btn-dark btn-block text-left' + ( this.state.show_spoilers ? ' active' : '' )}
+                  id='show-spoilers-button'
+                  onClick={this.handleDisplaySpoilersChanged}
+                  disabled={this.state.characters <= 0}
+                >
+                  Show Spoilers
+                </button>
+                <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-spoilers-button'>
+                  <div className='text-left'>
+                    Show/Hide spoiler covers over rooms which are not connected to any player character.
                   </div>
                 </UncontrolledTooltip>
                 {/*
