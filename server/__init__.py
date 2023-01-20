@@ -127,7 +127,7 @@ def spoilers():
   # todo: validate packed scenario format
   map_width = packed_scenario['width']
   map_height = packed_scenario['height']
-  scenario_id = packed_scenario['scenario_id']
+  spoilers_scenario_id = packed_scenario['spoilers_scenario_id']
 
   s = solver.Scenario()
   if not production:
@@ -137,7 +137,7 @@ def spoilers():
   s.unpack_scenario_for_spoilers( packed_scenario )
 
   solution = {
-    'scenario_id': scenario_id,
+    'spoilers_scenario_id': spoilers_scenario_id,
   }
   solution['spoilers'] = s.solve_spoilers()
 

@@ -303,8 +303,6 @@ class Scenario:
 
     add_elements( self.contents, 'walls', 'X' )
 
-    lam = [1,2,3]
-
     self.characters = packed_scenario['map']['characters']
 
     remap = {
@@ -1784,27 +1782,7 @@ class Scenario:
 
     return spoilers
 
-  # def solve_spoilers( self ):
-  #   self.calculate_spoilers()
-
-  #   def dereduce_locations( locations ):
-  #     return [ self.dereduce_location( _ ) for _ in locations ]
-
-  #   actions = [
-  #     {
-  #       'move': self.dereduce_location( _[0] ),
-  #       'attacks': dereduce_locations( _[1:] ),
-  #       'aoe': dereduce_locations( aoes[_] ),
-  #       'destinations': dereduce_locations( destinations[_] ),
-  #       'focuses': dereduce_locations( focuses[_] ),
-  #       'sightlines': list( sightlines[_] ),
-  #     }
-  #     for _ in raw_actions
-  #   ]
-
-  #   return 
-
-  def calculate_spoilers( self ):
+  def solve_spoilers( self ):
     # characters = [i for i,d in enumerate(self.figures) if d == 'C' ]
 
     if len(self.characters) > 0:
@@ -1815,16 +1793,11 @@ class Scenario:
     else:
       return [ False ] * self.MAP_SIZE
 
-  def solve_spoilers( self ):
-    spoilers = self.calculate_spoilers()
-    return spoilers
-
-  def solve( self, solve_reach, solve_sight, solve_spoilers ):
+  def solve( self, solve_reach, solve_sight ):
     actions = self.solve_move( False )
     reach = self.solve_reaches( _['move'] for _ in actions ) if solve_reach else None
     sight = self.solve_sights( _['move'] for _ in actions ) if solve_sight else None
-    spoilers = self.solve_spoilers() if solve_spoilers else None
-    return actions, reach, sight, spoilers
+    return actions, reach, sight
 
   def debug_plot_line( self, color, line ):
     self.debug_lines.add( ( color, ( scale_vector( DEBUG_PLOT_SCALE, line[0] ), scale_vector( DEBUG_PLOT_SCALE, line[1] ) ) ) )
