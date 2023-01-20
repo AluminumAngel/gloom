@@ -421,7 +421,7 @@ export default class MapEditor extends React.PureComponent {
       return ACTION_REQUEST_SPOILERS;
     }
 
-    if ( this.state.active_figure_index === NULL_INDEX ) {      
+    if ( this.state.active_figure_index === NULL_INDEX ) {
       return ACTION_NO_ACTIVE_FIGURE;
     }
 
@@ -723,7 +723,7 @@ export default class MapEditor extends React.PureComponent {
               figures = this.state.figures.slice();
               figures[index] = BRUSH.EMPTY;
               selection = NULL_INDEX;
-            }            
+            }
           }
           else {
             if ( isFigureAllowed( this.state.grid[index] ) ) {
@@ -735,7 +735,7 @@ export default class MapEditor extends React.PureComponent {
               if ( this.state.brush === this.inactiveFactionBrush() ) {
                 initiatives = this.state.initiatives.slice();
                 initiatives[index] = this.state.next_initiative;
-                selection = index;                
+                selection = index;
               }
               else {
                 initiatives = this.state.initiatives.slice();
@@ -1440,6 +1440,7 @@ export default class MapEditor extends React.PureComponent {
     else {
       solution_state = {
         solution_start_reach: views.reach ? views.reach[0].slice() : null,
+        solution_start_sight: views.sight ? views.sight[0].slice() : null,
       };
     }
     this.setDisplayedSolution( this.state.action_displayed, this.state.show_movement, this.state.show_reach, this.state.show_sight, this.state.show_spoilers, solution_state );
@@ -1840,7 +1841,7 @@ export default class MapEditor extends React.PureComponent {
 
     if ( !DEVELOPMENT ) {
       gtag( 'event', 'request', {
-        event_category: 'StartSpoilers', // ???
+        event_category: 'StartViews',
         event_label: this.getSolveViewLevel() > 1 ? 'sight' : 'reach',
         value: viewpoints.length,
       } );
@@ -1866,11 +1867,6 @@ export default class MapEditor extends React.PureComponent {
   };
 
   handleRequestSpoilers = () => {
-    // var viewpoints = [];
-    // for ( var i = 0; i < this.state.solution_actions.length; i++ ) {
-    //   viewpoints.push( this.state.solution_actions[i]['move'] );
-    // }
-
     if ( !DEVELOPMENT ) {
       gtag( 'event', 'request', {
         event_category: 'Spoilers',

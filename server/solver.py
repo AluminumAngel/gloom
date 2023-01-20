@@ -14,7 +14,6 @@ class Scenario:
 
     self.visibility_cache = {}
     self.path_cache = [ {}, {}, {}, {} ]
-    self.spoiler_cache = [ {}, {}, {}, {} ]
 
     self.debug_lines = set()
 
@@ -1772,13 +1771,6 @@ class Scenario:
           continue
 
         frontier.append( neighbor )
-
-    # self.spoiler_cache[0][cache_key] = (spoilers)
-    #
-    # # optimization: use the same distances for characters encountered during the traversal
-    # for c in found_characters:
-    #   cache_key = ( c, traversal_test )
-    #   self.spoiler_cache[0][cache_key] = ( spoilers )
 
     return spoilers
 
