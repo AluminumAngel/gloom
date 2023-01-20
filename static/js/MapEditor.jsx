@@ -1260,15 +1260,15 @@ export default class MapEditor extends React.PureComponent {
   };
 
   handleDisplayMovementChanged = () => {
-    this.setReachSightDisplayed( !this.state.show_movement, this.state.show_reach, this.state.show_sight )
+    this.setReachSightDisplayed( !this.state.show_movement, this.state.show_reach, this.state.show_sight, this.state.show_spoilers )
   };
 
   handleDisplayReachChanged = () => {
-    this.setReachSightDisplayed( this.state.show_movement, !this.state.show_reach, false )
+    this.setReachSightDisplayed( this.state.show_movement, !this.state.show_reach, false, this.state.show_spoilers )
   };
 
   handleDisplaySightChanged = () => {
-    this.setReachSightDisplayed( this.state.show_movement, false, !this.state.show_sight )
+    this.setReachSightDisplayed( this.state.show_movement, false, !this.state.show_sight, this.state.show_spoilers )
   };
 
   handleDisplayDestinationChanged = () => {
@@ -1409,7 +1409,7 @@ export default class MapEditor extends React.PureComponent {
       }
     }
 
-    this.setDisplayedSolution( DISPLAY_ALL_ACTIONS, this.state.show_movement, this.state.show_reach, this.state.show_sight, solution_state );
+    this.setDisplayedSolution( DISPLAY_ALL_ACTIONS, this.state.show_movement, this.state.show_reach, this.state.show_sight, this.state.show_spoilers, solution_state );
   }
 
   unpackViewsForActions( views ) {
@@ -1453,7 +1453,7 @@ export default class MapEditor extends React.PureComponent {
     this.setDisplayedSolution( action_displayed, this.state.show_movement, this.state.show_reach, this.state.show_sight, this.state.show_spoilers, null );
   }
 
-  setReachSightDisplayed( show_movement, show_reach, show_sight ) {
+  setReachSightDisplayed( show_movement, show_reach, show_sight, show_spoilers ) {
     if ( show_movement === this.state.show_movement ) {
       if ( show_reach === this.state.show_reach ) {
         if ( show_sight === this.state.show_sight ) {
@@ -1469,7 +1469,7 @@ export default class MapEditor extends React.PureComponent {
       action_displayed = this.state.action_displayed;
     }
 
-    this.setDisplayedSolution( action_displayed, show_movement, show_reach, show_sight, null );
+    this.setDisplayedSolution( action_displayed, show_movement, show_reach, show_sight, show_spoilers, null );
   }
 
   setDisplayedSolution( action_displayed, show_movement, show_reach, show_sight, show_spoilers, solution_state ) {
