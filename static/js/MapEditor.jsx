@@ -2388,7 +2388,7 @@ export default class MapEditor extends React.PureComponent {
                   onClick={this.handleDisplaySpoilersChanged}
                   disabled={ this.state.figures.some((b) => b === BRUSH.CHARACTER) === false }
                 >
-                  Show Spoilers
+                  Block Spoilers
                 </button>
                 <UncontrolledTooltip placement='left' fade={false} delay={C.TOOLTIP_DELAY} target='show-spoilers-button'>
                   <div className='text-left'>
