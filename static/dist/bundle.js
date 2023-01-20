@@ -6936,7 +6936,7 @@ var MapEditor = function (_React$PureComponent) {
                       return b === BRUSH.CHARACTER;
                     }) === false
                   },
-                  'Show Spoilers'
+                  'Block Spoilers'
                 ),
                 _react2.default.createElement(
                   _reactstrap.UncontrolledTooltip,
