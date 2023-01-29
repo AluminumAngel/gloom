@@ -11,7 +11,6 @@ unit_tests = False
 print_los = False
 show_each_action_separately = False
 profile = False
-spoilers = False
 rules = 1
 
 for arg in sys.argv[1:]:
@@ -23,8 +22,6 @@ for arg in sys.argv[1:]:
     show_each_action_separately = True
   elif arg == '--profile' or arg == '-p':
     profile = True
-  elif arg == '--spoilers' or arg == '-s':
-    spoilers = True
   elif arg == '--frost' or arg == '-f':
     rules = 0
   elif arg == '--gloom' or arg == '-g':
@@ -110,14 +107,7 @@ else:
   # print_map( scenario__, scenario__.MAP_WIDTH, scenario__.MAP_HEIGHT, scenario__.effective_walls, [ format_content( *_ ) for _ in zip( scenario__.figures, scenario__.contents ) ], [ format_numerical_label( _ ) for _ in range( 0, scenario__.MAP_SIZE ) ] )
   scenario.logging = True
   scenario.show_each_action_separately = show_each_action_separately
-  if spoilers:
-    s = scenario.solve_spoilers()
-    print_map(scenario, scenario.MAP_WIDTH, scenario.MAP_HEIGHT, scenario.effective_walls,
-              [format_content(*_) for _ in zip(scenario.figures, scenario.contents)],
-              [format_numerical_label(_) for _ in range(0, scenario.MAP_SIZE)],
-              [format_spoiler_label(_) for _ in s])
-  else:
-    actions = scenario.solve_move( False )
+  actions = scenario.solve_move( False )
   # scenario__.logging = True
   # scenario__.show_each_action_separately = show_each_action_separately
   # actions = scenario__.solve_move( False )

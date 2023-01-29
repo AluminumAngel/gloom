@@ -30,12 +30,6 @@ def format_aoe_content( value ):
     return Colors.red + ' A ' + Colors.end 
   return '   '
 
-def format_spoiler_label( value ):
-  if value:
-    return 'S'
-  else:
-    return ' '
-
 def format_numerical_label( value ):
   if value == MAX_VALUE:
     return '   '

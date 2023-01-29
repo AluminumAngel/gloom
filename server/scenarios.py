@@ -135,7 +135,7 @@ def init( s, width, height, aoe_width, aoe_height ):
   s.DEBUG_TOGGLE = False
 
 # TODO should be a member function?
-NUM_SCENARIOS = 153
+NUM_SCENARIOS = 150
 def init_from_test_scenario( s, scenario_index, rules ):
   init( s, 16, 7, 7, 7 )
 
@@ -3506,119 +3506,6 @@ def init_from_test_scenario( s, scenario_index, rules ):
 
   #######################################
   #
-
-  elif scenario_index == 150:
-    s.message = 'Spoiler test #1 - Open corner'
-
-    s.figures[7] = 'C'
-
-    s.contents[2] = 'X'
-    s.contents[9] = 'X'
-    s.contents[16] = 'X'
-    s.contents[22] = 'X'
-    s.contents[29] = 'X'
-
-  #######################################
-  #
-
-  elif scenario_index == 151:
-    s.message = 'Spoiler test #2 - Corner'
-
-    s.figures[7] = 'C'
-
-    s.contents[2] = 'X'
-    s.contents[9] = 'X'
-    s.contents[16] = 'X'
-    s.contents[22] = 'X'
-    s.contents[28] = 'X'
-    s.contents[29] = 'X'
-
-    #######################################
-    #
-
-  elif scenario_index == 152:
-    s.message = 'Spoiler test #3 - 2 corners, 1 open, 2 chars'
-
-    s.figures[7] = 'C'
-    s.figures[105] = 'C'
-
-    s.contents[2] = 'X'
-    s.contents[9] = 'X'
-    s.contents[16] = 'X'
-    s.contents[22] = 'X'
-    s.contents[28] = 'X'
-    s.contents[29] = 'X'
-
-    s.contents[84] = 'X'
-    s.contents[92] = 'X'
-    s.contents[100] = 'X'
-    s.contents[107] = 'X'
-
-  # #######################################
-  # #
-  #
-  # elif scenario_index == 152:
-  #   s.message = 'Spoiler test #3 - 2 corners, 2 chars'
-  #
-  #   s.figures[7] = 'C'
-  #   s.figures[105] = 'C'
-  #
-  #   s.contents[2] = 'X'
-  #   s.contents[9] = 'X'
-  #   s.contents[16] = 'X'
-  #   s.contents[22] = 'X'
-  #   s.contents[28] = 'X'
-  #   s.contents[29] = 'X'
-  #
-  #   s.contents[84] = 'X'
-  #   s.contents[85] = 'X'
-  #   s.contents[92] = 'X'
-  #   s.contents[100] = 'X'
-  #   s.contents[107] = 'X'
-
-  #######################################
-  #
-
-  # elif scenario_index == 152:
-  #   s.message = 'Spoiler test #3 - 2 corners, 1 open'
-  #
-  #   s.figures[7] = 'C'
-  #
-  #   s.contents[2] = 'X'
-  #   s.contents[9] = 'X'
-  #   s.contents[16] = 'X'
-  #   s.contents[22] = 'X'
-  #   s.contents[29] = 'X'
-  #
-  #   s.contents[84] = 'X'
-  #   s.contents[85] = 'X'
-  #   s.contents[92] = 'X'
-  #   s.contents[100] = 'X'
-  #   s.contents[107] = 'X'
-
-  #######################################
-  #
-
-  # elif scenario_index == 152:
-  #   s.message = 'Spoiler test #3 - 2 corners'
-  #
-  #   s.figures[7] = 'C'
-  #
-  #   s.contents[2] = 'X'
-  #   s.contents[9] = 'X'
-  #   s.contents[16] = 'X'
-  #   s.contents[22] = 'X'
-  #   s.contents[28] = 'X'
-  #   s.contents[29] = 'X'
-  #
-  #   s.contents[84] = 'X'
-  #   s.contents[85] = 'X'
-  #   s.contents[92] = 'X'
-  #   s.contents[100] = 'X'
-  #   s.contents[107] = 'X'
-  #
-  # #######################################
-  # #
 
   elif scenario_index == NUM_SCENARIOS:
     s.message = 'Line-of-sight test that is very close to fully blocked.'
