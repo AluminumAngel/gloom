@@ -11,6 +11,7 @@ import SightLines from './SightLines';
 import SightPoints from './SightPoints';
 import DebugLines from './DebugLines';
 import WallGrid from './WallGrid';
+import SpoilerHexGrid from './SpoilerHexGrid';
 
 const VIEW_BOX_SANDARD = -( C.GRID_MARGIN + C.GRID_DELTA ) + ' ' + -C.GRID_MARGIN + ' ' + ( C.GRID_EXTENT ) + ' ' + ( C.GRID_EXTENT );
 const VIEW_BOX_ROTATED = -C.GRID_MARGIN + ' ' + -( C.GRID_MARGIN + C.GRID_DELTA ) + ' ' + ( C.GRID_EXTENT ) + ' ' + ( C.GRID_EXTENT );
@@ -138,6 +139,9 @@ const Grid = React.memo( function( props ) {
           ref={props.dragRef}
           activeFaction={props.active_faction}
           onDragStart={props.onDragStart}
+        />
+        <SpoilerHexGrid
+          grid={props.spoilers}
         />
       </g>
     </svg>

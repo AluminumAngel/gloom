@@ -127,6 +127,7 @@ class Scenario:
     self.contents = [ ' ' ] * self.MAP_SIZE
     self.figures = [ ' ' ] * self.MAP_SIZE
     self.initiatives = [ 0 ] * self.MAP_SIZE
+    self.characters = []
 
     for location in figures:
       column = location / old_height
@@ -292,6 +293,28 @@ class Scenario:
 
     self.prepare_map()
 
+  def unpack_scenario_for_spoilers( self, packed_scenario ):
+    self.DEBUG_TOGGLE = int( packed_scenario.get( 'debug_toggle', '0' ) )
+
+    def add_elements( grid, key, content ):
+      for _ in packed_scenario['map'][key]:
+        grid[_] = content
+
+    add_elements( self.contents, 'walls', 'X' )
+
+    self.characters = packed_scenario['map']['characters']
+
+    remap = {
+      1: 0,
+      0: 1,
+      2: 5,
+    }
+    for _ in packed_scenario['map']['thin_walls']:
+      s = remap[_[1]]
+      self.walls[_[0]][s] = True
+
+    self.prepare_map()
+
   def can_end_move_on_standard( self, location ):
     return self.contents[location] in [ ' ', 'T', 'H', 'D' ] and self.figures[location] in [ ' ', 'A' ]
   def can_end_move_on_flying( self, location ):
@@ -301,7 +324,11 @@ class Scenario:
     return self.contents[location] in [ ' ', 'T', 'H', 'D' ] and self.figures[location] != 'C'
   def can_travel_through_flying( self, location ):
     return self.contents[location] in [ ' ', 'T', 'H', 'D', 'O' ]
-
+  def can_travel_through_spoiler( self, location ):
+    return self.contents[location] in [ ' ', 'T', 'H', 'D', 'O' ]
+  def is_wall( self, location ):
+    return self.contents[location] == 'X'
+  
   def is_trap_standard( self, location ):
     return self.contents[location] in [ 'T', 'H' ]
   def is_trap_flying( self, location ):
@@ -1715,6 +1742,48 @@ class Scenario:
 
   def solve_sights( self, viewpoints ):
     return [ self.solve_sight( _ ) for _ in viewpoints ]
+
+  def find_character_spoilers( self, character, characters, traversal_test, spoilers ):
+    frontier = collections.deque()
+    frontier.append( character )
+    visited = []
+    found_characters = []
+
+    while not len( frontier ) == 0:
+      current = frontier.popleft()
+      spoilers[current] = False
+      visited.append(current)
+      if current in characters and current not in found_characters:
+        found_characters.append(current)
+
+      for edge, neighbor in enumerate( self.neighbors[current] ):
+        if neighbor == -1:
+          continue
+        if neighbor in visited:
+          continue
+        else:
+          visited.append(neighbor)
+        if self.is_wall(neighbor):
+          spoilers[neighbor] = False
+        if not traversal_test( self, neighbor ):
+          continue
+        if self.walls[current][edge]:
+          continue
+
+        frontier.append( neighbor )
+
+    return spoilers
+
+  def solve_spoilers( self ):
+    # characters = [i for i,d in enumerate(self.figures) if d == 'C' ]
+
+    if len(self.characters) > 0:
+      spoilers = [True] * self.MAP_SIZE
+      for c in self.characters:
+        self.find_character_spoilers( c, self.characters, Scenario.can_travel_through_spoiler, spoilers )
+      return spoilers
+    else:
+      return [ False ] * self.MAP_SIZE
 
   def solve( self, solve_reach, solve_sight ):
     actions = self.solve_move( False )

@@ -75,6 +75,11 @@ polygon.sight {
   stroke-opacity: 0;
 }
 
+polygon.spoiler {
+  fill: darkgray;
+  opacity: 1.0;
+}
+
 /*
  * figures
  */
