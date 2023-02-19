@@ -1,8 +1,17 @@
+# todo:
+# - los and range are broken with reduce_map()
+# - clean up reduce_map - make it official
+
 import sys, collections, textwrap, itertools, pprint
 import scenarios
 from utils import *
 from settings import *
 from print_map import *
+
+# import time
+# perf_timers = {}
+# start_time = 0
+# last_time = 0
 
 class Scenario:
   def __init__( self ):
@@ -18,6 +27,7 @@ class Scenario:
     self.debug_lines = set()
 
   def reduce_map( self ):
+    assert not self.reduced
     self.reduced = True
     # print self.effective_walls
     # if hasattr( self, 'effective_walls' ):
@@ -25,6 +35,7 @@ class Scenario:
 
     # TODO: currently not used
     assert False
+    print 'reduce_map works for solves and is tested, but range and line-of-sight do not yet support it correct'
 
     # TODO: make sure we don't prepare twice
 
@@ -192,21 +203,25 @@ class Scenario:
     self.set_rules_flags()
 
   def set_rules_flags( self ):
-    # RULE_VERTEX_LOS:                LOS is only checked between vertices
-    # RULE_JUMP_DIFFICULT_TERRAIN:    difficult terrain effects the last hex of a jump move
-    # RULE_PROXIMITY_FOCUS:           proximity is ignored when determining moster focus
+    # RULE_VERTEX_LOS:                      LOS is only checked between vertices
+    # RULE_JUMP_DIFFICULT_TERRAIN:          difficult terrain effects the last hex of a jump move
+    # RULE_PROXIMITY_FOCUS:                 proximity is ignored when determining moster focus
+    # RULE_PRIORITIZE_FOCUS_DISADVANTAGE:   avoiding disadvantage against focus is prioritized over target count
     if self.FROST_RULES:
       self.RULE_VERTEX_LOS = False
       self.RULE_DIFFICULT_TERRAIN_JUMP = False
       self.RULE_PROXIMITY_FOCUS = False
+      self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE = False
     elif self.GLOOM_RULES:
       self.RULE_VERTEX_LOS = True
       self.RULE_DIFFICULT_TERRAIN_JUMP = True
       self.RULE_PROXIMITY_FOCUS = False
+      self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE = True
     elif self.JOTL_RULES:
       self.RULE_VERTEX_LOS = False
       self.RULE_DIFFICULT_TERRAIN_JUMP = False
       self.RULE_PROXIMITY_FOCUS = True
+      self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE = True
 
   def unpack_scenario( self, packed_scenario ):
     self.ACTION_MOVE = int( packed_scenario['move'] )
@@ -216,6 +231,9 @@ class Scenario:
     self.FLYING = int( packed_scenario['flying'] ) == 2
     self.MUDDLED = int( packed_scenario['muddled'] ) == 1
 
+    # added to packed_scenario in v2.10.0
+    self.TELEPORT = int( packed_scenario.get( 'teleport', '0' ) ) == 1
+    
     # added to packed_scenario in v2.5.0; removed in v2.6.0
     #self.JOTL_RULES = int( packed_scenario.get( 'jotl', '0' ) ) == 1
 
@@ -225,7 +243,7 @@ class Scenario:
     self.DEBUG_TOGGLE = int( packed_scenario.get( 'debug_toggle', '0' ) )
 
     def add_elements( grid, key, content ):
-      for _ in packed_scenario['map'][key]:
+      for _ in packed_scenario['map'].get( key, [] ):
         grid[_] = content
 
     add_elements( self.contents, 'walls', 'X' )
@@ -233,9 +251,12 @@ class Scenario:
     add_elements( self.contents, 'traps', 'T' )
     add_elements( self.contents, 'hazardous', 'H' )
     add_elements( self.contents, 'difficult', 'D' )
-    add_elements( self.contents, 'icy', 'I' )
     add_elements( self.figures, 'characters', 'C' )
     add_elements( self.figures, 'monsters', 'M' )
+    add_elements( self.figures, 'test', 'M' )
+
+    # added to packed_scenario in v2.8.0
+    add_elements( self.contents, 'icy', 'I' )
 
     active_figure_location = packed_scenario['active_figure']
     switch_factions = self.figures[active_figure_location] == 'C'
@@ -304,6 +325,8 @@ class Scenario:
     return self.contents[location] in [ ' ', 'T', 'H', 'D', 'I' ] and self.figures[location] != 'C'
   def can_travel_through_flying( self, location ):
     return self.contents[location] in [ ' ', 'T', 'H', 'D', 'O', 'I' ]
+  def can_travel_through_teleport( self, location ):
+    return self.contents[location] in [ ' ', 'X', 'T', 'H', 'D', 'O', 'I' ]
 
   def is_icy_standard( self, location ):
     return self.contents[location] == 'I'
@@ -388,7 +411,7 @@ class Scenario:
   def is_adjacent( self, location_a, location_b ):
     if location_b not in self.neighbors[location_a]:
       return False
-    distances = self.find_proximity_distances( location_a )
+    distances = self.find_proximity_distances( location_a, 2 )
     return distances[location_b] == 1
 
   def apply_rotated_aoe_offset( self, center, offset, rotation ):
@@ -681,7 +704,9 @@ class Scenario:
   # gives ~24% speed up on standard (simple) senarios with long, blocking walls
   # gives ~10% speed up on 131 (complex unit test)
   # gives no speed up on many unit tests (as they have very few occluders)
-  # the savings was measured with an in-memory cache (dictionary), not a file system, which may be slower
+  # the savings was measured with an in-memory cache (dictionary), not FileSystemCache, which may be slower
+  # later idea: bound the cache size; first in, first out
+  # should speed up results as your editing 
   def calculate_occluder_cache_key( self, location_a, location_b ):
     # does not take advantage of reflection symetry
     t, u, v = self.calculate_symmetric_coordinates( location_a, location_b )
@@ -961,7 +986,9 @@ class Scenario:
         if self.walls[current][edge]:
           continue
 
+        slide = False
         while self.is_icy( self, neighbor ):
+          slide = True
           next_neighbor = self.neighbors[neighbor][edge]
           if next_neighbor == -1:
             break
@@ -971,15 +998,15 @@ class Scenario:
             break
           neighbor = next_neighbor
 
-        neighbor_distance = distance + 1 + ( 0 if self.FLYING or self.JUMPING else self.additional_path_cost( neighbor ) )
-        neighbor_trap = self.is_trap( self, neighbor ) + ( 0 if self.JUMPING else trap )
+        neighbor_distance = distance + 1 + ( 0 if self.FLYING or self.JUMPING or self.TELEPORT or slide else self.additional_path_cost( neighbor ) )
+        neighbor_trap = self.is_trap( self, neighbor ) + ( 0 if self.JUMPING or self.TELEPORT else trap )
         if ( neighbor_trap, neighbor_distance ) < ( traps[neighbor], distances[neighbor] ):
           frontier.append( neighbor )
           distances[neighbor] = neighbor_distance
           traps[neighbor] = neighbor_trap
 
     if self.RULE_DIFFICULT_TERRAIN_JUMP:
-      if self.JUMPING:
+      if self.JUMPING and not self.TELEPORT:
         for location in range( self.MAP_SIZE ):
           distances[location] += self.additional_path_cost( location )
         distances[start] -= self.additional_path_cost( start )
@@ -996,12 +1023,13 @@ class Scenario:
     distances = list( distances )
     traps = list( traps )
     if not self.FLYING:
-      if not self.JUMPING or self.RULE_DIFFICULT_TERRAIN_JUMP:
-        destination_additional_path_cost = self.additional_path_cost( destination )
-        if destination_additional_path_cost > 0:
-          distances = [ _ + destination_additional_path_cost if _ != MAX_VALUE else _ for _ in distances ]
-        for location in range( self.MAP_SIZE ):
-          distances[location] -= self.additional_path_cost( location )
+      if not self.TELEPORT:
+        if not self.JUMPING or self.RULE_DIFFICULT_TERRAIN_JUMP:
+          destination_additional_path_cost = self.additional_path_cost( destination )
+          if destination_additional_path_cost > 0:
+            distances = [ _ + destination_additional_path_cost if _ != MAX_VALUE else _ for _ in distances ]
+          for location in range( self.MAP_SIZE ):
+            distances[location] -= self.additional_path_cost( location )
 
       if self.is_trap( self, destination ):
         traps = [ _ + 1 if _ != MAX_VALUE else _ for _ in traps ]
@@ -1025,21 +1053,13 @@ class Scenario:
     distances = [ MAX_VALUE ] * self.MAP_SIZE
     traps = [ MAX_VALUE ] * self.MAP_SIZE
 
-    # # ground truth
-    # for location in range( self.MAP_SIZE ):
-    #   if traversal_test( self, location ):
-    #     d, t = self.find_path_distances( location, traversal_test )
-    #     distances[location] = d[destination]
-    #     traps[location] = t[destination]
-    # return distances, traps
-
     frontier = collections.deque()
     frontier.append( destination )
 
     distances[destination] = 0
     traps[destination] = 0
-    if self.JUMPING:
-      if self.RULE_DIFFICULT_TERRAIN_JUMP:
+    if self.JUMPING or self.TELEPORT:
+      if not self.TELEPORT and self.RULE_DIFFICULT_TERRAIN_JUMP:
         distances[destination] += self.additional_path_cost( destination )
       traps[destination] += int( self.is_trap( self, destination ) )
 
@@ -1069,9 +1089,10 @@ class Scenario:
           if not could_have_stopped_here:
             continue
 
+        slide = False
         while True:
-          neighbor_distance = distance + 1 + ( 0 if self.FLYING or self.JUMPING else self.additional_path_cost( current ) )
-          neighbor_trap = trap + ( 0 if self.JUMPING else self.is_trap( self, current ) )
+          neighbor_distance = distance + 1 + ( 0 if self.FLYING or self.JUMPING or self.TELEPORT or slide else self.additional_path_cost( current ) )
+          neighbor_trap = trap + ( 0 if self.JUMPING or self.TELEPORT else self.is_trap( self, current ) )
           if ( neighbor_trap, neighbor_distance ) < ( traps[neighbor], distances[neighbor] ):
             frontier.append( neighbor )
             distances[neighbor] = neighbor_distance
@@ -1079,6 +1100,7 @@ class Scenario:
 
           if not self.is_icy( self, neighbor ):
             break
+          slide = True
             
           next_neighbor = self.neighbors[neighbor][edge]
           if next_neighbor == -1:
@@ -1089,16 +1111,30 @@ class Scenario:
             break
           neighbor = next_neighbor
 
-    if self.JUMPING:
-      if self.RULE_DIFFICULT_TERRAIN_JUMP:
+    if self.JUMPING or self.TELEPORT:
+      if not self.TELEPORT and self.RULE_DIFFICULT_TERRAIN_JUMP:
         distances[destination] -= self.additional_path_cost( destination )
       traps[destination] -= int( self.is_trap( self, destination ) )
+
+    # # test against ground truth
+    # gt_distances = [ MAX_VALUE ] * self.MAP_SIZE
+    # gt_traps = [ MAX_VALUE ] * self.MAP_SIZE
+    # for location in range( self.MAP_SIZE ):
+    #   if traversal_test( self, location ):
+    #     d, t = self.find_path_distances( location, traversal_test )
+    #     gt_distances[location] = d[destination]
+    #     gt_traps[location] = t[destination]
+    # if distances != gt_distances:
+    #   print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in distances ] )
+    #   print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in gt_distances ] )
+    # assert distances == gt_distances
+    # assert traps == gt_traps
 
     self.path_cache[1][cache_key] = ( distances, traps )
     return distances, traps
 
-  def find_proximity_distances( self, start ):
-    cache_key = ( start )
+  def find_proximity_distances( self, start, limit ):
+    cache_key = ( start, limit )
     if cache_key in self.path_cache[2]:
       return self.path_cache[2][cache_key]
 
@@ -1120,7 +1156,8 @@ class Scenario:
           continue
         neighbor_distance = distance + 1
         if neighbor_distance < distances[neighbor]:
-          frontier.append( neighbor )
+          if neighbor_distance < limit:
+            frontier.append( neighbor )
           distances[neighbor] = neighbor_distance
 
     self.path_cache[2][cache_key] = distances
@@ -1152,6 +1189,13 @@ class Scenario:
     return distances
 
   def calculate_monster_move( self ):
+    # global start_time
+    # global last_time
+    # global perf_timers
+    # start_time = last_time = time.time()
+
+    assert not self.reduced
+
     if self.ACTION_RANGE == 0 or self.ACTION_TARGET == 0:
       ATTACK_RANGE = 1
       SUSCEPTIBLE_TO_DISADVANTAGE = False
@@ -1180,6 +1224,9 @@ class Scenario:
       self.can_travel_through = Scenario.can_travel_through_standard
       self.is_icy = Scenario.is_icy_standard
       self.is_trap = Scenario.is_trap_standard
+    if self.TELEPORT:
+      self.can_travel_through = Scenario.can_travel_through_teleport
+      self.is_icy = Scenario.is_icy_flying
 
     if self.logging:
       map_debug_tags = [ ' ' ] * self.MAP_SIZE
@@ -1217,7 +1264,7 @@ class Scenario:
         out += ', JUMPING'
       if self.MUDDLED:
         out += ', MUDDLED'
-      out += ', DEBUG_TOGGLE = %s' % ( 'TRUE' if self.DEBUG_TOGGLE else 'FALSE' )
+      # out += ', DEBUG_TOGGLE = %s' % ( 'TRUE' if self.DEBUG_TOGGLE else 'FALSE' )
       if out == '':
         out = 'NO ACTION'
       else:
@@ -1234,7 +1281,7 @@ class Scenario:
     # find active monster
     active_monster = self.figures.index( 'A' )
     travel_distances, trap_counts = self.find_path_distances( active_monster, self.can_travel_through )
-    proximity_distances = self.find_proximity_distances( active_monster )
+    proximity_distances = self.find_proximity_distances( active_monster, MAX_VALUE )
     # rev_travel_distances, rev_trap_counts = self.find_path_distances_to_destination( active_monster, self.can_travel_through )
     # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in trap_counts ] )
     # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in travel_distances ] )
@@ -1287,6 +1334,10 @@ class Scenario:
     # find characters
     characters = [ _ for _, figure in enumerate( self.figures ) if figure == 'C' ]
 
+    # _ = time.time()
+    # perf_timers['0 setup'] = _ - last_time
+    # last_time = _
+
     # find monster focuses
 
     if not len( characters ):
@@ -1317,7 +1368,7 @@ class Scenario:
             s.focuses = { character }
 
       for character in characters:
-        range_to_character = self.find_proximity_distances( character )
+        range_to_character = self.find_proximity_distances( character, ATTACK_RANGE )
         # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( _ ) for _ in self.contents ], [ format_numerical_label( _ ) for _ in range_to_character ] )
 
         for location in travel_distance_sorted_map:
@@ -1344,7 +1395,7 @@ class Scenario:
                         consider_focus()
                         return
                 else:
-                  distances = self.find_proximity_distances( location )
+                  distances = self.find_proximity_distances( location, ATTACK_RANGE )
                   for aoe_pattern in aoe_pattern_list:
                     for aoe_offset in aoe_pattern:
                       target = self.apply_aoe_offset( character, aoe_offset )
@@ -1360,7 +1411,7 @@ class Scenario:
       # rank characters for secondary targeting
       focus_ranks = {}
       sorted_infos = sorted(
-        ( ( proximity_distances[_], self.initiatives[_] ), _ )
+        ( ( 0 if self.RULE_PROXIMITY_FOCUS else proximity_distances[_], self.initiatives[_] ), _ )
         for _ in characters
       )
       best_info = sorted_infos[0][0]
@@ -1372,6 +1423,10 @@ class Scenario:
         focus_ranks[character] = rank
       num_focus_ranks = rank + 1
 
+    # _ = time.time()
+    # perf_timers['1 focus'] = _ - last_time
+    # last_time = _
+
     # players choose among focus ties
     for focus in focuses:
 
@@ -1379,13 +1434,25 @@ class Scenario:
 
       class t:
         groups = set()
-        best_group = (
-          MAX_VALUE - 1, # traps to the attack location
-          0,             # can reach the attack location
-          1,             # disadvantage against the focus
-          0,             # total number of targets
-          MAX_VALUE - 1, # path length to the attack location
-        ) + tuple( [ 0 ] * num_focus_ranks ) # target count for each focus rank
+        TRAP_COUNT_INDEX = 0
+        CAN_REACH_INDEX = 1
+        DISADVANTAGE_AGAINST_FOCUS_INDEX = 2
+        TARGET_COUNT_INDEX = 3 if self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE else 2
+        if self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE:
+          best_group = (
+            MAX_VALUE - 1, # traps to the attack location
+            0,             # can reach the attack location
+            1,             # disadvantage against the focus
+            0,             # total number of targets
+            MAX_VALUE - 1, # path length to the attack location
+          ) + tuple( [ 0 ] * num_focus_ranks ) # target count for each focus rank
+        else:
+          best_group = (
+            MAX_VALUE - 1, # traps to the attack location
+            0,             # can reach the attack location
+            0,             # total number of targets
+            MAX_VALUE - 1, # path length to the attack location
+          ) + tuple( [ 0 ] * num_focus_ranks ) # target count for each focus rank
       def consider_group( num_targets, preexisting_targets, preexisting_targets_of_rank, preexisting_targets_disadvantage, aoe_hexes ):
         available_targets = targetable_characters - set( preexisting_targets )
         max_num_targets = min( num_targets, len( available_targets ) ) if not ALL_TARGETS else len( available_targets )
@@ -1402,13 +1469,21 @@ class Scenario:
           for target in target_set:
             targets_of_rank[focus_ranks[target]] += 1
 
-          this_group = (
-            trap_counts[location],
-            -can_reach_location,
-            int( has_disadvantage_against_focus ),
-            -len( targets ),
-            travel_distances[location],
-          ) + tuple( -_ for _ in targets_of_rank )
+          if self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE:
+            this_group = (
+              trap_counts[location],
+              -can_reach_location,
+              int( has_disadvantage_against_focus ),
+              -len( targets ),
+              travel_distances[location],
+            ) + tuple( -_ for _ in targets_of_rank )
+          else:
+            this_group = (
+              trap_counts[location],
+              -can_reach_location,
+              -len( targets ),
+              travel_distances[location],
+            ) + tuple( -_ for _ in targets_of_rank )
 
           # print location, this_group, t.best_group
           if this_group == t.best_group:
@@ -1425,16 +1500,16 @@ class Scenario:
           can_reach_location = travel_distances[location] <= self.ACTION_MOVE
 
           # early test of location using the first two elements of the minimized tuple
-          if trap_counts[location] > t.best_group[0]:
+          if trap_counts[location] > t.best_group[t.TRAP_COUNT_INDEX]:
             continue
-          if trap_counts[location] == t.best_group[0]:
-            if not can_reach_location and t.best_group[1] == -1:
+          if trap_counts[location] == t.best_group[t.TRAP_COUNT_INDEX]:
+            if not can_reach_location and t.best_group[t.CAN_REACH_INDEX] == -1:
               continue
 
           has_disadvantage_against_focus = SUSCEPTIBLE_TO_DISADVANTAGE and self.is_adjacent( location, focus )
 
           # determine the set of characters attackable by non-AoE attacks
-          range_to_location = self.find_proximity_distances( location )
+          range_to_location = self.find_proximity_distances( location, ATTACK_RANGE )
           targetable_characters = {
             _
             for _ in characters
@@ -1442,6 +1517,8 @@ class Scenario:
           }
 
           if not AOE_ACTION:
+            if focus not in targetable_characters:
+              continue
             # add non-AoE targets and consider resulting actions
             consider_group( 1 + PLUS_TARGET_FOR_MOVEMENT, [], [ 0 ] * num_focus_ranks, 0, [] )
 
@@ -1469,7 +1546,7 @@ class Scenario:
 
           else:
             # loop over all aoe placements that hit characters
-            distances = self.find_proximity_distances( location )
+            distances = self.find_proximity_distances( location, ATTACK_RANGE )
             for aoe_location in characters:
               for aoe_pattern in aoe_pattern_list:
                 aoe_targets = []
@@ -1496,6 +1573,10 @@ class Scenario:
                   if aoe_targets:
                     consider_group( PLUS_TARGET, aoe_targets, aoe_targets_of_rank, aoe_targets_disadvantage, aoe_hexes )
 
+      # _ = time.time()
+      # perf_timers['2 target group'] = _ - last_time
+      # last_time = _
+
       # given the target group, find the best destinations to attack from
       # based on the following priorities
 
@@ -1511,7 +1592,7 @@ class Scenario:
         max_num_targets = min( num_targets, len( available_targets ) ) if not ALL_TARGETS else len( available_targets )
 
         # if its impossible to attack a group as big as a chosen target group
-        if len( preexisting_targets ) + max_num_targets != -t.best_group[3]:
+        if len( preexisting_targets ) + max_num_targets != -t.best_group[t.TARGET_COUNT_INDEX]:
           return
 
         # loop over every possible set of potential targets
@@ -1524,8 +1605,9 @@ class Scenario:
             continue
 
           targets_disadvantage = preexisting_targets_disadvantage
-          for target in target_set:
-            targets_disadvantage += int( SUSCEPTIBLE_TO_DISADVANTAGE and self.is_adjacent( location, target ) )
+          if SUSCEPTIBLE_TO_DISADVANTAGE:
+            for target in target_set:
+              targets_disadvantage += int( self.is_adjacent( location, target ) )
 
           this_destination = (
             targets_disadvantage,
@@ -1549,19 +1631,20 @@ class Scenario:
 
           # early test of location using the first two elements of the minimized tuple
 
-          if trap_counts[location] != t.best_group[0]:
+          if trap_counts[location] != t.best_group[t.TRAP_COUNT_INDEX]:
             continue
 
           can_reach_location = travel_distances[location] <= self.ACTION_MOVE
-          if -can_reach_location != t.best_group[1]:
+          if -can_reach_location != t.best_group[t.CAN_REACH_INDEX]:
             continue
 
-          has_disadvantage_against_focus = SUSCEPTIBLE_TO_DISADVANTAGE and self.is_adjacent( location, focus )
-          if int( has_disadvantage_against_focus ) != t.best_group[2]:
-            continue 
+          if self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE:
+            has_disadvantage_against_focus = SUSCEPTIBLE_TO_DISADVANTAGE and self.is_adjacent( location, focus )
+            if int( has_disadvantage_against_focus ) != t.best_group[t.DISADVANTAGE_AGAINST_FOCUS_INDEX]:
+              continue 
 
           # determine the set of characters attackable by non-AoE attacks
-          range_to_location = self.find_proximity_distances( location )
+          range_to_location = self.find_proximity_distances( location, ATTACK_RANGE )
           targetable_characters = {
             _
             for _ in characters
@@ -1569,6 +1652,8 @@ class Scenario:
           }
 
           if not AOE_ACTION:
+            if focus not in targetable_characters:
+              continue
             # add non-AoE targets and consider resulting actions
             consider_destination( 1 + PLUS_TARGET_FOR_MOVEMENT, [], [ 0 ] * num_focus_ranks, 0, [] )
 
@@ -1596,7 +1681,7 @@ class Scenario:
 
           else:
             # loop over all aoe placements that hit characters
-            distances = self.find_proximity_distances( location )
+            distances = self.find_proximity_distances( location, ATTACK_RANGE )
             for aoe_location in characters:
               for aoe_pattern in aoe_pattern_list:
                 aoe_targets = []
@@ -1684,6 +1769,10 @@ class Scenario:
         else:
           focus_map[action] = { focus }
 
+      # _ = time.time()
+      # perf_timers['3 destination group'] = _ - last_time
+      # last_time = _
+
     # if we find no actions, stand still
     if not actions:
       action = ( active_monster, )
@@ -1727,6 +1816,19 @@ class Scenario:
             action_debug_tags[target] = 'a'
           # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( figures, self.contents ) ], [ format_initiative( _ ) for _ in self.initiatives ], action_debug_tags )
 
+    # _ = time.time()
+    # perf_timers['4 finalize'] = _ - last_time
+    # perf_timers['total'] = _ - start_time
+
+    # total = perf_timers['total'] * 10000.0
+    # if total > 1:
+    #   keys = perf_timers.keys()
+    #   keys.sort()
+    #   for key in keys:
+    #     if key != 'total':
+    #       print '[%20s] %7i (%i%%)' % ( key, perf_timers[key] * 10000, 100 * perf_timers[key] * 10000 / total )
+    #   print '[%20s] %7i' % ( 'total', perf_timers['total'] * 10000 )
+
     return actions, aoes, destinations, focus_map, sightlines, debug_lines
 
   def solve_reach( self, monster ):
@@ -1737,7 +1839,7 @@ class Scenario:
     else:
       ATTACK_RANGE = self.ACTION_RANGE
 
-    distances = self.find_proximity_distances( monster )
+    distances = self.find_proximity_distances( monster, ATTACK_RANGE )
 
     reach = []
     run_begin = None
@@ -1778,35 +1880,38 @@ class Scenario:
     return sight
 
   def solve_move( self, test ):
-    # # export to scenario
-    # # to create using client, set GRID_HEIGHT to 7
-    # print '#######################################'
-    # for index, ( figure, initiative ) in enumerate( zip( self.figures, self.initiatives ) ):
-    #   if figure != ' ':
-    #     print '    s.figures[%r] = %r' % ( index, figure )
-    #     if initiative != 0:
-    #       print '    s.initiatives[%r] = %r' % ( index, initiative )
-    # print
-    # for index, content in enumerate( self.contents ):
-    #   if content != ' ':
-    #     print '    s.contents[%r] = %r' % ( index, content )
-    # for index, walls in enumerate( self.walls ):
-    #   for edge in range( 3 ):
-    #     if walls[edge]:
-    #       print '    s.walls[%r][%r] = %r' % ( index, edge, walls[edge] )
-    # print
-    # print '    s.ACTION_MOVE = %r' % self.ACTION_MOVE
-    # if self.ACTION_RANGE != 0:
-    #   print '    s.ACTION_RANGE = %r' % self.ACTION_RANGE
-    # if self.ACTION_TARGET != 1:
-    #   print '    s.ACTION_TARGET = %r' % self.ACTION_TARGET
-    # if self.FLYING:
-    #   print '    s.FLYING = %r' % self.FLYING
-    # if self.JUMPING:
-    #   print '    s.JUMPING = %r' % self.JUMPING
-    # if self.MUDDLED:
-    #   print '    s.MUDDLED = %r' % self.MUDDLED
-    # print '#######################################'
+    if self.logging:
+      # export to scenario
+      # to create using client, set GRID_HEIGHT to 7
+      print '#######################################'
+      for index, ( figure, initiative ) in enumerate( zip( self.figures, self.initiatives ) ):
+        if figure != ' ':
+          print '    s.figures[%r] = %r' % ( index, figure )
+          if initiative != 0:
+            print '    s.initiatives[%r] = %r' % ( index, initiative )
+      print
+      for index, content in enumerate( self.contents ):
+        if content != ' ':
+          print '    s.contents[%r] = %r' % ( index, content )
+      for index, walls in enumerate( self.walls ):
+        for edge in range( 3 ):
+          if walls[edge]:
+            print '    s.walls[%r][%r] = %r' % ( index, edge, walls[edge] )
+      print
+      print '    s.ACTION_MOVE = %r' % self.ACTION_MOVE
+      if self.ACTION_RANGE != 0:
+        print '    s.ACTION_RANGE = %r' % self.ACTION_RANGE
+      if self.ACTION_TARGET != 1:
+        print '    s.ACTION_TARGET = %r' % self.ACTION_TARGET
+      if self.FLYING:
+        print '    s.FLYING = %r' % self.FLYING
+      if self.JUMPING:
+        print '    s.JUMPING = %r' % self.JUMPING
+      if self.TELEPORT:
+        print '    s.TELEPORT = %r' % self.TELEPORT
+      if self.MUDDLED:
+        print '    s.MUDDLED = %r' % self.MUDDLED
+      print '#######################################'
 
     start_location = self.figures.index( 'A' )
 
