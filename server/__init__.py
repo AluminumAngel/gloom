@@ -13,11 +13,11 @@ debug = not production
 
 title = 'Gloomhaven Monster Mover'
 version_major = 2
-version_minor = 8
+version_minor = 11
 version_build = 0
 version = str( version_major ) + '.' + str( version_minor ) + '.' + str( version_build )
 client_local_storage_version_major = 1
-client_local_storage_version_minor = 3
+client_local_storage_version_minor = 5
 client_local_storage_version_build = 0
 client_local_storage_version = str( client_local_storage_version_major ) + '.' + str( client_local_storage_version_minor ) + '.' + str( client_local_storage_version_build )
 
@@ -71,6 +71,7 @@ def solve():
     s.debug_visuals = True
   scenarios.init( s, map_width, map_height, 7, 7 )
   s.unpack_scenario( packed_scenario )
+  # s.reduce_map()
   actions, reach, sight = s.solve( solve_view > 0, solve_view > 1 )
 
   solution = {
