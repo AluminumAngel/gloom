@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+  <head>
+    <title>{{ title }} - v{{ version }}{{ debug_server and ' - Debug' or '' }}</title>
+
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
+
+    <script>
+      URL_FOR = {
+        root: '{{ url_for( "root" ) }}',
+        los: '{{ url_for( "los" ) }}',
+        solve: '{{ url_for( "solve" ) }}',
+        views: '{{ url_for( "views" ) }}',
+      };
+      DEVELOPMENT = ( {{ debug_server and "true" or "false" }} );
+      APP_NAME = '{{ title }}';
+      APP_VERSION = '{{ version }}';
+      DATA_VERSION = '{{ client_local_storage_version }}';
+      DATA_VERSION_MAJOR = ( {{ client_local_storage_version_major }} );
+      DATA_VERSION_MINOR = ( {{ client_local_storage_version_minor }} );
+      DATA_VERSION_BUILD = ( {{ client_local_storage_version_build }} );
+      START_IN_LOS_MODE = '{{ los_mode }}';
+    </script>
+
+    <script async src='https://www.googletagmanager.com/gtag/js?id=UA-119941535-1'></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ dataLayer.push( arguments ); }
+      if ( !DEVELOPMENT ) {
+        gtag( 'js', new Date() );
+        gtag( 'config', 'UA-119941535-1' );
+      }
+    </script>
+
+    <link rel='stylesheet' href='{{ url_for( 'static', filename='darkly.bootstrap.min.css' ) }}'>
+    <link rel='stylesheet' href='{{ url_for( 'static', filename='style.css', version=version ) }}'>
+  </head>
+
+  <body>
+    <div id='root'></div>
+    <script src='{{ url_for( 'static', filename='bundle.js', version=version ) }}' type='text/javascript'></script>
+  </body>
+
+</html>
