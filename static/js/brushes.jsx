@@ -7,7 +7,7 @@ export const HAZARDOUS_TERRAIN = 4;
 export const DIFFICULT_TERRAIN = 5;
 export const ICY_TERRAIN = 6;
 export const FIRST_TERRAIN_BRUSH = OBSTACLE;
-export const LAST_TERRAIN_BRUSH = DIFFICULT_TERRAIN;
+export const LAST_TERRAIN_BRUSH = ICY_TERRAIN;
 
 export const CHARACTER = 7;
 export const MONSTER = 8;

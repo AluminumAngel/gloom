@@ -96,6 +96,7 @@ const STATE_KEYS = [
   'range',
   'target',
   'flying',
+  'teleport',
   'muddled',
   'game_rules',
   'aoe_grid',
@@ -132,6 +133,11 @@ const SIMPLE_STATE_PROPERTIES = {
     bits: 2,
     min: 0,
     max: 2,
+  },
+  teleport: {
+    bits: 1,
+    min: 0,
+    max: 1,
   },
   muddled: {
     bits: 1,
@@ -221,6 +227,7 @@ export default class MapEditor extends React.PureComponent {
       range: 0,
       target: 1,
       flying: 0,
+      teleport: 0,
       muddled: 0,
       game_rules: 0,
       // debug_toggle: 0,
@@ -307,10 +314,7 @@ export default class MapEditor extends React.PureComponent {
     if ( !this.local_storage_available ) return;
 
     var previous_version = localStorage.getItem( 'version' )
-    if ( previous_version !== '1.0.0'
-      && previous_version !== '1.1.0'
-      && previous_version !== DATA_VERSION
-    ) {
+    if ( previous_version !== DATA_VERSION ) {
       localStorage.clear();
     }
     else {
@@ -487,6 +491,7 @@ export default class MapEditor extends React.PureComponent {
       figure,
       this.state.initiatives[index],
       this.state.flying,
+      this.state.teleport,
       this.state.rotate_grid
     );
   };
@@ -831,6 +836,9 @@ export default class MapEditor extends React.PureComponent {
     // write game_rules
     bit_writer.writeBits( SIMPLE_STATE_PROPERTIES['game_rules'].bits, this.state['game_rules'] );
 
+    // write teleport
+    bit_writer.writeBits( SIMPLE_STATE_PROPERTIES['teleport'].bits, this.state['teleport'] );
+
     // write active_figure_index
     var value = this.state.active_figure_index;
     if ( value === -1 ) {
@@ -945,6 +953,15 @@ export default class MapEditor extends React.PureComponent {
     // - http://localhost:5000/MUAOGAiAwEBgmAFIgGoBSIPaAhILQOEKaAA [JotL rules]
     // - http://localhost:5000/MUAOEAiAwEBgmAFIgGoBSIPaAhILQOEKaAA [Frost rules]
     // - http://localhost:5000/MUgFVC1gwCaEEggzEM4nJEAogQA
+    // v1.5.0
+    // - http://localhost:5000/UUgFpFqgi04JECBAgAABQgkEwQAYAANgkDACYQFCCQTCABgoXECAAAECBAgQECBQgABCBoQEwACBMAAGChcQgAJhgAABAgQEECBAgHABAWgACcIYwoABA2GAUAEBiBAGBIIhATBAuIAAZIAKYQxhSAAMECogAB3CAAECBAgQIECAAOECQgJggFACAQIECBAgAA
+    // - http://localhost:5000/UUgFplrAjYMIECBAgAABAgQIECB0QGgADBY2IBiGBMAAoQOCYIiAsAGhATBQ6ICQABgkQEAAAcIGBAgQEECAAAGChQ8IGDBIgJAAYQMCYBAMCBQABsIAoQOCYMAAAYJgoNABAYMECBAshEBAAAECBAgIIED4gEABAgQKIRA0AAYIEAADhQ8IgkGCYJAwAoEwAAYKIxAWIJxAAApAAmgAEQgnECBAgAAB
+    // - http://localhost:5000/UUAOJBAAgYHAMAOQANUCkAa1BSQWgMIV0AA [Gloom rules]
+    // - http://localhost:5000/UUAOKBAAgYHAMAOQANUCkAa1BSQWgMIV0AA [JotL rules]
+    // - http://localhost:5000/UUAOIBAAgYHAMAOQANUCkAa1BSQWgMIV0AA [Frost rules]
+    // - http://localhost:5000/UUgFpFrAgE0IJRBmIJxPSIBQAgE
+    // - http://localhost:5000/UQgE1A4AgXbAkAIBAgQIECC8AAU [teleport]
+    // - http://localhost:5000/UQgEBBvAgNjAEANjBkYMbJiBEQMUAA [icy terrain]
 
     try {
       var bit_reader = new BitReader( url_scenario );
@@ -955,12 +972,14 @@ export default class MapEditor extends React.PureComponent {
       const data_version_build = bit_reader.readBits( 3 );
       var game_rules_data_version;
       var grid_data_version;
+      var teleport_data_version;
       if ( data_version_major === 1
         && data_version_minor === 0
         && data_version_build === 0
       ) {
         game_rules_data_version = 0;
         grid_data_version = 0;
+        teleport_data_version = 0;
       }
       else if ( data_version_major === 1
         && data_version_minor === 1
@@ -968,6 +987,7 @@ export default class MapEditor extends React.PureComponent {
       ) {
         game_rules_data_version = 1;
         grid_data_version = 0;
+        teleport_data_version = 0;
       }
       else if ( data_version_major === 1
         && data_version_minor === 2
@@ -975,6 +995,23 @@ export default class MapEditor extends React.PureComponent {
       ) {
         game_rules_data_version = 2;
         grid_data_version = 0;
+        teleport_data_version = 0;
+      }
+      else if ( data_version_major === 1
+        && data_version_minor === 3
+        && data_version_build === 0
+      ) {
+        game_rules_data_version = 2;
+        grid_data_version = 1;
+        teleport_data_version = 0;
+      }
+      else if ( data_version_major === 1
+        && data_version_minor === 4
+        && data_version_build === 0
+      ) {
+        game_rules_data_version = 2;
+        grid_data_version = 1;
+        teleport_data_version = 0;
       }
       else if ( data_version_major !== DATA_VERSION_MAJOR
         || data_version_minor !== DATA_VERSION_MINOR
@@ -985,6 +1022,7 @@ export default class MapEditor extends React.PureComponent {
       else {
         game_rules_data_version = 2;
         grid_data_version = 1;
+        teleport_data_version = 1;
       }
 
       // read simple keys
@@ -999,29 +1037,24 @@ export default class MapEditor extends React.PureComponent {
       } );
 
       // read game_rules or jotl
-      if ( game_rules_data_version === 0 )
-      {
+      if ( game_rules_data_version === 0 ) {
         scenario_state['game_rules'] = GAME_RULES_GLOOM;
       }
-      else if ( game_rules_data_version === 1 )
-      {
+      else if ( game_rules_data_version === 1 ) {
         const value = bit_reader.readBits( SIMPLE_STATE_PROPERTIES['jotl'].bits );
         validate(
           value,
           SIMPLE_STATE_PROPERTIES['jotl'].min,
           SIMPLE_STATE_PROPERTIES['jotl'].max
         );
-        if ( value === 0 )
-        {
+        if ( value === 0 ) {
           scenario_state['game_rules'] = GAME_RULES_GLOOM;
         }
-        else
-        {
+        else {
           scenario_state['game_rules'] = GAME_RULES_JOTL;
         }
       }
-      else
-      {
+      else {
         const value = bit_reader.readBits( SIMPLE_STATE_PROPERTIES['game_rules'].bits );
         validate(
           value,
@@ -1029,6 +1062,20 @@ export default class MapEditor extends React.PureComponent {
           SIMPLE_STATE_PROPERTIES['game_rules'].max
         );
         scenario_state['game_rules'] = value;
+      }
+
+      // read teleport
+      if ( teleport_data_version === 0 ) {
+        scenario_state['teleport'] = 0;
+      }
+      else {
+        const value = bit_reader.readBits( SIMPLE_STATE_PROPERTIES['teleport'].bits );
+        validate(
+          value,
+          SIMPLE_STATE_PROPERTIES['teleport'].min,
+          SIMPLE_STATE_PROPERTIES['teleport'].max
+        );
+        scenario_state['teleport'] = value;
       }
 
       var grid_size;
@@ -1273,6 +1320,12 @@ export default class MapEditor extends React.PureComponent {
   handleFlyingChange = ( value ) => {
     this.setScenario( {
       flying: value,
+    } );
+  };
+
+  handleTeleportChange = ( value ) => {
+    this.setScenario( {
+      teleport: value,
     } );
   };
 
@@ -1557,6 +1610,7 @@ export default class MapEditor extends React.PureComponent {
       range: this.state.range,
       target: this.state.target,
       flying: this.state.flying,
+      teleport: this.state.teleport,
       muddled: this.state.muddled,
       game_rules: this.state.game_rules,
       // debug_toggle: this.state.debug_toggle,
@@ -1946,6 +2000,7 @@ export default class MapEditor extends React.PureComponent {
             <div className='mt-5'>
               <BrushPicker
                 flying={this.state.flying}
+                teleport={this.state.teleport}
                 initiative={this.state.next_initiative}
                 selection={this.state.brush}
                 activeFaction={this.state.active_faction}
@@ -1958,12 +2013,14 @@ export default class MapEditor extends React.PureComponent {
                 range={this.state.range}
                 target={this.state.target}
                 flying={this.state.flying}
+                teleport={this.state.teleport}
                 muddled={this.state.muddled}
                 initiative={this.state.selection === -1 ? -1 : this.state.initiatives[this.state.selection]}
                 onMoveChange={this.handleMoveChange}
                 onRangeChange={this.handleRangeChange}
                 onTargetChange={this.handleTargetChange}
                 onFlyingChange={this.handleFlyingChange}
+                onTeleportChange={this.handleTeleportChange}
                 onMuddledChange={this.handleMuddledChange}
                 onInitiativeChange={this.handleInitiativeChange}
               />
@@ -2051,6 +2108,7 @@ export default class MapEditor extends React.PureComponent {
                   attacks={this.state.display_attacks}
                   focuses={this.state.show_focus ? this.state.display_focuses : null}
                   flying={this.state.flying}
+                  teleport={this.state.teleport}
                   selection={this.state.selection}
                   rotate={this.state.rotate_grid}
                   dragSourceIndex={this.state.drag_source_index}
@@ -2261,6 +2319,8 @@ export default class MapEditor extends React.PureComponent {
                         <p/>
                         A vertex that starts or ends at a wall is considered touching it and cannot be used to draw line-of-sight.
                         <p/>
+                        Avoiding disadvantage against the focus is prioritized above attacking as many targets as possible and above avoiding disadvantage against secondary targets.
+                        <p/>
                         The last hex of a jump costs two movement points if entering difficult terrain.
                       </div>
                     </UncontrolledTooltip>
@@ -2274,6 +2334,8 @@ export default class MapEditor extends React.PureComponent {
                     <UncontrolledTooltip placement='left-end' fade={false} delay={C.TOOLTIP_DELAY} target='use-jotl-rules-button'>
                       <div className='text-left'>
                         Two hexes have line-of-sight if a line can be drawn from any part of one hex to any part of the other without touching a wall.
+                        <p/>
+                        Avoiding disadvantage against the focus is prioritized above attacking as many targets as possible and above avoiding disadvantage against secondary targets.
                         <p/>
                         Proximity does not affect monster focus. Initiative is the only tiebreaker.
                       </div>
