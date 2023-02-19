@@ -994,6 +994,8 @@ class Scenario:
             break
           if not traversal_test( self, next_neighbor ):
             break
+          if self.figures[next_neighbor] == 'M':
+            break
           elif self.walls[neighbor][edge]:
             break
           neighbor = next_neighbor
@@ -1084,12 +1086,15 @@ class Scenario:
             could_have_stopped_here = True
           elif not traversal_test( self, opposite_neighbor ):
             could_have_stopped_here = True
+          elif self.figures[opposite_neighbor] == 'M':
+            could_have_stopped_here = True
           elif self.walls[current][opposite_edge]:
             could_have_stopped_here = True
           if not could_have_stopped_here:
             continue
 
         slide = False
+        prev_neighbor = current
         while True:
           neighbor_distance = distance + 1 + ( 0 if self.FLYING or self.JUMPING or self.TELEPORT or slide else self.additional_path_cost( current ) )
           neighbor_trap = trap + ( 0 if self.JUMPING or self.TELEPORT else self.is_trap( self, current ) )
@@ -1098,7 +1103,7 @@ class Scenario:
             distances[neighbor] = neighbor_distance
             traps[neighbor] = neighbor_trap
 
-          if not self.is_icy( self, neighbor ):
+          if not self.is_icy( self, neighbor ) or self.figures[prev_neighbor] == 'M':
             break
           slide = True
             
@@ -1109,6 +1114,7 @@ class Scenario:
             break
           elif self.walls[neighbor][edge]:
             break
+          prev_neighbor = neighbor
           neighbor = next_neighbor
 
     if self.JUMPING or self.TELEPORT:
@@ -1230,7 +1236,7 @@ class Scenario:
 
     if self.logging:
       map_debug_tags = [ ' ' ] * self.MAP_SIZE
-      # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in range( self.MAP_SIZE ) ] )
+      print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in range( self.MAP_SIZE ) ] )
       if AOE_ACTION:
         false_contents = [ '   ' ] * self.AOE_SIZE
         if AOE_MELEE:

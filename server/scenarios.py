@@ -130,12 +130,13 @@ def init( s, width, height, aoe_width, aoe_height ):
   s.ACTION_TARGET = 1
   s.FLYING = False
   s.JUMPING = False
+  s.TELEPORT = False
   s.MUDDLED = False
 
   s.DEBUG_TOGGLE = False
 
+NUM_SCENARIOS = 17
 # TODO should be a member function?
-NUM_SCENARIOS = 158
 def init_from_test_scenario( s, scenario_index, rules ):
   init( s, 16, 7, 7, 7 )
 
@@ -149,6 +150,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   # T : trap
   # H : hazardous
   # D : difficult
+  # I : icy
 
   #######################################
   # 1 - simple test
@@ -1365,7 +1367,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   # plus attack
 
   elif scenario_index == 64:
-    s.message = 'Online test question #8.'
+    s.message = 'Online test question #8. JotL picks a different focus. Frosthaven prioritizes target count above disadvantage.'
 
     s.figures[16] = 'C'
     s.initiatives[16] = 10
@@ -1384,6 +1386,8 @@ def init_from_test_scenario( s, scenario_index, rules ):
 
     s.correct_answer = { ( 18, 16, 31 ) }
     if s.JOTL_RULES:
+      s.correct_answer = { ( 30, 16, 31, 35 ) }
+    if s.FROST_RULES:
       s.correct_answer = { ( 30, 16, 31, 35 ) }
 
   #######################################
@@ -1414,7 +1418,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   # plus attack
 
   elif scenario_index == 66:
-    s.message = 'Online test question #10.'
+    s.message = 'Online test question #10. JotL picks a different focus. Frosthaven doesn\'t prioritize disadvantage against focus above other disadvantage.'
 
     s.figures[16] = 'C'
     s.initiatives[16] = 10
@@ -1435,6 +1439,8 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.correct_answer = { ( 22, 16, 31, 35 ) }
     if s.JOTL_RULES:
       s.correct_answer = { ( 30, 16, 31, 35 ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 22, 16, 31, 35 ), ( 30, 16, 31, 35 ) }
 
   #######################################
   #
@@ -1533,6 +1539,8 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_TARGET = 2
 
     s.correct_answer = { ( 24, 9, 47 ) }
+    if s.JOTL_RULES:
+      s.correct_answer = { ( 24, 9, 50 ) }
 
   #######################################
   #
@@ -2058,6 +2066,8 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_TARGET = 3
 
     s.correct_answer = { ( 23, 11, 33, 38 ) }
+    if s.JOTL_RULES:
+      s.correct_answer = { ( 23, 11, 33, 39 ) }
     
   #######################################
   #
@@ -2988,15 +2998,99 @@ def init_from_test_scenario( s, scenario_index, rules ):
         ( 20, 8, 17, 23, 40, 46, 51, 58 ),
       }
     elif s.JOTL_RULES:
-      # jotl monster doesn't break focus ties with proximity, resulting in many equal focus options
+      # jotl monster doesn't break focus ties with proximity, resulting in many tied options
       s.correct_answer = {
-        ( 66, 17, 23, 46, 51, 57, 58, 102 ),
-        ( 66, 8, 17, 23, 46, 51, 58, 94 ),
-        ( 37, 8, 17, 23, 46, 51, 58, 80 ),
-        ( 66, 17, 23, 46, 51, 57, 58, 94 ),
-        ( 37, 8, 17, 23, 46, 51, 58, 68 ),
-        ( 66, 8, 17, 23, 46, 51, 58, 102 ),
         ( 37, 8, 17, 23, 26, 46, 51, 58 ),
+        ( 37, 8, 17, 23, 26, 46, 51, 68 ),
+        ( 37, 8, 17, 23, 26, 46, 51, 80 ),
+        ( 37, 8, 17, 23, 26, 46, 58, 68 ),
+        ( 37, 8, 17, 23, 26, 46, 58, 80 ),
+        ( 37, 8, 17, 23, 26, 46, 68, 80 ),
+        ( 37, 8, 17, 23, 26, 51, 58, 68 ),
+        ( 37, 8, 17, 23, 26, 51, 58, 80 ),
+        ( 37, 8, 17, 23, 26, 51, 68, 80 ),
+        ( 37, 8, 17, 23, 26, 58, 68, 80 ),
+        ( 37, 8, 17, 23, 46, 51, 58, 68 ),
+        ( 37, 8, 17, 23, 46, 51, 58, 80 ),
+        ( 37, 8, 17, 23, 46, 51, 68, 80 ),
+        ( 37, 8, 17, 23, 46, 58, 68, 80 ),
+        ( 37, 8, 17, 23, 51, 58, 68, 80 ),
+        ( 45, 8, 17, 23, 26, 40, 57, 94 ),
+        ( 45, 8, 17, 23, 26, 40, 58, 94 ),
+        ( 45, 8, 17, 23, 26, 40, 68, 94 ),
+        ( 45, 8, 17, 23, 26, 40, 80, 94 ),
+        ( 45, 8, 17, 23, 26, 57, 58, 94 ),
+        ( 45, 8, 17, 23, 26, 57, 68, 94 ),
+        ( 45, 8, 17, 23, 26, 57, 80, 94 ),
+        ( 45, 8, 17, 23, 26, 58, 68, 94 ),
+        ( 45, 8, 17, 23, 26, 58, 80, 94 ),
+        ( 45, 8, 17, 23, 26, 68, 80, 94 ),
+        ( 45, 8, 17, 23, 40, 57, 58, 94 ),
+        ( 45, 8, 17, 23, 40, 57, 68, 94 ),
+        ( 45, 8, 17, 23, 40, 57, 80, 94 ),
+        ( 45, 8, 17, 23, 40, 58, 68, 94 ),
+        ( 45, 8, 17, 23, 40, 58, 80, 94 ),
+        ( 45, 8, 17, 23, 40, 68, 80, 94 ),
+        ( 45, 8, 17, 23, 57, 58, 68, 94 ),
+        ( 45, 8, 17, 23, 57, 58, 80, 94 ),
+        ( 45, 8, 17, 23, 57, 68, 80, 94 ),
+        ( 45, 8, 17, 23, 58, 68, 80, 94 ),
+        ( 52, 8, 17, 23, 26, 40, 57, 102 ),
+        ( 52, 8, 17, 23, 26, 40, 58, 102 ),
+        ( 52, 8, 17, 23, 26, 40, 68, 102 ),
+        ( 52, 8, 17, 23, 26, 40, 80, 102 ),
+        ( 52, 8, 17, 23, 26, 40, 92, 102 ),
+        ( 52, 8, 17, 23, 26, 40, 94, 102 ),
+        ( 52, 8, 17, 23, 26, 57, 58, 102 ),
+        ( 52, 8, 17, 23, 26, 57, 68, 102 ),
+        ( 52, 8, 17, 23, 26, 57, 80, 102 ),
+        ( 52, 8, 17, 23, 26, 57, 92, 102 ),
+        ( 52, 8, 17, 23, 26, 57, 94, 102 ),
+        ( 52, 8, 17, 23, 26, 58, 68, 102 ),
+        ( 52, 8, 17, 23, 26, 58, 80, 102 ),
+        ( 52, 8, 17, 23, 26, 58, 92, 102 ),
+        ( 52, 8, 17, 23, 26, 58, 94, 102 ),
+        ( 52, 8, 17, 23, 26, 68, 80, 102 ),
+        ( 52, 8, 17, 23, 26, 68, 92, 102 ),
+        ( 52, 8, 17, 23, 26, 68, 94, 102 ),
+        ( 52, 8, 17, 23, 26, 80, 92, 102 ),
+        ( 52, 8, 17, 23, 26, 80, 94, 102 ),
+        ( 52, 8, 17, 23, 26, 92, 94, 102 ),
+        ( 52, 8, 17, 23, 40, 57, 58, 102 ),
+        ( 52, 8, 17, 23, 40, 57, 68, 102 ),
+        ( 52, 8, 17, 23, 40, 57, 80, 102 ),
+        ( 52, 8, 17, 23, 40, 57, 92, 102 ),
+        ( 52, 8, 17, 23, 40, 57, 94, 102 ),
+        ( 52, 8, 17, 23, 40, 58, 68, 102 ),
+        ( 52, 8, 17, 23, 40, 58, 80, 102 ),
+        ( 52, 8, 17, 23, 40, 58, 92, 102 ),
+        ( 52, 8, 17, 23, 40, 58, 94, 102 ),
+        ( 52, 8, 17, 23, 40, 68, 80, 102 ),
+        ( 52, 8, 17, 23, 40, 68, 92, 102 ),
+        ( 52, 8, 17, 23, 40, 68, 94, 102 ),
+        ( 52, 8, 17, 23, 40, 80, 92, 102 ),
+        ( 52, 8, 17, 23, 40, 80, 94, 102 ),
+        ( 52, 8, 17, 23, 40, 92, 94, 102 ),
+        ( 52, 8, 17, 23, 57, 58, 68, 102 ),
+        ( 52, 8, 17, 23, 57, 58, 80, 102 ),
+        ( 52, 8, 17, 23, 57, 58, 92, 102 ),
+        ( 52, 8, 17, 23, 57, 58, 94, 102 ),
+        ( 52, 8, 17, 23, 57, 68, 80, 102 ),
+        ( 52, 8, 17, 23, 57, 68, 92, 102 ),
+        ( 52, 8, 17, 23, 57, 68, 94, 102 ),
+        ( 52, 8, 17, 23, 57, 80, 92, 102 ),
+        ( 52, 8, 17, 23, 57, 80, 94, 102 ),
+        ( 52, 8, 17, 23, 57, 92, 94, 102 ),
+        ( 52, 8, 17, 23, 58, 68, 80, 102 ),
+        ( 52, 8, 17, 23, 58, 68, 92, 102 ),
+        ( 52, 8, 17, 23, 58, 68, 94, 102 ),
+        ( 52, 8, 17, 23, 58, 80, 92, 102 ),
+        ( 52, 8, 17, 23, 58, 80, 94, 102 ),
+        ( 52, 8, 17, 23, 58, 92, 94, 102 ),
+        ( 52, 8, 17, 23, 68, 80, 92, 102 ),
+        ( 52, 8, 17, 23, 68, 80, 94, 102 ),
+        ( 52, 8, 17, 23, 68, 92, 94, 102 ),
+        ( 52, 8, 17, 23, 80, 92, 94, 102 ),
       }
     elif s.FROST_RULES:
       # frosthaven monster doesn't need to move to get los to good attacks
@@ -3166,7 +3260,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 137:
-    s.message = 'https://boardgamegeek.com/article/29498431#29498431'
+    s.message = 'https://boardgamegeek.com/article/29498431#29498431. Frosthaven doesn\'t prioritize disadvantage against focus above other disadvantage.'
 
     s.figures[53] = 'C'
     s.initiatives[53] = 10
@@ -3186,6 +3280,8 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_TARGET = 3
 
     s.correct_answer = { ( 67, 53, 74, 76 ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 67, 53, 74, 76 ), ( 61, 53, 74, 76 ) }
 
   #######################################
   #
@@ -3234,7 +3330,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 140:
-    s.message = 'Monsters are willing to move farther to avoid disadvantage against secondary targets; but this one is muddled.'
+    s.message = 'Monsters are willing to move farther to avoid disadvantage against secondary targets; but this one can has Move 5.'
 
     s.figures[53] = 'C'
     s.initiatives[53] = 10
@@ -3255,7 +3351,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 141:
-    s.message = 'Monster picks his secondary targets based on how far it must move to attack them, then proximity, then initiative. Here both groups can be attacked in five steps. It picks the left targets due to proximty. It ends up moving six steps to avoid disadvantage, even though it could have attacked the right targets without disadvantage in five moves. That is because targets are picked based on distance to attack. Only after picking targets does the monster adjust its destination based on avoiding disadvantage.'
+    s.message = 'Monster picks his secondary targets based on how far it must move to attack them, then proximity, then initiative. Here both groups can be attacked in five steps. It picks the left targets due to proximty. It ends up moving six steps to avoid disadvantage, even though it could have attacked the right targets without disadvantage in five moves. That is because targets are picked based on distance to attack. Only after picking targets does the monster adjust its destination based on avoiding disadvantage. However, Jaws of the Lion ignores proximity, so the groups are considered equal priority. The monster then chooses the attack location that requires minimum movement.'
 
     s.figures[53] = 'C'
     s.initiatives[53] = 10
@@ -3275,12 +3371,14 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_TARGET = 3
 
     s.correct_answer = { ( 40, 26, 32, 53 ) }
+    if s.JOTL_RULES:
+      s.correct_answer = { ( 67, 53, 81, 82 ) }
 
   #######################################
   #
 
   elif scenario_index == 142:
-    s.message = 'Tests a bug in the line-line collision detection causing all colinear line segments to report as colliding.'
+    s.message = 'Tests a bug in the line-line collision detection causing all collinear line segments to report as colliding.'
 
     s.figures[32] = 'C'
 
@@ -3661,7 +3759,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #######################################
   #
 
-  elif scenario_index == NUM_SCENARIOS:
+  elif scenario_index == 158:
     s.message = 'Monster anticipates future use of ice, including accounting for a slide-stopping wall, when determining path to focus.'
 
     s.figures[12] = 'A'
@@ -3676,6 +3774,451 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_MOVE = 2
 
     s.correct_answer = { ( 18, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 159:
+    s.message = 'Sliding onto difficult terrain does not costs an extra move.'
+
+    s.figures[12] = 'A'
+    s.figures[38] = 'C'
+    s.initiatives[38] = 1
+
+    s.contents[19] = 'I'
+    s.contents[25] = 'D'
+
+    s.ACTION_MOVE = 2
+
+    s.correct_answer = { ( 32, 38 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 160:
+    s.message = 'Sliding onto difficult terrain does not costs an extra move.'
+
+    s.figures[6] = 'A'
+    s.figures[38] = 'C'
+    s.initiatives[38] = 1
+
+    s.contents[33] = 'I'
+    s.contents[39] = 'D'
+
+    s.ACTION_MOVE = 2
+
+    s.correct_answer = { ( 19, ), ( 20, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 161:
+    s.message = 'Monsters teleport through walls.'
+
+    s.figures[17] = 'A'
+    s.figures[31] = 'C'
+    s.initiatives[31] = 1
+
+    s.contents[22] = 'X'
+    s.contents[23] = 'X'
+    s.contents[24] = 'X'
+    s.contents[25] = 'X'
+
+    s.ACTION_MOVE = 2
+    s.TELEPORT = True
+
+    s.correct_answer = { ( 32, 31 ), ( 30, 31 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 162:
+    s.message = 'Flying monsters teleport onto obstacles and traps.'
+
+    s.figures[17] = 'A'
+    s.figures[31] = 'C'
+    s.initiatives[31] = 1
+
+    s.contents[22] = 'X'
+    s.contents[23] = 'X'
+    s.contents[24] = 'X'
+    s.contents[25] = 'X'
+    s.contents[30] = 'T'
+    s.contents[32] = 'O'
+
+    s.ACTION_MOVE = 2
+    s.FLYING = True
+    s.TELEPORT = True
+
+    s.correct_answer = { ( 32, 31 ), ( 30, 31 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 163:
+    s.message = 'Online test question #21.'
+
+    s.figures[22] = 'A'
+    s.figures[26] = 'C'
+    s.initiatives[26] = 1
+
+    s.contents[24] = 'D'
+
+    s.ACTION_MOVE = 2
+    s.JUMPING = True
+
+    s.correct_answer = { ( 23, ) }
+    if s.JOTL_RULES or s.FROST_RULES:
+      s.correct_answer = { ( 24, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 164:
+    s.message = 'Online test question #22.'
+
+    s.figures[22] = 'A'
+    s.figures[25] = 'C'
+    s.initiatives[25] = 1
+
+    s.contents[24] = 'D'
+
+    s.ACTION_MOVE = 2
+    s.JUMPING = True
+
+    s.correct_answer = { ( 17, ), ( 23, ), ( 31, ) }
+    if s.JOTL_RULES or s.FROST_RULES:
+      s.correct_answer = { ( 24, 25 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 165:
+    s.message = 'Online test question #23.'
+
+    s.figures[29] = 'A'
+    s.figures[33] = 'C'
+    s.initiatives[33] = 1
+
+    s.contents[17] = 'X'
+    s.contents[18] = 'X'
+    s.contents[19] = 'X'
+    s.contents[24] = 'X'
+    s.contents[31] = 'T'
+    s.contents[38] = 'X'
+    s.contents[45] = 'X'
+    s.contents[46] = 'X'
+    s.contents[47] = 'X'
+
+    s.ACTION_MOVE = 2
+    s.JUMPING = True
+
+    s.correct_answer = { ( 30, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 166:
+    s.message = 'Online test question #24.'
+
+    s.figures[24] = 'A'
+    s.figures[30] = 'C'
+    s.initiatives[30] = 1
+    s.figures[32] = 'C'
+    s.initiatives[32] = 2
+    s.figures[44] = 'C'
+    s.initiatives[44] = 4
+    s.figures[46] = 'C'
+    s.initiatives[46] = 3
+
+    s.ACTION_MOVE = 3
+    s.ACTION_RANGE = 3
+    s.ACTION_TARGET = 3
+    s.JUMPING = True
+
+    s.correct_answer = { ( 23, 30, 32, 46 ) }
+    if s.JOTL_RULES or s.FROST_RULES:
+      s.correct_answer = { ( 24, 30, 32, 46 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 167:
+    s.message = 'Online test question #25.'
+
+    s.figures[11] = 'C'
+    s.initiatives[11] = 3
+    s.figures[22] = 'A'
+    s.figures[26] = 'C'
+    s.initiatives[26] = 1
+    s.figures[39] = 'C'
+    s.initiatives[39] = 2
+
+    s.contents[32] = 'O'
+    s.contents[38] = 'O'
+
+    s.ACTION_MOVE = 4
+    s.ACTION_TARGET = 2
+
+    s.correct_answer = { ( 33, 26, 39 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 168:
+    s.message = 'Monsters measure proximity around walls.'
+
+    s.figures[15] = 'C'
+    s.initiatives[15] = 1
+    s.figures[17] = 'A'
+    s.figures[48] = 'C'
+    s.initiatives[48] = 1
+
+    s.contents[8] = 'X'
+    s.contents[16] = 'X'
+    s.contents[23] = 'X'
+    s.contents[31] = 'X'
+    s.contents[38] = 'X'
+    s.contents[46] = 'X'
+
+    s.ACTION_MOVE = 4
+
+    s.correct_answer = { ( 40, 48 ), ( 47, 48 ), ( 7, 15 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 169:
+    s.message = 'Even teleporting monsters measure proximity around walls.'
+
+    s.figures[24] = 'A'
+    s.figures[30] = 'C'
+    s.initiatives[30] = 1
+    s.figures[47] = 'C'
+    s.initiatives[47] = 2
+
+    s.contents[8] = 'X'
+    s.contents[16] = 'X'
+    s.contents[23] = 'X'
+    s.contents[31] = 'X'
+    s.contents[38] = 'X'
+    s.contents[46] = 'X'
+
+    s.ACTION_MOVE = 4
+    s.TELEPORT = True
+
+    s.correct_answer = { ( 39, 47 ) }
+    if s.JOTL_RULES:
+      s.correct_answer = { ( 37, 30 ), ( 22, 30 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 170:
+    s.message = 'Monsters do not measure proximity around obstacles.'
+
+    s.figures[24] = 'A'
+    s.figures[30] = 'C'
+    s.initiatives[30] = 1
+    s.figures[47] = 'C'
+    s.initiatives[47] = 2
+
+    s.contents[8] = 'X'
+    s.contents[16] = 'X'
+    s.contents[23] = 'X'
+    s.contents[31] = 'O'
+    s.contents[38] = 'X'
+    s.contents[46] = 'X'
+
+    s.ACTION_MOVE = 4
+    s.TELEPORT = True
+
+    s.correct_answer = { ( 37, 30 ), ( 22, 30 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 171:
+    s.message = 'Monsters do not slide through other monsters.'
+
+    s.figures[9] = 'A'
+    s.figures[32] = 'M'
+    s.figures[54] = 'C'
+    s.initiatives[54] = 1
+
+    s.contents[17] = 'I'
+    s.contents[24] = 'I'
+    s.contents[32] = 'I'
+    s.contents[39] = 'I'
+
+    s.ACTION_MOVE = 1
+
+    s.correct_answer = { ( 24, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 172:
+    s.message = 'Monsters can step through other monsters that are on icy terrain.'
+
+    s.figures[9] = 'A'
+    s.figures[32] = 'M'
+    s.figures[54] = 'C'
+    s.initiatives[54] = 1
+
+    s.contents[17] = 'I'
+    s.contents[24] = 'I'
+    s.contents[32] = 'I'
+    s.contents[39] = 'I'
+
+    s.ACTION_MOVE = 2
+
+    s.correct_answer = { ( 47, 54 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 173:
+    s.message = 'Monsters will slide into a blocking monster to move closer to their focus.'
+
+    s.figures[9] = 'A'
+    s.figures[39] = 'M'
+    s.figures[54] = 'C'
+    s.initiatives[54] = 1
+
+    s.contents[17] = 'I'
+    s.contents[24] = 'I'
+    s.contents[32] = 'I'
+    s.contents[39] = 'I'
+
+    s.ACTION_MOVE = 1
+
+    s.correct_answer = { ( 32, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 174:
+    s.message = 'Monsters will slide into a blocking monster to move closer to their focus.'
+
+    s.figures[9] = 'A'
+    s.figures[47] = 'M'
+    s.figures[54] = 'C'
+    s.initiatives[54] = 1
+
+    s.contents[17] = 'I'
+    s.contents[24] = 'I'
+    s.contents[32] = 'I'
+    s.contents[39] = 'I'
+
+    s.ACTION_MOVE = 1
+
+    s.correct_answer = { ( 39, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 175:
+    s.message = 'Monsters will slide into a blocking monster to move closer to their focus.'
+
+    s.figures[9] = 'A'
+    s.figures[32] = 'M'
+    s.figures[39] = 'M'
+    s.figures[54] = 'C'
+    s.initiatives[54] = 1
+
+    s.contents[17] = 'I'
+    s.contents[24] = 'I'
+    s.contents[32] = 'I'
+    s.contents[39] = 'I'
+
+    s.ACTION_MOVE = 1
+
+    s.correct_answer = { ( 24, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 176:
+    s.message = 'Monsters will slide into a blocking monster to move closer to their focus.'
+
+    s.figures[9] = 'A'
+    s.figures[39] = 'M'
+    s.figures[54] = 'C'
+    s.initiatives[54] = 1
+
+    s.contents[17] = 'I'
+    s.contents[24] = 'I'
+    s.contents[32] = 'I'
+
+    s.ACTION_MOVE = 1
+
+    s.correct_answer = { ( 32, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 177:
+    s.message = 'Monsters will step through a blocking monster on icy terrain to move closer to their focus.'
+
+    s.figures[9] = 'A'
+    s.figures[24] = 'M'
+    s.figures[39] = 'M'
+    s.figures[54] = 'C'
+    s.initiatives[54] = 1
+
+    s.contents[17] = 'I'
+    s.contents[24] = 'I'
+    s.contents[32] = 'I'
+    s.contents[39] = 'I'
+
+    s.ACTION_MOVE = 2
+
+    s.correct_answer = { ( 32, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 178:
+    s.message = 'Monsters do not slide through characters.'
+
+    s.figures[9] = 'A'
+    s.figures[39] = 'C'
+    s.initiatives[39] = 1
+    s.figures[54] = 'C'
+    s.initiatives[54] = 1
+
+    s.contents[17] = 'I'
+    s.contents[24] = 'I'
+    s.contents[32] = 'I'
+    s.contents[39] = 'I'
+
+    s.ACTION_MOVE = 3
+    s.ACTION_TARGET = 2
+
+    s.correct_answer = { ( 32, 39 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 179:
+    s.message = 'Monsters do not slide through characters.'
+
+    s.figures[9] = 'A'
+    s.figures[39] = 'C'
+    s.initiatives[39] = 1
+    s.figures[54] = 'C'
+    s.initiatives[54] = 1
+
+    s.contents[17] = 'I'
+    s.contents[24] = 'I'
+    s.contents[32] = 'I'
+    s.contents[39] = 'I'
+
+    s.ACTION_MOVE = 4
+    s.ACTION_TARGET = 2
+
+    s.correct_answer = { ( 47, 39, 54 ) }
 
   #######################################
   #

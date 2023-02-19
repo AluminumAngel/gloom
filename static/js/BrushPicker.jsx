@@ -73,6 +73,7 @@ const BrushPicker = React.memo( function( props ) {
               y='0'
               figure={props.activeFaction ? BRUSH.ACTIVE_CHARACTER : BRUSH.ACTIVE_MONSTER}
               flying={props.flying}
+              teleport={props.teleport}
               initiative={props.initiative}
               activeFaction={props.activeFaction}
             />
