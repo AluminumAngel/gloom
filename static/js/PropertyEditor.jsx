@@ -39,8 +39,13 @@ const TARGET_OPTIONS = [
 
 const FLYING_OPTIONS = [
   [ 0, 'none' ],
-  [ 1, 'jumping' ],
+  [ 1, 'jump' ],
   [ 2, 'flying' ],
+];
+
+const TELEPORT_OPTIONS = [
+  [ 0, 'no' ],
+  [ 1, 'yes' ],
 ];
 
 const MUDDLED_OPTIONS = [
@@ -107,11 +112,23 @@ const PropertyEditor = React.memo( function( props ) {
       <NumberSelector
         label='Trait'
         options={FLYING_OPTIONS}
+        traitBehavior={true}
         value={props.flying}
         onChange={props.onFlyingChange}
         tooltip={
           <React.Fragment>
             Set the movement trait of the current move.
+          </React.Fragment>
+        }
+      />
+      <NumberSelector
+        label='Teleport'
+        options={TELEPORT_OPTIONS}
+        value={props.teleport}
+        onChange={props.onTeleportChange}
+        tooltip={
+          <React.Fragment>
+            Set whether the active {props.activeFactionString} is teleporting.
           </React.Fragment>
         }
       />
