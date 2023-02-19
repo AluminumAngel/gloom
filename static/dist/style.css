@@ -48,6 +48,10 @@ polygon.difficult-terrain {
   fill: rgb( 87, 47, 143 );
 }
 
+polygon.icy-terrain {
+  fill: rgb( 87, 205, 229 );
+}
+
 /*
  * hex overlays
  */

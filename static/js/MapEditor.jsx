@@ -1590,6 +1590,7 @@ export default class MapEditor extends React.PureComponent {
     add_elements( this.state.grid, 'traps', BRUSH.TRAP );
     add_elements( this.state.grid, 'hazardous', BRUSH.HAZARDOUS_TERRAIN );
     add_elements( this.state.grid, 'difficult', BRUSH.DIFFICULT_TERRAIN );
+    add_elements( this.state.grid, 'icy', BRUSH.ICY_TERRAIN );
 
     const inactive_faction_brush = this.inactiveFactionBrush();
     scenario.map.initiatives = [];

@@ -51,7 +51,7 @@ elif print_los:
   print_map( scenario, scenario.MAP_WIDTH, scenario.MAP_HEIGHT, scenario.effective_walls, [ format_content( *_ ) for _ in zip( scenario.figures, scenario.contents ) ], [ format_los( _ ) for _ in visible_locations ] )
 
 elif profile:
-  SAMPLE_COUNT = 5
+  SAMPLE_COUNT = 100
 
   results = {}
   for test in ( False, True ):
@@ -64,9 +64,6 @@ elif profile:
 
       start = time.time()
       actions = scenario.solve_move( test )
-      # for action in actions:
-        # scenario.solve_sight( action['move'] )
-      # scenario.solve_sight( 27 )
 
       end = time.time()
       results[test].append( end - start )

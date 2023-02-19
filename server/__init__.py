@@ -13,8 +13,8 @@ debug = not production
 
 title = 'Gloomhaven Monster Mover'
 version_major = 2
-version_minor = 7
-version_build = 1
+version_minor = 8
+version_build = 0
 version = str( version_major ) + '.' + str( version_minor ) + '.' + str( version_build )
 client_local_storage_version_major = 1
 client_local_storage_version_minor = 3

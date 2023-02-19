@@ -83,6 +83,7 @@ const Figure = React.memo( function( props ) {
           className={className}
           figure={figure}
           flying={props.flying}
+          teleport={props.teleport}
           initiative={props.initiative}
           activeFaction={props.activeFaction}
         />

@@ -158,6 +158,8 @@ class Scenario:
     self.setup_vertices_list()
     self.setup_neighbors_mapping()
 
+    self.HAS_ICY_TERRAIN = 'I' in self.contents
+
     contents_walls = [ None ] * self.MAP_SIZE
     self.effective_walls = [ 0 ] * self.MAP_SIZE
     for location in range( self.MAP_SIZE ):
@@ -231,6 +233,7 @@ class Scenario:
     add_elements( self.contents, 'traps', 'T' )
     add_elements( self.contents, 'hazardous', 'H' )
     add_elements( self.contents, 'difficult', 'D' )
+    add_elements( self.contents, 'icy', 'I' )
     add_elements( self.figures, 'characters', 'C' )
     add_elements( self.figures, 'monsters', 'M' )
 
@@ -293,14 +296,19 @@ class Scenario:
     self.prepare_map()
 
   def can_end_move_on_standard( self, location ):
-    return self.contents[location] in [ ' ', 'T', 'H', 'D' ] and self.figures[location] in [ ' ', 'A' ]
+    return self.contents[location] in [ ' ', 'T', 'H', 'D', 'I' ] and self.figures[location] in [ ' ', 'A' ]
   def can_end_move_on_flying( self, location ):
-    return self.contents[location] in [ ' ', 'T', 'O', 'H', 'D' ] and self.figures[location] in [ ' ', 'A' ]
+    return self.contents[location] in [ ' ', 'T', 'O', 'H', 'D', 'I' ] and self.figures[location] in [ ' ', 'A' ]
 
   def can_travel_through_standard( self, location ):
-    return self.contents[location] in [ ' ', 'T', 'H', 'D' ] and self.figures[location] != 'C'
+    return self.contents[location] in [ ' ', 'T', 'H', 'D', 'I' ] and self.figures[location] != 'C'
   def can_travel_through_flying( self, location ):
-    return self.contents[location] in [ ' ', 'T', 'H', 'D', 'O' ]
+    return self.contents[location] in [ ' ', 'T', 'H', 'D', 'O', 'I' ]
+
+  def is_icy_standard( self, location ):
+    return self.contents[location] == 'I'
+  def is_icy_flying( self, location ):
+    return False
 
   def is_trap_standard( self, location ):
     return self.contents[location] in [ 'T', 'H' ]
@@ -952,8 +960,19 @@ class Scenario:
           continue
         if self.walls[current][edge]:
           continue
-        neighbor_distance = distance + 1 + int( not self.FLYING and not self.JUMPING and self.additional_path_cost( neighbor ) )
-        neighbor_trap = int( not self.JUMPING ) * trap + int( self.is_trap( self, neighbor ) )
+
+        while self.is_icy( self, neighbor ):
+          next_neighbor = self.neighbors[neighbor][edge]
+          if next_neighbor == -1:
+            break
+          if not traversal_test( self, next_neighbor ):
+            break
+          elif self.walls[neighbor][edge]:
+            break
+          neighbor = next_neighbor
+
+        neighbor_distance = distance + 1 + ( 0 if self.FLYING or self.JUMPING else self.additional_path_cost( neighbor ) )
+        neighbor_trap = self.is_trap( self, neighbor ) + ( 0 if self.JUMPING else trap )
         if ( neighbor_trap, neighbor_distance ) < ( traps[neighbor], distances[neighbor] ):
           frontier.append( neighbor )
           distances[neighbor] = neighbor_distance
@@ -973,10 +992,6 @@ class Scenario:
     # path distance is symetric except for difficult terrain and traps
     # we correct for the asymetry of starting vs ending on difficult terrain
     # we correct for the asymetry of starting vs ending on traps
-    cache_key = ( destination, traversal_test )
-    if cache_key in self.path_cache[1]:
-      return self.path_cache[1][cache_key]
-
     distances, traps = self.find_path_distances( destination, traversal_test )
     distances = list( distances )
     traps = list( traps )
@@ -993,6 +1008,92 @@ class Scenario:
       for location in range( self.MAP_SIZE ):
         traps[location] -= int( self.is_trap( self, location ) )
     
+    return distances, traps
+
+  def find_path_distances_to_destination( self, destination, traversal_test ):
+    cache_key = ( destination, traversal_test )
+    if cache_key in self.path_cache[1]:
+      return self.path_cache[1][cache_key]
+
+    # optimization to share cache with find_path_distances
+    # only valid when there is no icy terrain
+    if not self.HAS_ICY_TERRAIN:
+      distances, traps = self.find_path_distances_reverse( destination, traversal_test )
+      self.path_cache[1][cache_key] = ( distances, traps )
+      return distances, traps
+
+    distances = [ MAX_VALUE ] * self.MAP_SIZE
+    traps = [ MAX_VALUE ] * self.MAP_SIZE
+
+    # # ground truth
+    # for location in range( self.MAP_SIZE ):
+    #   if traversal_test( self, location ):
+    #     d, t = self.find_path_distances( location, traversal_test )
+    #     distances[location] = d[destination]
+    #     traps[location] = t[destination]
+    # return distances, traps
+
+    frontier = collections.deque()
+    frontier.append( destination )
+
+    distances[destination] = 0
+    traps[destination] = 0
+    if self.JUMPING:
+      if self.RULE_DIFFICULT_TERRAIN_JUMP:
+        distances[destination] += self.additional_path_cost( destination )
+      traps[destination] += int( self.is_trap( self, destination ) )
+
+    while not len( frontier ) == 0:
+      current = frontier.popleft()
+      distance = distances[current]
+      trap = traps[current]
+      for edge, neighbor in enumerate( self.neighbors[current] ):
+        if neighbor == -1:
+          continue
+        if not traversal_test( self, neighbor ):
+          continue
+        if self.walls[current][edge]:
+          continue
+
+        if self.is_icy( self, current ):
+          opposite_edge = ( edge + 3 ) % 6
+          opposite_neighbor = self.neighbors[current][opposite_edge]
+
+          could_have_stopped_here = False
+          if opposite_neighbor == -1:
+            could_have_stopped_here = True
+          elif not traversal_test( self, opposite_neighbor ):
+            could_have_stopped_here = True
+          elif self.walls[current][opposite_edge]:
+            could_have_stopped_here = True
+          if not could_have_stopped_here:
+            continue
+
+        while True:
+          neighbor_distance = distance + 1 + ( 0 if self.FLYING or self.JUMPING else self.additional_path_cost( current ) )
+          neighbor_trap = trap + ( 0 if self.JUMPING else self.is_trap( self, current ) )
+          if ( neighbor_trap, neighbor_distance ) < ( traps[neighbor], distances[neighbor] ):
+            frontier.append( neighbor )
+            distances[neighbor] = neighbor_distance
+            traps[neighbor] = neighbor_trap
+
+          if not self.is_icy( self, neighbor ):
+            break
+            
+          next_neighbor = self.neighbors[neighbor][edge]
+          if next_neighbor == -1:
+            break
+          if not traversal_test( self, next_neighbor ):
+            break
+          elif self.walls[neighbor][edge]:
+            break
+          neighbor = next_neighbor
+
+    if self.JUMPING:
+      if self.RULE_DIFFICULT_TERRAIN_JUMP:
+        distances[destination] -= self.additional_path_cost( destination )
+      traps[destination] -= int( self.is_trap( self, destination ) )
+
     self.path_cache[1][cache_key] = ( distances, traps )
     return distances, traps
 
@@ -1067,14 +1168,17 @@ class Scenario:
     if self.FLYING:
       self.can_end_move_on = Scenario.can_end_move_on_flying
       self.can_travel_through = Scenario.can_travel_through_flying
+      self.is_icy = Scenario.is_icy_flying
       self.is_trap = Scenario.is_trap_flying
     elif self.JUMPING:
       self.can_end_move_on = Scenario.can_end_move_on_standard
       self.can_travel_through = Scenario.can_travel_through_flying
+      self.is_icy = Scenario.is_icy_flying
       self.is_trap = Scenario.is_trap_standard
     else:
       self.can_end_move_on = Scenario.can_end_move_on_standard
       self.can_travel_through = Scenario.can_travel_through_standard
+      self.is_icy = Scenario.is_icy_standard
       self.is_trap = Scenario.is_trap_standard
 
     if self.logging:
@@ -1131,7 +1235,7 @@ class Scenario:
     active_monster = self.figures.index( 'A' )
     travel_distances, trap_counts = self.find_path_distances( active_monster, self.can_travel_through )
     proximity_distances = self.find_proximity_distances( active_monster )
-    # rev_travel_distances, rev_trap_counts = self.find_path_distances_reverse( active_monster, self.can_travel_through )
+    # rev_travel_distances, rev_trap_counts = self.find_path_distances_to_destination( active_monster, self.can_travel_through )
     # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in trap_counts ] )
     # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in travel_distances ] )
     # print_map( self, self.MAP_WIDTH, self.MAP_HEIGHT, self.effective_walls, [ format_content( *_ ) for _ in zip( self.figures, self.contents ) ], [ format_numerical_label( _ ) for _ in proximity_distances ] )
@@ -1540,7 +1644,7 @@ class Scenario:
             MAX_VALUE - 1, # distance to destination
             MAX_VALUE - 1, # travel distance
           )
-          distance_to_destination, traps_to_destination = self.find_path_distances_reverse( destination[0], self.can_travel_through )
+          distance_to_destination, traps_to_destination = self.find_path_distances_to_destination( destination[0], self.can_travel_through )
           for location in range( self.MAP_SIZE ):
             if travel_distances[location] <= self.ACTION_MOVE:
               if self.can_end_move_on( self, location ):
@@ -1674,6 +1778,36 @@ class Scenario:
     return sight
 
   def solve_move( self, test ):
+    # # export to scenario
+    # # to create using client, set GRID_HEIGHT to 7
+    # print '#######################################'
+    # for index, ( figure, initiative ) in enumerate( zip( self.figures, self.initiatives ) ):
+    #   if figure != ' ':
+    #     print '    s.figures[%r] = %r' % ( index, figure )
+    #     if initiative != 0:
+    #       print '    s.initiatives[%r] = %r' % ( index, initiative )
+    # print
+    # for index, content in enumerate( self.contents ):
+    #   if content != ' ':
+    #     print '    s.contents[%r] = %r' % ( index, content )
+    # for index, walls in enumerate( self.walls ):
+    #   for edge in range( 3 ):
+    #     if walls[edge]:
+    #       print '    s.walls[%r][%r] = %r' % ( index, edge, walls[edge] )
+    # print
+    # print '    s.ACTION_MOVE = %r' % self.ACTION_MOVE
+    # if self.ACTION_RANGE != 0:
+    #   print '    s.ACTION_RANGE = %r' % self.ACTION_RANGE
+    # if self.ACTION_TARGET != 1:
+    #   print '    s.ACTION_TARGET = %r' % self.ACTION_TARGET
+    # if self.FLYING:
+    #   print '    s.FLYING = %r' % self.FLYING
+    # if self.JUMPING:
+    #   print '    s.JUMPING = %r' % self.JUMPING
+    # if self.MUDDLED:
+    #   print '    s.MUDDLED = %r' % self.MUDDLED
+    # print '#######################################'
+
     start_location = self.figures.index( 'A' )
 
     raw_actions, aoes, destinations, focuses, sightlines, debug_lines = self.calculate_monster_move()

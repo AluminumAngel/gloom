@@ -257,6 +257,26 @@ const BrushPicker = React.memo( function( props ) {
           }
         />
         <BrushButton
+          brush={BRUSH.ICY_TERRAIN}
+          selection={props.selection}
+          onClick={props.onSelection}
+          text='Icy Terrain'
+          icon={
+            <polygon
+              className='icy-terrain'
+              points={BASE_HEX_POINTS}
+              pointerEvents='none'
+            />
+          }
+          tooltip={
+            <React.Fragment>
+              Left-click the board to add or remove icy terrain.
+              <p/>
+              Right-click any overlay tile to remove it.
+            </React.Fragment>
+          }
+        />
+        <BrushButton
           brush={BRUSH.THIN_WALL}
           selection={props.selection}
           onClick={props.onSelection}

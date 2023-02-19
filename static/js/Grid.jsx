@@ -117,6 +117,7 @@ const Grid = React.memo( function( props ) {
           attacks={props.attacks}
           focuses={props.focuses}
           flying={props.flying}
+          teleport={props.teleport}
           selection={props.selection}
           rotate={props.rotate}
           dragSourceIndex={props.dragSourceIndex}

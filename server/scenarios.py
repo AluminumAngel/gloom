@@ -135,7 +135,7 @@ def init( s, width, height, aoe_width, aoe_height ):
   s.DEBUG_TOGGLE = False
 
 # TODO should be a member function?
-NUM_SCENARIOS = 150
+NUM_SCENARIOS = 158
 def init_from_test_scenario( s, scenario_index, rules ):
   init( s, 16, 7, 7, 7 )
 
@@ -3507,7 +3507,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #######################################
   #
 
-  elif scenario_index == NUM_SCENARIOS:
+  elif scenario_index == 150:
     s.message = 'Line-of-sight test that is very close to fully blocked.'
 
     s.figures[31] = 'C'
@@ -3528,11 +3528,163 @@ def init_from_test_scenario( s, scenario_index, rules ):
       s.correct_answer = { ( 89, ) }
 
   #######################################
+  #
+
+  elif scenario_index == 151:
+    s.message = 'Monsters slide along icy terrain.'
+
+    s.figures[12] = 'A'
+    s.figures[38] = 'C'
+    s.initiatives[38] = 1
+
+    s.contents[19] = 'I'
+    s.contents[25] = 'I'
+
+    s.ACTION_MOVE = 1
+
+    s.correct_answer = { ( 32, 38 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 152:
+    s.message = 'Flying monsters do not slide.'
+
+    s.figures[12] = 'A'
+    s.figures[38] = 'C'
+    s.initiatives[38] = 1
+
+    s.contents[19] = 'I'
+    s.contents[25] = 'I'
+
+    s.ACTION_MOVE = 1
+    s.FLYING = True
+
+    s.correct_answer = { ( 19, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 153:
+    s.message = 'Sliding stops at figures.'
+
+    s.figures[12] = 'A'
+    s.figures[38] = 'C'
+    s.initiatives[38] = 1
+
+    s.contents[19] = 'I'
+    s.contents[25] = 'I'
+    s.contents[32] = 'I'
+
+    s.ACTION_MOVE = 2
+
+    s.correct_answer = { ( 32, 38 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 154:
+    s.message = 'Monster uses ice to reach target then moves out of disadvantage.'
+
+    s.figures[12] = 'A'
+    s.figures[38] = 'C'
+    s.initiatives[38] = 1
+
+    s.contents[19] = 'I'
+    s.contents[25] = 'I'
+    s.contents[32] = 'I'
+    s.contents[33] = 'I'
+    s.contents[39] = 'I'
+
+    s.ACTION_MOVE = 2
+    s.ACTION_RANGE = 2
+
+    s.correct_answer = { ( 24, 38 ), ( 47, 38 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 155:
+    s.message = 'Monster uses ice to minimize distance to target.'
+
+    s.figures[21] = 'C'
+    s.initiatives[21] = 1
+    s.figures[27] = 'A'
+
+    s.contents[18] = 'I'
+    s.contents[19] = 'I'
+    s.contents[37] = 'I'
+    s.contents[38] = 'I'
+    s.contents[39] = 'I'
+
+    s.ACTION_MOVE = 3
+
+    s.correct_answer = { ( 23, ), ( 16, ), ( 36, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 156:
+    s.message = 'Monster anticipates future use of ice when determining path to focus.'
+
+    s.figures[21] = 'C'
+    s.initiatives[21] = 1
+    s.figures[27] = 'A'
+
+    s.contents[37] = 'I'
+    s.contents[38] = 'I'
+    s.contents[39] = 'I'
+
+    s.ACTION_MOVE = 2
+
+    s.correct_answer = { ( 40, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 157:
+    s.message = 'Monster anticipates future use of ice, including accounting for a slide-stopping wall, when determining path to focus.'
+
+    s.figures[12] = 'A'
+    s.figures[45] = 'C'
+    s.initiatives[45] = 1
+
+    s.contents[26] = 'I'
+    s.contents[33] = 'I'
+    s.contents[39] = 'I'
+    s.walls[46][2] = True
+
+    s.ACTION_MOVE = 2
+
+    s.correct_answer = { ( 39, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == NUM_SCENARIOS:
+    s.message = 'Monster anticipates future use of ice, including accounting for a slide-stopping wall, when determining path to focus.'
+
+    s.figures[12] = 'A'
+    s.figures[51] = 'C'
+    s.initiatives[51] = 1
+
+    s.contents[24] = 'I'
+    s.contents[31] = 'I'
+    s.contents[37] = 'I'
+    s.walls[30][1] = True
+
+    s.ACTION_MOVE = 2
+
+    s.correct_answer = { ( 18, ) }
+
+  #######################################
+  #
+
   else:
     s.valid = False
 
   for content in s.contents:
-    if content not in [ ' ', 'O', 'X', 'T', 'H', 'D' ]:
+    if content not in [ ' ', 'O', 'X', 'T', 'H', 'D', 'I' ]:
       exit( 'invalid content \'%s\'' % content )
   for figure in s.figures:
     if figure not in [ ' ', 'C', 'A', 'M' ]:

@@ -32,7 +32,7 @@ def format_aoe_content( value ):
 
 def format_numerical_label( value ):
   if value == MAX_VALUE:
-    return '   '
+    return '999'
   elif value < 10:
     return ' %1i ' % value
   else:

@@ -31,7 +31,7 @@ export default class DragFigure extends React.PureComponent {
     this.source_index = C.NULL_INDEX;
   }
 
-  activate( mouse_x, mouse_y, source_index, c, r, figure, initiative, flying, rotated ) {
+  activate( mouse_x, mouse_y, source_index, c, r, figure, initiative, flying, teleport, rotated ) {
     this.active = true;
     this.mouse_x = this.initial_mouse_x = mouse_x;
     this.mouse_y = this.initial_mouse_y = mouse_y;
@@ -44,6 +44,7 @@ export default class DragFigure extends React.PureComponent {
       figure: figure,
       initiative: initiative,
       flying: flying,
+      teleport: teleport,
       rotated: rotated,
     } )
 
@@ -63,6 +64,7 @@ export default class DragFigure extends React.PureComponent {
       figure: BRUSH.EMPTY,
       initiative: 1,
       flying: 0,
+      teleport: 0,
       rotated: false,
     } );
   }
@@ -112,6 +114,7 @@ export default class DragFigure extends React.PureComponent {
           y={this.state.y}
           figure={this.state.figure}
           flying={this.state.flying}
+          teleport={this.state.teleport}
           initiative={this.state.initiative}
           activeFaction={this.props.activeFaction}
         />

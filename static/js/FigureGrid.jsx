@@ -19,6 +19,7 @@ const FigureGrid = React.memo( function( props ) {
         attack={props.attacks[index]}
         focus={props.focuses && props.focuses[index]}
         flying={props.flying}
+        teleport={props.teleport}
         selected={props.selection === index}
         rotate={props.rotate}
         dragSource={props.dragSourceIndex === index}

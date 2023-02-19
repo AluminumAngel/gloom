@@ -8,6 +8,7 @@ const CLASS_NAMES = [
   'trap',
   'hazardous-terrain',
   'difficult-terrain',
+  'icy-terrain',
 ];
 
 export default class Hex extends React.PureComponent {
