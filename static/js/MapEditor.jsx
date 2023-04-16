@@ -2348,7 +2348,7 @@ export default class MapEditor extends React.PureComponent {
               <div className='mt-2 mb-4 text-secondary small'>
                 <p/>
                 <p className='footer'/>
-                &copy; 2022 <a href='mailto:daniel.richard.nelson@gmail.com'>daniel.richard.nelson@gmail.com</a>
+                &copy; 2023 <a href='mailto:daniel.richard.nelson@gmail.com'>daniel.richard.nelson@gmail.com</a>
                 <p className='footer'/>
                 <a href='https://github.com/AluminumAngel/gloom'>github.com/AluminumAngel/gloom</a>
                 <p className='footer'/>
