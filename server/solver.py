@@ -207,21 +207,29 @@ class Scenario:
     # RULE_JUMP_DIFFICULT_TERRAIN:          difficult terrain effects the last hex of a jump move
     # RULE_PROXIMITY_FOCUS:                 proximity is ignored when determining moster focus
     # RULE_PRIORITIZE_FOCUS_DISADVANTAGE:   avoiding disadvantage against focus is prioritized over target count
+    # RULE_MAXIMIZE_FUTURE_MULTIATTACK:     move towards best multiattack if no attack possible this turn
+    # RULE_RANK_SECONDARY_TARGETS:          rank secondary targets' priority using focus rules
     if self.FROST_RULES:
       self.RULE_VERTEX_LOS = False
       self.RULE_DIFFICULT_TERRAIN_JUMP = False
       self.RULE_PROXIMITY_FOCUS = False
       self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE = False
+      self.RULE_MAXIMIZE_FUTURE_MULTIATTACK = False
+      self.RULE_RANK_SECONDARY_TARGETS = False
     elif self.GLOOM_RULES:
       self.RULE_VERTEX_LOS = True
       self.RULE_DIFFICULT_TERRAIN_JUMP = True
       self.RULE_PROXIMITY_FOCUS = False
       self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE = True
+      self.RULE_MAXIMIZE_FUTURE_MULTIATTACK = True
+      self.RULE_RANK_SECONDARY_TARGETS = True
     elif self.JOTL_RULES:
       self.RULE_VERTEX_LOS = False
       self.RULE_DIFFICULT_TERRAIN_JUMP = False
       self.RULE_PROXIMITY_FOCUS = True
       self.RULE_PRIORITIZE_FOCUS_DISADVANTAGE = True
+      self.RULE_MAXIMIZE_FUTURE_MULTIATTACK = True
+      self.RULE_RANK_SECONDARY_TARGETS = True
 
   def unpack_scenario( self, packed_scenario ):
     self.ACTION_MOVE = int( packed_scenario['move'] )
@@ -1330,7 +1338,7 @@ class Scenario:
           aoe_pattern_set.add( tuple( aoe_hexes ) )
 
       aoe_pattern_list = [
-         [
+        [
           get_offset( PRECALC_GRID_CENTER, location, PRECALC_GRID_HEIGHT )
           for location in aoe
         ]
@@ -1413,21 +1421,28 @@ class Scenario:
           inner()
 
       focuses = s.focuses
+      can_attack_focus = s.shortest_path[1] <= self.ACTION_MOVE
+      heed_only_focus = not self.RULE_MAXIMIZE_FUTURE_MULTIATTACK and not can_attack_focus
 
       # rank characters for secondary targeting
       focus_ranks = {}
-      sorted_infos = sorted(
-        ( ( 0 if self.RULE_PROXIMITY_FOCUS else proximity_distances[_], self.initiatives[_] ), _ )
-        for _ in characters
-      )
-      best_info = sorted_infos[0][0]
-      rank = 0
-      for info, character in sorted_infos:
-        if info != best_info:
-          rank += 1
-          best_info = info
-        focus_ranks[character] = rank
-      num_focus_ranks = rank + 1
+      if self.RULE_RANK_SECONDARY_TARGETS:
+        sorted_infos = sorted(
+          ( ( 0 if self.RULE_PROXIMITY_FOCUS else proximity_distances[_], self.initiatives[_] ), _ )
+          for _ in characters
+        )
+        best_info = sorted_infos[0][0]
+        rank = 0
+        for info, character in sorted_infos:
+          if info != best_info:
+            rank += 1
+            best_info = info
+          focus_ranks[character] = rank
+        num_focus_ranks = rank + 1
+      else:
+        for character in characters:
+          focus_ranks[character] = 0
+        num_focus_ranks = 1
 
     # _ = time.time()
     # perf_timers['1 focus'] = _ - last_time
@@ -1435,6 +1450,11 @@ class Scenario:
 
     # players choose among focus ties
     for focus in focuses:
+
+      if heed_only_focus:
+        heeded_characters = [ focus ]
+      else:
+        heeded_characters = characters
 
       # find the best group of targets based on the following priorities
 
@@ -1457,9 +1477,10 @@ class Scenario:
             MAX_VALUE - 1, # traps to the attack location
             0,             # can reach the attack location
             0,             # total number of targets
+            MAX_VALUE - 1, # number of targts with disadvantage
             MAX_VALUE - 1, # path length to the attack location
           ) + tuple( [ 0 ] * num_focus_ranks ) # target count for each focus rank
-      def consider_group( num_targets, preexisting_targets, preexisting_targets_of_rank, preexisting_targets_disadvantage, aoe_hexes ):
+      def consider_group( num_targets, preexisting_targets, preexisting_targets_of_rank, preexisting_targets_disadvantage ):
         available_targets = targetable_characters - set( preexisting_targets )
         max_num_targets = min( num_targets, len( available_targets ) ) if not ALL_TARGETS else len( available_targets )
 
@@ -1484,10 +1505,15 @@ class Scenario:
               travel_distances[location],
             ) + tuple( -_ for _ in targets_of_rank )
           else:
+            targets_disadvantage = preexisting_targets_disadvantage
+            if SUSCEPTIBLE_TO_DISADVANTAGE:
+              for target in target_set:
+                targets_disadvantage += int( self.is_adjacent( location, target ) )
             this_group = (
               trap_counts[location],
               -can_reach_location,
               -len( targets ),
+              targets_disadvantage,
               travel_distances[location],
             ) + tuple( -_ for _ in targets_of_rank )
 
@@ -1518,7 +1544,7 @@ class Scenario:
           range_to_location = self.find_proximity_distances( location, ATTACK_RANGE )
           targetable_characters = {
             _
-            for _ in characters
+            for _ in heeded_characters
             if range_to_location[_] <= ATTACK_RANGE and self.test_los_between_locations( _, location )
           }
 
@@ -1526,7 +1552,7 @@ class Scenario:
             if focus not in targetable_characters:
               continue
             # add non-AoE targets and consider resulting actions
-            consider_group( 1 + PLUS_TARGET_FOR_MOVEMENT, [], [ 0 ] * num_focus_ranks, 0, [] )
+            consider_group( 1 + PLUS_TARGET_FOR_MOVEMENT, [], [ 0 ] * num_focus_ranks, 0 )
 
           elif AOE_MELEE:
             # loop over every possible aoe placement
@@ -1534,13 +1560,11 @@ class Scenario:
               aoe_targets = []
               aoe_targets_of_rank = [ 0 ] * num_focus_ranks
               aoe_targets_disadvantage = 0
-              aoe_hexes = []
 
               # loop over each hex in the aoe, adding targets
               for aoe_offset in aoe:
                 target = self.apply_rotated_aoe_offset( location, aoe_offset, aoe_rotation )
-                aoe_hexes.append( target )
-                if target in characters:
+                if target in heeded_characters:
                   if self.test_los_between_locations( target, location ):
                     aoe_targets.append( target )
                     aoe_targets_of_rank[focus_ranks[target]] += 1
@@ -1548,17 +1572,16 @@ class Scenario:
 
               # add non-AoE targets and consider result
               if aoe_targets:
-                consider_group( PLUS_TARGET, aoe_targets, aoe_targets_of_rank, aoe_targets_disadvantage, aoe_hexes )
+                consider_group( PLUS_TARGET, aoe_targets, aoe_targets_of_rank, aoe_targets_disadvantage )
 
           else:
             # loop over all aoe placements that hit characters
             distances = self.find_proximity_distances( location, ATTACK_RANGE )
-            for aoe_location in characters:
+            for aoe_location in heeded_characters:
               for aoe_pattern in aoe_pattern_list:
                 aoe_targets = []
                 aoe_targets_of_rank = [ 0 ] * num_focus_ranks
                 aoe_targets_disadvantage = 0
-                aoe_hexes = []
 
                 # loop over each hex in the aoe, adding targets
                 in_range = False
@@ -1567,8 +1590,7 @@ class Scenario:
                   if target:
                     if distances[target] <= ATTACK_RANGE:
                       in_range = True
-                    aoe_hexes.append( target )
-                    if target in characters:
+                    if target in heeded_characters:
                       if self.test_los_between_locations( target, location ):
                         aoe_targets.append( target )
                         aoe_targets_of_rank[focus_ranks[target]] += 1
@@ -1577,7 +1599,7 @@ class Scenario:
                 # add non-AoE targets and consider result
                 if in_range:
                   if aoe_targets:
-                    consider_group( PLUS_TARGET, aoe_targets, aoe_targets_of_rank, aoe_targets_disadvantage, aoe_hexes )
+                    consider_group( PLUS_TARGET, aoe_targets, aoe_targets_of_rank, aoe_targets_disadvantage )
 
       # _ = time.time()
       # perf_timers['2 target group'] = _ - last_time
@@ -1585,6 +1607,9 @@ class Scenario:
 
       # given the target group, find the best destinations to attack from
       # based on the following priorities
+
+      # optimization: Frosthaven rules do not require the following separate minimization step.
+      # Instead, the locations can be found in above minimization and used directly.
 
       class u:
         destinations = set()
@@ -1653,7 +1678,7 @@ class Scenario:
           range_to_location = self.find_proximity_distances( location, ATTACK_RANGE )
           targetable_characters = {
             _
-            for _ in characters
+            for _ in heeded_characters
             if range_to_location[_] <= ATTACK_RANGE and self.test_los_between_locations( _, location )
           }
 
@@ -1675,7 +1700,7 @@ class Scenario:
               for aoe_offset in aoe:
                 target = self.apply_rotated_aoe_offset( location, aoe_offset, aoe_rotation )
                 aoe_hexes.append( target )
-                if target in characters:
+                if target in heeded_characters:
                   if self.test_los_between_locations( target, location ):
                     aoe_targets.append( target )
                     aoe_targets_of_rank[focus_ranks[target]] += 1
@@ -1688,7 +1713,7 @@ class Scenario:
           else:
             # loop over all aoe placements that hit characters
             distances = self.find_proximity_distances( location, ATTACK_RANGE )
-            for aoe_location in characters:
+            for aoe_location in heeded_characters:
               for aoe_pattern in aoe_pattern_list:
                 aoe_targets = []
                 aoe_targets_of_rank = [ 0 ] * num_focus_ranks
@@ -1703,7 +1728,7 @@ class Scenario:
                     if distances[target] <= ATTACK_RANGE:
                       in_range = True
                     aoe_hexes.append( target )
-                    if target in characters:
+                    if target in heeded_characters:
                       if self.test_los_between_locations( target, location ):
                         aoe_targets.append( target )
                         aoe_targets_of_rank[focus_ranks[target]] += 1
@@ -1717,6 +1742,7 @@ class Scenario:
       # determine the best move based on the chosen destinations
 
       can_reach_destinations = t.best_group[1] == -1
+      assert can_reach_destinations == can_attack_focus
       if can_reach_destinations:
         if PLUS_TARGET >= 0:
           actions_for_this_focus = u.destinations
@@ -1903,6 +1929,11 @@ class Scenario:
         for edge in range( 3 ):
           if walls[edge]:
             print '    s.walls[%r][%r] = %r' % ( index, edge, walls[edge] )
+      if True in self.aoe:
+        print
+        for index, aoe in enumerate( self.aoe ):
+          if aoe:
+            print '    s.aoe[%r] = True' % index
       print
       print '    s.ACTION_MOVE = %r' % self.ACTION_MOVE
       if self.ACTION_RANGE != 0:

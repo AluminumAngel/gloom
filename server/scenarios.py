@@ -1,3 +1,10 @@
+# todo
+# - add quiz elements #26+ to scenarios (change senario size in these cases)
+# - add frosthaven rulebook examples (Appendix B) to scenarios
+# -- https://s3.amazonaws.com/geekdo-files.com/bgg349420?response-content-disposition=inline%3B%20filename%3D%22Frosthaven_Rules_-_Part_3.pdf%22&response-content-type=application%2Fpdf&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJYFNCT7FKCE4O6TA%2F20230324%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230324T065057Z&X-Amz-SignedHeaders=host&X-Amz-Expires=120&X-Amz-Signature=d65efab43e5dce4fb6a0ed19183f7547a40ec749a666bae6fe9240b4b9dc3109
+# - on each BGG moster mover test question, post a link to the scenario
+# -- for ones that change for Frosthaven: "click here to see how Frosthaven changes the answer"
+
 def unreduce_actions( s, actions ):
   def fix_location( location ):
     column = location / s.MAP_HEIGHT
@@ -135,7 +142,6 @@ def init( s, width, height, aoe_width, aoe_height ):
 
   s.DEBUG_TOGGLE = False
 
-NUM_SCENARIOS = 17
 # TODO should be a member function?
 def init_from_test_scenario( s, scenario_index, rules ):
   init( s, 16, 7, 7, 7 )
@@ -249,7 +255,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   # 6 - online test question #3; test breaking focus ties with proximity
 
   elif scenario_index == 6:
-    s.message = 'When choosing focus, proximity breaks ties in path delta_length. C20 is in closer proximity.'
+    s.message = 'Online test question #3. When choosing focus, proximity breaks ties in path delta_length. C20 is in closer proximity.'
 
     s.figures[50] = 'C'
     s.initiatives[50] = 10
@@ -1471,7 +1477,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 68:
-    s.message = 'Online test question #12.'
+    s.message = 'Online test question #12. In Frosthaven, secondary targets are not ranked.'
 
     s.figures[15] = 'C'
     s.initiatives[15] = 40
@@ -1491,6 +1497,8 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.correct_answer = { ( 9, 23, 24 ), ( 10, 23, 24 ) }
     if s.JOTL_RULES:
       s.correct_answer = { ( 9, 22, 24 ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 9, 23, 24 ), ( 10, 23, 24 ), ( 9, 22, 24 ), ( 9, 15, 24 ) }
 
   #######################################
   #
@@ -1518,12 +1526,14 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_TARGET = 2
 
     s.correct_answer = { ( 31, 17, 29 ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 31, 29, 46 ), ( 31, 17, 29 ) }
   
   #######################################
   #
 
   elif scenario_index == 70:
-    s.message = 'The monster prioritizes additional targets based on their rank as a focus. Here C30 is preferred because it is in closer proximity.'
+    s.message = 'The monster prioritizes additional targets based on their rank as a focus. Here C30 is preferred because it is in closer proximity. In Frosthaven, secondary targets are not ranked.'
 
     s.figures[9] = 'C'
     s.initiatives[9] = 10
@@ -1541,12 +1551,14 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.correct_answer = { ( 24, 9, 47 ) }
     if s.JOTL_RULES:
       s.correct_answer = { ( 24, 9, 50 ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 24, 9, 47 ), ( 24, 9, 50 ), }
 
   #######################################
   #
 
   elif scenario_index == 71:
-    s.message = 'The monster prioritizes additional targets based on their rank as a focus. Here C20 is preferred because of initiative.'
+    s.message = 'The monster prioritizes additional targets based on their rank as a focus. Here C20 is preferred because of initiative. In Frosthaven, secondary targets are not ranked.'
 
     s.figures[17] = 'C'
     s.initiatives[17] = 10
@@ -1562,6 +1574,8 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_TARGET = 2
 
     s.correct_answer = { ( 39, 17, 62 ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 39, 17, 62 ), ( 37, 17, 57 ) }
 
   #######################################
   #
@@ -1630,7 +1644,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 75:
-    s.message = 'The monster chooses extra targets based on their priority as a focus. On ties, players choose.'
+    s.message = 'The monster chooses extra targets based on their priority as a focus. On ties, players choose. In Frosthaven, secondary targets are not ranked.'
 
     s.figures[16] = 'C'
     s.initiatives[16] = 10
@@ -1651,6 +1665,23 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_TARGET = 4
 
     s.correct_answer = { ( 23, 16, 22, 24, 31 ), ( 23, 16, 17, 24, 31 ) }
+    if s.FROST_RULES:
+      s.correct_answer = {
+        ( 23, 16, 22, 24, 31 ),
+        ( 23, 16, 17, 24, 30 ),
+        ( 23, 17, 22, 24, 31 ),
+        ( 23, 17, 22, 24, 30 ),
+        ( 23, 16, 17, 22, 24 ),
+        ( 23, 16, 17, 22, 31 ),
+        ( 23, 22, 24, 30, 31 ),
+        ( 23, 16, 22, 24, 30 ),
+        ( 23, 16, 24, 30, 31 ),
+        ( 23, 16, 17, 24, 31 ),
+        ( 23, 16, 17, 30, 31 ),
+        ( 23, 16, 17, 22, 30 ),
+        ( 23, 17, 24, 30, 31 ),
+        ( 23, 16, 22, 30, 31 ),
+      }
 
   #######################################
   #
@@ -1748,7 +1779,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 81:
-    s.message = 'When deciding how to use its AoE, the monster prioritizes targets based on their ranking as a focus. The monster\'s first priority is to attack its focus, C30. After that, the next highest priority is C10.'
+    s.message = 'When deciding how to use its AoE, the monster prioritizes targets based on their ranking as a focus. The monster\'s first priority is to attack its focus, C30. After that, the next highest priority is C10. In Frosthaven, secondary targets are not ranked.'
 
     s.figures[16] = 'C'
     s.initiatives[16] = 30
@@ -1765,6 +1796,8 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_MOVE = 2
 
     s.correct_answer = { ( 23, 8, 16 ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 23, 8, 16 ), ( 9, 16, 22 ) }
 
   #######################################
   #
@@ -2043,7 +2076,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 93:
-    s.message = 'Online test question #15.'
+    s.message = 'Online test question #15. Frosthaven monsters do not rank secondary targets, so the players can shoose which two targets beyond the focus are attacked.'
 
     s.figures[11] = 'C'
     s.initiatives[11] = 35
@@ -2068,6 +2101,8 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.correct_answer = { ( 23, 11, 33, 38 ) }
     if s.JOTL_RULES:
       s.correct_answer = { ( 23, 11, 33, 39 ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 23, 11, 38, 39 ), ( 23, 11, 33, 38 ), ( 23, 11, 33, 39 ) }
     
   #######################################
   #
@@ -2707,7 +2742,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 121:
-    s.message = 'The monster will place its AoE to hit its focus and the most favorable set of additional targets.'
+    s.message = 'The monster will place its AoE to hit its focus and the most favorable set of additional targets. In Frosthaven, secondary targets are not ranked, the players can choose.'
 
     s.figures[58] = 'C'
     s.initiatives[58] = 10
@@ -2730,6 +2765,8 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_RANGE = 3
 
     s.correct_answer = { ( 35, 58, 59, 60 ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 35, 58, 64, 71 ), ( 35, 58, 59, 60 ) }
 
   #######################################
   #
@@ -2811,7 +2848,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 125:
-    s.message = 'If a monster cannot attack its focus this turn, it will move towards the most optimal attack location. That is true even if there is a closer attack location that is less optimal.'
+    s.message = 'If a monster cannot attack its focus this turn, it will move towards the most optimal attack location. That is true even if there is a closer attack location that is less optimal. This is not true for Frosthaven, in which the monster will move towards the closest attack location.'
 
     s.figures[26] = 'C'
     s.figures[39] = 'C'
@@ -2841,12 +2878,14 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_TARGET = 2
 
     s.correct_answer = { ( 30, ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 37, ) }
 
   #######################################
   #
 
   elif scenario_index == 126:
-    s.message = 'If the monster has multiple attack options that target its focus plus a maximum number of additional charcters, it will favor additional targets that are closest in proximty first, then it will favor targets that have lower initiative. In this case, C20 is favored over C30 due to initiative. Note that if secondary targets were instead ranked based on their quality as a focus, C30 would have been favored. That is because only two steps are required to attack C30 individually, while three steps are required to attack C20 due to the obstacle. See this ruling (https://boardgamegeek.com/article/29431623#29431623). Still looking for full clarity (https://boardgamegeek.com/article/29455803#29455803).'
+    s.message = 'If the monster has multiple attack options that target its focus plus a maximum number of additional charcters, it will favor additional targets that are closest in proximty first, then it will favor targets that have lower initiative. In this case, C20 is favored over C30 due to initiative. Note that if secondary targets were instead ranked based on their quality as a focus, C30 would have been favored. That is because only two steps are required to attack C30 individually, while three steps are required to attack C20 due to the obstacle. See this ruling (https://boardgamegeek.com/article/29431623#29431623). Still looking for full clarity (https://boardgamegeek.com/article/29455803#29455803). In Frosthaven, secondary targets are not ranked. So players may choose.'
 
     s.figures[33] = 'C'
     s.initiatives[33] = 30
@@ -2864,7 +2903,9 @@ def init_from_test_scenario( s, scenario_index, rules ):
 
     s.ACTION_MOVE = 3
 
-    s.correct_answer = { (32, 39, 47 ) }
+    s.correct_answer = { ( 32, 39, 47 ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 32, 39, 47 ), ( 46, 33, 39 ) }
 
   #######################################
   #
@@ -3093,9 +3134,23 @@ def init_from_test_scenario( s, scenario_index, rules ):
         ( 52, 8, 17, 23, 80, 92, 94, 102 ),
       }
     elif s.FROST_RULES:
-      # frosthaven monster doesn't need to move to get los to good attacks
+      # frosthaven monster doesn't need to move to get los to good attacks and secondary targets are players' choice
       s.correct_answer = {
+        ( 37, 8, 17, 23, 46, 51, 58, 80 ),
+        ( 37, 8, 17, 23, 26, 58, 68, 80 ),
+        ( 37, 8, 17, 23, 26, 46, 58, 68 ),
+        ( 37, 8, 17, 23, 26, 46, 51, 80 ),
+        ( 37, 8, 17, 23, 26, 46, 68, 80 ),
         ( 37, 8, 17, 23, 26, 46, 51, 58 ),
+        ( 37, 8, 17, 23, 51, 58, 68, 80 ),
+        ( 37, 8, 17, 23, 46, 51, 68, 80 ),
+        ( 37, 8, 17, 23, 26, 46, 51, 68 ),
+        ( 37, 8, 17, 23, 26, 51, 68, 80 ),
+        ( 37, 8, 17, 23, 46, 51, 58, 68 ),
+        ( 37, 8, 17, 23, 26, 46, 58, 80 ),
+        ( 37, 8, 17, 23, 26, 51, 58, 68 ),
+        ( 37, 8, 17, 23, 26, 51, 58, 80 ),
+        ( 37, 8, 17, 23, 46, 58, 68, 80 ),
       }
 
   #######################################
@@ -3136,7 +3191,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 133:
-    s.message = 'The monster first uses proximity to rank secondary targets, before initiative. Because of the wall line between the monster and C10, C10 is two proximity steps away. Thus, the monster prefers C30 as its second target.'
+    s.message = 'The monster first uses proximity to rank secondary targets, before initiative. Because of the wall line between the monster and C10, C10 is two proximity steps away. Thus, the monster prefers C30 as its second target. In Frosthaven, secondary targets are not ranked, so the monster will choose the attack that avoids disadvantage.'
 
     s.figures[38] = 'C'
     s.initiatives[38] = 10
@@ -3165,7 +3220,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_TARGET = 2
 
     s.correct_answer = { ( 37, 44, 45 ) }
-    if s.JOTL_RULES:
+    if s.JOTL_RULES or s.FROST_RULES:
       s.correct_answer = { ( 37, 38, 45 ) }
 
   #######################################
@@ -3260,7 +3315,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 137:
-    s.message = 'https://boardgamegeek.com/article/29498431#29498431. Frosthaven doesn\'t prioritize disadvantage against focus above other disadvantage.'
+    s.message = 'https://boardgamegeek.com/article/29498431#29498431. Frosthaven monsters do not rank secondary targets, so will pick the attach that avoids all disadvantage.'
 
     s.figures[53] = 'C'
     s.initiatives[53] = 10
@@ -3281,7 +3336,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
 
     s.correct_answer = { ( 67, 53, 74, 76 ) }
     if s.FROST_RULES:
-      s.correct_answer = { ( 67, 53, 74, 76 ), ( 61, 53, 74, 76 ) }
+      s.correct_answer = { ( 39, 24, 34, 53 ) }
 
   #######################################
   #
@@ -3308,7 +3363,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 139:
-    s.message = 'Monsters are willing to move farther to avoid disadvantage against secondary targets; but this one is muddled.'
+    s.message = 'Monsters are willing to move farther to avoid disadvantage against secondary targets, but this one is muddled.'
 
     s.figures[53] = 'C'
     s.initiatives[53] = 10
@@ -3330,7 +3385,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 140:
-    s.message = 'Monsters are willing to move farther to avoid disadvantage against secondary targets; but this one can has Move 5.'
+    s.message = 'Monsters are willing to move farther to avoid disadvantage against secondary targets, but this one has Move 5.'
 
     s.figures[53] = 'C'
     s.initiatives[53] = 10
@@ -3351,7 +3406,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 141:
-    s.message = 'Monster picks his secondary targets based on how far it must move to attack them, then proximity, then initiative. Here both groups can be attacked in five steps. It picks the left targets due to proximty. It ends up moving six steps to avoid disadvantage, even though it could have attacked the right targets without disadvantage in five moves. That is because targets are picked based on distance to attack. Only after picking targets does the monster adjust its destination based on avoiding disadvantage. However, Jaws of the Lion ignores proximity, so the groups are considered equal priority. The monster then chooses the attack location that requires minimum movement.'
+    s.message = 'Monster picks his secondary targets based on how far it must move to attack them, then proximity, then initiative. Here both groups can be attacked in five steps. It picks the left targets due to proximty. It ends up moving six steps to avoid disadvantage, even though it could have attacked the right targets without disadvantage in five moves. That is because targets are picked based on distance to attack. Only after picking targets does the monster adjust its destination based on avoiding disadvantage. However, Jaws of the Lion ignores proximity, so the groups are considered equal priority. The monster then chooses the attack location that requires minimum movement. In Frosthaven secondary targets are not ranked, so the monster will prefer the targets that require less movement to avoid disadvantage.'
 
     s.figures[53] = 'C'
     s.initiatives[53] = 10
@@ -3371,7 +3426,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_TARGET = 3
 
     s.correct_answer = { ( 40, 26, 32, 53 ) }
-    if s.JOTL_RULES:
+    if s.JOTL_RULES or s.FROST_RULES:
       s.correct_answer = { ( 67, 53, 81, 82 ) }
 
   #######################################
@@ -3919,7 +3974,7 @@ def init_from_test_scenario( s, scenario_index, rules ):
   #
 
   elif scenario_index == 166:
-    s.message = 'Online test question #24.'
+    s.message = 'Online test question #24. Frosthaven monsters do not rank secondary targets but do prefer targets without disadvantage.'
 
     s.figures[24] = 'A'
     s.figures[30] = 'C'
@@ -3934,17 +3989,18 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_MOVE = 3
     s.ACTION_RANGE = 3
     s.ACTION_TARGET = 3
-    s.JUMPING = True
 
     s.correct_answer = { ( 23, 30, 32, 46 ) }
-    if s.JOTL_RULES or s.FROST_RULES:
+    if s.JOTL_RULES:
       s.correct_answer = { ( 24, 30, 32, 46 ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 23, 32, 44, 46 ) }
 
   #######################################
   #
 
   elif scenario_index == 167:
-    s.message = 'Online test question #25.'
+    s.message = 'Online test question #25. Frosthaven monsters do not rank secondary targets.'
 
     s.figures[11] = 'C'
     s.initiatives[11] = 3
@@ -3961,6 +4017,8 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_TARGET = 2
 
     s.correct_answer = { ( 33, 26, 39 ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 33, 26, 39 ), ( 19, 11, 26 ) }
 
   #######################################
   #
@@ -4219,6 +4277,73 @@ def init_from_test_scenario( s, scenario_index, rules ):
     s.ACTION_TARGET = 2
 
     s.correct_answer = { ( 47, 39, 54 ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 180:
+    s.message = 'In Frosthaven, if a monster with multiple attacks cannot make an attack this turn, it moves towards the closest hex that allows it to attack its focus. In Gloomhaven, the monster moves towards the hex that maximizes its attack.'
+
+    s.figures[12] = 'A'
+    s.figures[23] = 'C'
+    s.initiatives[23] = 1
+    s.figures[30] = 'C'
+    s.initiatives[30] = 2
+
+    s.contents[18] = 'X'
+    s.contents[24] = 'X'
+
+    s.ACTION_MOVE = 1
+    s.ACTION_TARGET = 2
+
+    s.correct_answer = { ( 19, ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 11, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 181:
+    s.message = 'In Frosthaven, if a monster with AoE cannot make an attack this turn, it moves towards the closest hex that allows it to attack its focus. In Gloomhaven, the monster moves towards the hex that maximizes its attack.'
+
+    s.figures[12] = 'A'
+    s.figures[23] = 'C'
+    s.initiatives[23] = 1
+    s.figures[30] = 'C'
+    s.initiatives[30] = 2
+
+    s.contents[18] = 'X'
+    s.contents[24] = 'X'
+
+    s.ACTION_MOVE = 1
+    s.ACTION_TARGET = 1
+
+    s.aoe[17] = True
+    s.aoe[23] = True
+
+    s.correct_answer = { ( 19, ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 11, ) }
+
+  #######################################
+  #
+
+  elif scenario_index == 182:
+    s.message = 'In Frosthaven, if a monster with multiple attacks cannot make an attack this turn, it moves towards the closest hex that allows it to attack its focus. In Gloomhaven, the monster moves towards the hex that maximizes its attack.'
+
+    s.figures[11] = 'C'
+    s.initiatives[11] = 1
+    s.figures[22] = 'A'
+    s.figures[39] = 'C'
+    s.initiatives[39] = 2
+
+    s.ACTION_MOVE = 1
+    s.ACTION_RANGE = 2
+    s.ACTION_TARGET = 2
+
+    s.correct_answer = { ( 23, ) }
+    if s.FROST_RULES:
+      s.correct_answer = { ( 23, ), ( 16, ) }
 
   #######################################
   #
